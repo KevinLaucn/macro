@@ -26,6 +26,7 @@ import {
   type LexicalNode,
 } from 'lexical';
 import { flattenConsecutiveParagraphs } from './flattenConsecutiveParagraphs';
+import { stripOwnTrackingPixelsFromHtml } from './readReceipts';
 import type { ReplyType } from './replyType';
 
 export function clearEmailBody(editor: LexicalEditor | undefined) {
@@ -149,6 +150,17 @@ function $generateHeaderNodes(
 
 const REPLYING_TO_ID_ATTRIBUTE = 'data-replying-to-id';
 
+/**
+ * Returns quoted HTML safe to move into a live composer. Sent messages may
+ * contain Macro's own read-receipt pixel; strip it while the markup is still
+ * inert so opening a reply/forward cannot record a false recipient open.
+ */
+function getComposerQuotedBodyHtml(replyingTo: ApiMessage): string | undefined {
+  const html = replyingTo.body_html_sanitized?.toString();
+  if (!html) return undefined;
+  return replyingTo.is_sent ? stripOwnTrackingPixelsFromHtml(html) : html;
+}
+
 const $appendPreviousEmail = (
   editor: LexicalEditor,
   replyingTo: ApiMessage | undefined,
@@ -171,7 +183,7 @@ const $appendPreviousEmail = (
   const headerNodes = $generateHeaderNodes(replyingTo, replyType);
   headerNodes.forEach((n) => wrapper.append(n));
 
-  const replyingToBodyHTML = replyingTo.body_html_sanitized;
+  const replyingToBodyHTML = getComposerQuotedBodyHtml(replyingTo);
   if (!replyingToBodyHTML) {
     // Plain text email
     const textNode = $createTextNode(replyingTo.body_text ?? '');
@@ -352,7 +364,7 @@ function getAppendedReplyElement(
   }
 
   const quote = document.createElement('blockquote');
-  const replyingToBodyHTML = replyingTo.body_html_sanitized;
+  const replyingToBodyHTML = getComposerQuotedBodyHtml(replyingTo);
   if (!replyingToBodyHTML) {
     quote.textContent = replyingTo.body_text ?? '';
   } else {
