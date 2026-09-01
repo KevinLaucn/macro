@@ -148,7 +148,10 @@ pub async fn fetch_and_attach_forwarded_attachments(
 
         Ok::<AttachmentToSend, anyhow::Error>(AttachmentToSend {
             file_name: fwd_att.filename.clone().unwrap_or_default(),
-            content_type: fwd_att.mime_type.clone().unwrap_or_else(|| "application/octet-stream".to_string()),
+            content_type: fwd_att
+                .mime_type
+                .clone()
+                .unwrap_or_else(|| "application/octet-stream".to_string()),
             data,
         })
     });
@@ -159,6 +162,70 @@ pub async fn fetch_and_attach_forwarded_attachments(
         Some(existing) => existing.extend(forwarded_to_send),
         None => message_to_send.attachments = Some(forwarded_to_send),
     }
+
+    Ok(())
+}
+
+/// Embed a read-receipt tracking pixel in the outgoing HTML when the sending
+/// inbox has read receipts enabled.
+///
+/// Existing Macro tracking pixels are stripped first so replies never resend
+/// or retrigger pixels from quoted sent messages. Tracking is deliberately
+/// best-effort: a tracking failure must never block delivery of the email.
+#[tracing::instrument(skip(db, message_to_send), fields(message_db_id = ?message_to_send.db_id))]
+pub async fn attach_open_tracking_pixel(
+    db: &PgPool,
+    message_to_send: &mut message::MessageToSend,
+) {
+    let _ = try_attach_open_tracking_pixel(db, message_to_send)
+        .await
+        .inspect_err(|error| {
+            tracing::warn!(
+                ?error,
+                message_db_id = ?message_to_send.db_id,
+                "Failed to attach open tracking pixel; sending without read receipt tracking"
+            );
+        });
+}
+
+async fn try_attach_open_tracking_pixel(
+    db: &PgPool,
+    message_to_send: &mut message::MessageToSend,
+) -> anyhow::Result<()> {
+    let Some(db_id) = message_to_send.db_id else {
+        return Ok(());
+    };
+    let Some(html) = message_to_send.body_html.as_deref() else {
+        return Ok(());
+    };
+
+    let base_url = macro_service_urls::EmailServiceUrl::new()
+        .context("unable to resolve email service base url")?
+        .to_string();
+
+    let mut new_html = email_utils::open_tracking::strip_open_tracking_pixels(html, &base_url);
+
+    let enabled = email_db_client::settings::fetch_read_receipts_enabled(db, message_to_send.link_id)
+        .await
+        .context("unable to fetch read receipt settings")?;
+
+    if enabled {
+        let token = Uuid::new_v4();
+        email_db_client::messages::open_tracking::set_message_open_tracking_token(
+            db,
+            db_id,
+            message_to_send.link_id,
+            token,
+        )
+        .await
+        .context("unable to persist open tracking token")?;
+
+        let pixel_url =
+            email_utils::open_tracking::open_tracking_pixel_url(&base_url, &token.to_string());
+        new_html = email_utils::open_tracking::inject_open_tracking_pixel(&new_html, &pixel_url);
+    }
+
+    message_to_send.body_html = Some(new_html);
 
     Ok(())
 }

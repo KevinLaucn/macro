@@ -4,6 +4,7 @@ pub mod get_parsed;
 pub mod get_parsed_search;
 pub mod get_simple_messages;
 pub mod insert;
+pub mod open_tracking;
 pub mod replying_to_id;
 pub mod scheduled;
 #[cfg(test)]

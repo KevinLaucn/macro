@@ -12,6 +12,7 @@ mod health;
 
 mod calendar_watch;
 mod email;
+mod tracking;
 
 // Misc
 pub(crate) mod context;
@@ -67,6 +68,9 @@ fn api_router(state: ApiContext) -> Router<ApiContext> {
     Router::new()
         .nest("/email", email::router(state))
         .nest("/gmail", gmail::router())
+        // Public tracking pixel endpoint. Recipient mail clients cannot
+        // authenticate, so this intentionally sits outside the email auth tree.
+        .nest("/t", tracking::router())
         .nest("/internal", internal::router())
         .nest("/calendar", calendar_router)
 }

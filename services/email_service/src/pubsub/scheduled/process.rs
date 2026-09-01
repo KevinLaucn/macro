@@ -1,7 +1,7 @@
 use crate::pubsub::scheduled::context::ScheduledContext;
 use crate::pubsub::util::publish_email_event;
 use crate::util::gmail::send::{
-    cleanup_draft_attachments, fetch_and_attach_draft_attachments,
+    attach_open_tracking_pixel, cleanup_draft_attachments, fetch_and_attach_draft_attachments,
     fetch_and_attach_forwarded_attachments, generate_email_threading_headers,
 };
 use anyhow::Context;
@@ -146,6 +146,10 @@ async fn process_scheduled_message_inner(
     // Include forwarded attachments (fetched from Gmail at send time)
     fetch_and_attach_forwarded_attachments(&ctx.db, &ctx.email_api, &link, &mut message_to_send)
         .await?;
+
+    // Read receipts are attached at the last possible moment before the MIME
+    // payload is handed to Gmail. Failure is best-effort and never blocks send.
+    attach_open_tracking_pixel(&ctx.db, &mut message_to_send).await;
 
     let send_request = SendRequest {
         message: message_to_send.clone(),

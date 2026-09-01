@@ -1,5 +1,6 @@
 pub(crate) mod get;
 pub(crate) mod labels;
+pub(crate) mod tracking;
 
 use axum::Router;
 use axum::routing::{get, patch, post};
@@ -21,5 +22,6 @@ pub fn router(_state: ApiContext) -> Router<ApiContext> {
         >())
         .route("/labels", patch(labels::handler))
         .route("/batch", post(get::batch_handler))
+        .route("/tracking", post(tracking::batch_handler))
         .route("/{id}", get(get::handler))
 }

@@ -1,0 +1,89 @@
+use super::*;
+
+const BASE_URL: &str = "https://email-service.macro.com";
+const TOKEN: &str = "open-tracking-token-test";
+
+#[test]
+fn pixel_url_joins_base_and_token() {
+    assert_eq!(
+        open_tracking_pixel_url(BASE_URL, TOKEN),
+        format!("https://email-service.macro.com/t/o/{TOKEN}")
+    );
+    assert_eq!(
+        open_tracking_pixel_url("http://localhost:8087/", TOKEN),
+        format!("http://localhost:8087/t/o/{TOKEN}")
+    );
+}
+
+#[test]
+fn inject_appends_when_no_body_tag() {
+    let url = open_tracking_pixel_url(BASE_URL, TOKEN);
+    let html = "<div>hello</div>";
+    let injected = inject_open_tracking_pixel(html, &url);
+
+    assert!(injected.starts_with(html));
+    assert!(injected.contains(&format!(r#"<img src="{url}""#)));
+}
+
+#[test]
+fn inject_inserts_before_closing_body_tag() {
+    let url = open_tracking_pixel_url(BASE_URL, TOKEN);
+    let html = "<html><BODY><p>hi</p></BODY></html>";
+    let injected = inject_open_tracking_pixel(html, &url);
+
+    let pixel_idx = injected.find("<img").unwrap();
+    let body_close_idx = injected.find("</BODY>").unwrap();
+    assert!(pixel_idx < body_close_idx);
+    assert!(injected.ends_with("</BODY></html>"));
+}
+
+#[test]
+fn strip_removes_own_pixels_only() {
+    let url = open_tracking_pixel_url(BASE_URL, TOKEN);
+    let html = format!(
+        r#"<p>hi</p><img src="{url}" alt="" width="1" height="1"><img src="https://example.com/logo.png">"#
+    );
+
+    let stripped = strip_open_tracking_pixels(&html, BASE_URL);
+
+    assert!(!stripped.contains("/t/o/"));
+    assert!(stripped.contains("https://example.com/logo.png"));
+    assert!(stripped.contains("<p>hi</p>"));
+}
+
+#[test]
+fn strip_removes_cross_environment_pixels() {
+    let html = format!(
+        r#"<blockquote><img src="https://email-service-dev.macro.com/t/o/{TOKEN}" width="1" height="1"></blockquote>"#
+    );
+
+    let stripped = strip_open_tracking_pixels(&html, BASE_URL);
+
+    assert!(!stripped.contains("/t/o/"));
+    assert!(stripped.contains("<blockquote>"));
+}
+
+#[test]
+fn strip_keeps_lookalike_third_party_pixels() {
+    let html = r#"<img src="https://tracker.example.com/t/o/abc" width="1" height="1">"#;
+
+    let stripped = strip_open_tracking_pixels(html, BASE_URL);
+
+    assert_eq!(stripped, html);
+}
+
+#[test]
+fn inject_after_strip_leaves_one_tracking_pixel() {
+    let old_url = open_tracking_pixel_url(BASE_URL, "11111111-2222-3333-4444-555555555555");
+    let html = format!(
+        r#"<html><body><p>reply</p><img src="{old_url}" width="1"></body></html>"#
+    );
+
+    let new_url = open_tracking_pixel_url(BASE_URL, TOKEN);
+    let cleaned = strip_open_tracking_pixels(&html, BASE_URL);
+    let injected = inject_open_tracking_pixel(&cleaned, &new_url);
+
+    assert!(!injected.contains("11111111-2222-3333-4444-555555555555"));
+    assert_eq!(injected.matches("/t/o/").count(), 1);
+    assert!(injected.contains(TOKEN));
+}

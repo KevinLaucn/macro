@@ -1,9 +1,17 @@
 import { UserIcon, type UserIconProps } from '@core/component/UserIcon';
 import { useEmail } from '@core/context/user';
+import EyeIcon from '@phosphor-icons/core/regular/eye.svg?component-solid';
+import { useReadReceiptStatusQuery } from '@queries/email/readReceipts';
 import type { ApiMessage } from '@service-email/generated/schemas';
+import { Tooltip } from '@ui';
 import { cn } from '@ui/utils/classname';
 import { createMemo, Show } from 'solid-js';
 import { getSenderDisplayName, getSenderMacroId } from '../util/emailUser';
+import {
+  formatSeenLabel,
+  formatSeenTooltip,
+  statusSeenAt,
+} from '../util/readReceipts';
 import { formatShortDate } from './EmailMessageTopBar';
 import { EmailUserTooltip } from './EmailUserTooltip';
 
@@ -16,6 +24,12 @@ interface CollapsedMessageProps {
 
 export function CollapsedMessage(props: CollapsedMessageProps) {
   const currentUserEmail = useEmail();
+
+  const readReceiptQuery = useReadReceiptStatusQuery(
+    () => props.message.db_id,
+    () => props.message.is_sent && !props.message.is_draft
+  );
+  const seenAt = createMemo(() => statusSeenAt(readReceiptQuery.data));
 
   const senderDisplay = createMemo(() =>
     getSenderDisplayName(props.message, currentUserEmail())
@@ -92,6 +106,21 @@ export function CollapsedMessage(props: CollapsedMessageProps) {
               <span class="shrink-0 text-ink-extra-muted/60 tabular-nums">
                 {formatShortDate(props.message.internal_date_ts!)}
               </span>
+            </Show>
+            <Show when={seenAt()}>
+              {(openedAt) => (
+                <Tooltip
+                  label={
+                    readReceiptQuery.data
+                      ? `${formatSeenLabel(openedAt())} · ${formatSeenTooltip(readReceiptQuery.data)}`
+                      : formatSeenLabel(openedAt())
+                  }
+                >
+                  <span class="shrink-0 inline-flex items-center text-ink-extra-muted cursor-default">
+                    <EyeIcon class="size-3.5" />
+                  </span>
+                </Tooltip>
+              )}
             </Show>
           </div>
           <div class="min-w-0 text-sm text-ink-muted truncate">{snippet()}</div>

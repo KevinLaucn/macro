@@ -28,6 +28,10 @@ import { EMAIL_BODY_CONTAINMENT_CSS } from '../util/emailBodyContainmentCss';
 import { fitToWidthZoom } from '../util/fitToWidthZoom';
 import { isPersonalMessage } from '../util/isPersonalMessage';
 import {
+  removeOwnTrackingPixels,
+  stripOwnTrackingPixelsFromHtml,
+} from '../util/readReceipts';
+import {
   fetchImagesViaPlatform,
   resolveCidImages,
 } from '../util/resolveEmailImages';
@@ -54,22 +58,34 @@ export function EmailMessageBody(props: EmailMessageBodyProps) {
     );
   }
 
+  // Strip the sender's own receipt pixel while the markup is still inert,
+  // before parseEmailContent can rewrite remote images through Macro's image
+  // proxy. This closes the false-positive path that caused upstream #3943 to
+  // be abandoned: opening your own Sent copy must not look like a recipient
+  // open.
+  const renderBodyHtml = createMemo(() => {
+    const html = props.message.body_html_sanitized?.toString();
+    if (!html || !props.message.is_sent) return html;
+    return stripOwnTrackingPixelsFromHtml(html);
+  });
+
   // If we don't have body replyless, it may be because it hasn't been generated yet. For instance, this is the case immediately after a message is sent. We can use the HTML to parse the message correctly.
   const bodyReplyless = createMemo(() => {
-    let replyless = props.message.body_replyless ?? '';
+    let replyless = props.message.body_replyless?.toString() ?? '';
+    if (replyless && props.message.is_sent) {
+      replyless = stripOwnTrackingPixelsFromHtml(replyless);
+    }
     if (!replyless) {
-      if (props.message.body_html_sanitized) {
+      const fullHtml = renderBodyHtml();
+      if (fullHtml) {
         const parser = new DOMParser();
-        const doc = parser.parseFromString(
-          props.message.body_html_sanitized.toString(),
-          'text/html'
-        );
+        const doc = parser.parseFromString(fullHtml, 'text/html');
         const styleTags = Array.from(doc.head?.querySelectorAll('style') ?? [])
           .map((style) => style.outerHTML)
           .join('\n');
         const quoted = doc.body.querySelector('.macro_quote');
         if (quoted) {
-          quoted?.remove();
+          quoted.remove();
           return styleTags
             ? `${styleTags}\n${doc.body.innerHTML}`
             : doc.body.innerHTML;
@@ -82,12 +98,9 @@ export function EmailMessageBody(props: EmailMessageBodyProps) {
   const isPlaintext = () => !props.message.body_html_sanitized;
 
   const parsedBodyHtml = createMemo(() => {
-    return props.message.body_html_sanitized
-      ? parseEmailContent(
-          props.message.body_html_sanitized,
-          !showFullHTML(),
-          !showFullHTML()
-        )
+    const html = renderBodyHtml();
+    return html
+      ? parseEmailContent(html, !showFullHTML(), !showFullHTML())
       : undefined;
   });
 
@@ -107,20 +120,20 @@ export function EmailMessageBody(props: EmailMessageBodyProps) {
   // quote in the full html means there is hidden content regardless of
   // body_replyless.
   const bodyHtmlHasQuote = createMemo(() => {
-    const html = props.message.body_html_sanitized;
+    const html = renderBodyHtml();
     if (!html || !props.message.body_macro) return false;
-    const doc = new DOMParser().parseFromString(html.toString(), 'text/html');
+    const doc = new DOMParser().parseFromString(html, 'text/html');
     return doc.body.querySelector('.macro_quote') !== null;
   });
 
   const hasHiddenReplyStructure = () => {
+    const fullHtml = renderBodyHtml();
     return (
       !isPlaintext() &&
       (bodyHtmlHasQuote() ||
         (bodyReplyless() &&
-          bodyReplyless().toString().replace(/\s+/g, '').length !==
-            props.message.body_html_sanitized?.toString().replace(/\s+/g, '')
-              .length) ||
+          bodyReplyless().replace(/\s+/g, '').length !==
+            fullHtml?.replace(/\s+/g, '').length) ||
         source()?.signature)
     );
   };
@@ -152,6 +165,10 @@ export function EmailMessageBody(props: EmailMessageBodyProps) {
     shadow.appendChild(styleEl);
     const messageDiv = document.createElement('div');
     messageDiv.innerHTML = source()?.mainContent ?? '';
+    // Defense in depth in case a future parser path reintroduces the pixel.
+    if (props.message.is_sent) {
+      removeOwnTrackingPixels(messageDiv);
+    }
     // Mark button-like anchors so the font override doesn't break their sizing
     for (const a of messageDiv.querySelectorAll<HTMLAnchorElement>(
       'a[style]'

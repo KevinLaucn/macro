@@ -1,5 +1,7 @@
 import { useEmail } from '@core/context/user';
 import type { DateValue } from '@core/util/date';
+import EyeIcon from '@phosphor-icons/core/regular/eye.svg?component-solid';
+import { useReadReceiptStatusQuery } from '@queries/email/readReceipts';
 import CaretRight from '@phosphor/caret-right.svg';
 import type { ApiMessage } from '@service-email/generated/schemas';
 import { Button, cn, Tooltip } from '@ui';
@@ -16,6 +18,11 @@ import {
   getRecipientDisplayName,
   getSenderDisplayName,
 } from '../util/emailUser';
+import {
+  formatSeenLabel,
+  formatSeenTooltip,
+  statusSeenAt,
+} from '../util/readReceipts';
 import { useEmailContext } from './EmailContext';
 import { EmailUserTooltip } from './EmailUserTooltip';
 import { type EmailMessageAction, MessageActions } from './MessageActions';
@@ -174,6 +181,11 @@ function HeaderTopRow(props: {
     ...props.message.to,
     ...props.message.cc,
   ]);
+  const readReceiptQuery = useReadReceiptStatusQuery(
+    () => props.message.db_id,
+    () => props.message.is_sent && !props.message.is_draft
+  );
+  const seenAt = createMemo(() => statusSeenAt(readReceiptQuery.data));
 
   return (
     <div class="flex flex-row w-full items-center justify-between gap-2 text-xs min-w-0">
@@ -196,6 +208,22 @@ function HeaderTopRow(props: {
               {formatShortDate(props.message.internal_date_ts!)}
             </span>
           </Tooltip>
+        </Show>
+        <Show when={seenAt()}>
+          {(openedAt) => (
+            <Tooltip
+              label={
+                readReceiptQuery.data
+                  ? formatSeenTooltip(readReceiptQuery.data)
+                  : formatSeenLabel(openedAt())
+              }
+            >
+              <span class="flex items-center gap-1 text-xs text-ink-extra-muted cursor-default shrink-0">
+                <EyeIcon class="size-3.5" />
+                <span>{formatSeenLabel(openedAt())}</span>
+              </span>
+            </Tooltip>
+          )}
         </Show>
         <div
           classList={{
