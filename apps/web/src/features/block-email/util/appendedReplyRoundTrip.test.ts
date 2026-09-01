@@ -15,9 +15,11 @@ import {
 import { describe, expect, it } from 'vitest';
 import {
   prepareEmailBody,
+  prepareEmailBodyFromHtml,
   registerToggleAppendedThread,
   TOGGLE_APPEND_EMAIL_THREAD_COMMAND,
 } from './prepareEmailBody';
+import type { ReplyType } from './replyType';
 
 function decodeBodyHtml(encoded: string) {
   const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
@@ -34,6 +36,15 @@ const replyingTo = {
   body_text: 'original message text',
   internal_date_ts: '2026-08-01T12:00:00Z',
   attachments: [],
+} as unknown as ApiMessage;
+
+const sentWithTracking = {
+  ...replyingTo,
+  is_sent: true,
+  body_html_sanitized:
+    '<p>sent message body</p>' +
+    '<img src="https://email-service.macro.com/t/o/composer-test-token" width="1" height="1">' +
+    '<img src="https://example.com/logo.png">',
 } as unknown as ApiMessage;
 
 function makeEditor() {
@@ -61,15 +72,19 @@ function $collectMacroQuotes(): LexicalNode[] {
   return found;
 }
 
-function appendQuote(editor: ReturnType<typeof makeEditor>) {
+function appendQuote(
+  editor: ReturnType<typeof makeEditor>,
+  message: ApiMessage = replyingTo,
+  replyType: ReplyType = 'reply'
+) {
   editor.update(() => {
     const p = $createParagraphNode();
     p.append($createTextNode('my reply'));
     $getRoot().append(p);
   });
   editor.dispatchCommand(TOGGLE_APPEND_EMAIL_THREAD_COMMAND, {
-    replyingTo,
-    replyType: 'reply',
+    replyingTo: message,
+    replyType,
     visible: true,
   });
 }
@@ -134,5 +149,30 @@ describe('appended reply draft round trip', () => {
     editorB.read(() => {
       expect($collectMacroQuotes()).toHaveLength(0);
     });
+  });
+
+  it('strips a sent message tracking pixel before adding the live composer quote', () => {
+    const editor = makeEditor();
+    appendQuote(editor, sentWithTracking, 'forward');
+
+    const prepared = prepareEmailBody(editor);
+    expect(prepared).not.toBeNull();
+    const html = decodeBodyHtml(prepared!.bodyHtml);
+
+    expect(html).toContain('sent message body');
+    expect(html).toContain('https://example.com/logo.png');
+    expect(html).not.toContain('/t/o/composer-test-token');
+  });
+
+  it('strips a sent message tracking pixel from serialization-time appended quotes', () => {
+    const prepared = prepareEmailBodyFromHtml('<p>my reply</p>', {
+      replyingTo: sentWithTracking,
+      replyType: 'forward',
+    });
+    const html = decodeBodyHtml(prepared.bodyHtml);
+
+    expect(html).toContain('sent message body');
+    expect(html).toContain('https://example.com/logo.png');
+    expect(html).not.toContain('/t/o/composer-test-token');
   });
 });
