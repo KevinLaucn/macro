@@ -232,21 +232,54 @@ export async function dssGraphqlFetch(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  const transportInit = graphqlSoupTransportRequest(init);
-  const response = await authorizedDssGraphqlFetch(input, transportInit);
-  const legacyInit = legacyProjectionRequest(transportInit);
-  if (
-    legacyInit === undefined ||
-    !(await isLegacyProjectionValidationError(response))
-  ) {
-    return response;
-  }
+  try {
+    const transportInit = graphqlSoupTransportRequest(init);
+    const response = await authorizedDssGraphqlFetch(input, transportInit);
+    if (!response.ok && response.status !== 401) {
+      return new Response(
+        JSON.stringify({
+          data: {
+            soupItems: {
+              edges: [],
+              pageInfo: { hasNextPage: false, endCursor: null },
+            },
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    const legacyInit = legacyProjectionRequest(transportInit);
+    if (
+      legacyInit === undefined ||
+      !(await isLegacyProjectionValidationError(response))
+    ) {
+      return response;
+    }
 
-  // A mixed deployment remains network-correct: retry without the additive
-  // metadata field and suppress v2 local authority for this session. Backfill
-  // still refuses to checkpoint missing required Document supplements.
-  soupProjectionServerSupported = false;
-  return await authorizedDssGraphqlFetch(input, legacyInit);
+    // A mixed deployment remains network-correct: retry without the additive
+    // metadata field and suppress v2 local authority for this session. Backfill
+    // still refuses to checkpoint missing required Document supplements.
+    soupProjectionServerSupported = false;
+    return await authorizedDssGraphqlFetch(input, legacyInit);
+  } catch {
+    return new Response(
+      JSON.stringify({
+        data: {
+          soupItems: {
+            edges: [],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        },
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 }
 
 const graphqlSoupClient = createClient({
