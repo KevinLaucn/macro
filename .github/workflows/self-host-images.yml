@@ -124,7 +124,8 @@ jobs:
       - name: Build and push
         run: |
           set -euo pipefail
-          img="$REGISTRY/$NAMESPACE/macro-services:${{ steps.version.outputs.value }}"
+          ns="$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]')"
+          img="$REGISTRY/$ns/macro-services:${{ steps.version.outputs.value }}"
           docker build -f self-host/images/Dockerfile.services \
             --build-arg BIN_DIR=build/bin \
             --build-arg MACRO_VERSION="${{ steps.version.outputs.value }}" \
@@ -184,7 +185,8 @@ jobs:
         run: |
           set -euo pipefail
           v="${{ inputs.version || github.ref_name }}"
-          img="$REGISTRY/$NAMESPACE/macro-web:$v"
+          ns="$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]')"
+          img="$REGISTRY/$ns/macro-web:$v"
           docker build -f self-host/images/Dockerfile.web \
             --build-arg DIST_DIR=build/dist --build-arg MACRO_VERSION="$v" \
             -t "$img" self-host
@@ -208,9 +210,10 @@ jobs:
         run: |
           set -euo pipefail
           v="${{ needs.services.outputs.version }}"
-          img="$REGISTRY/$NAMESPACE/macro-init:$v"
+          ns="$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]')"
+          img="$REGISTRY/$ns/macro-init:$v"
           docker build -f self-host/init/Dockerfile \
-            --build-arg MACRO_IMAGE_SERVICES="$REGISTRY/$NAMESPACE/macro-services" \
+            --build-arg MACRO_IMAGE_SERVICES="$REGISTRY/$ns/macro-services" \
             --build-arg MACRO_VERSION="$v" \
             -t "$img" .
           docker push "$img"
@@ -246,6 +249,7 @@ jobs:
         run: |
           set -euo pipefail
           v="${{ inputs.version || github.ref_name }}"
-          img="$REGISTRY/$NAMESPACE/${{ matrix.image }}:$v"
+          ns="$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]')"
+          img="$REGISTRY/$ns/${{ matrix.image }}:$v"
           docker build -f "${{ matrix.dockerfile }}" -t "$img" .
           docker push "$img"
