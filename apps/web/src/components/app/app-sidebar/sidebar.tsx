@@ -51,8 +51,9 @@ import { toast } from '@core/component/Toast/Toast';
 import { UserIcon } from '@core/component/UserIcon';
 import {
   ENABLE_CALLS,
-  ENABLE_CRM,
-  ENABLE_NEW_PRICING_OVERRIDE,
+  enableCrm,
+  enableNewPricing,
+  isFeatureEnabled,
 } from '@core/constant/featureFlags';
 import {
   type SettingsTab,
@@ -125,7 +126,8 @@ import {
 import { Dynamic } from 'solid-js/web';
 import { CalendarSidebarPreview } from './calendar-sidebar-preview';
 
-interface SidebarItem {
+// TODO(sidebar-next): move to app-sidebar/navigation.tsx once SidebarRail ships.
+export interface SidebarItem {
   id: ListView | (string & {});
   label: string;
   href: string;
@@ -305,7 +307,7 @@ const isMarkdownDocumentsParams = (
   return initialClientFilters?.or?.includes('doc-markdown') ?? false;
 };
 
-function sidebarContent(
+export function sidebarContent(
   viewId: SidebarItem['id'],
   params?: SidebarItem['params']
 ): SplitContent {
@@ -319,7 +321,7 @@ function sidebarContent(
  * Holding shift opens it in a new split. Use in-app back/forward to return to
  * prior entries.
  */
-function navigateToSidebarView(args: {
+export function navigateToSidebarView(args: {
   viewId: SidebarItem['id'];
   params?: SidebarItem['params'];
   shiftKey: boolean;
@@ -354,7 +356,7 @@ function navigateToSidebarView(args: {
   });
 }
 
-const registerSidebarHotkeys = ({
+export const registerSidebarHotkeys = ({
   isSlim,
   onOpenChange,
 }: SidebarHotkeyDeps) => {
@@ -825,9 +827,15 @@ type SidebarSettingsWidgetProps = {
    * menu once the user removes its dedicated row.
    */
   gettingStartedLink?: SidebarItem;
+  /**
+   * Icon-only: drops the trigger's leading padding and start alignment so the
+   * avatar centres in its square, and grows the avatar to nearly fill it. For
+   * `SidebarRail`, where the name and caret are hidden anyway.
+   */
+  compact?: boolean;
 };
 
-const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
+export const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
   const userId = useUserId();
   const email = useEmail();
   const logout = useLogout();
@@ -868,7 +876,9 @@ const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
         variant="ghost"
         class={cn(
           'flex items-center rounded-md cursor-default text-ink-extra-muted not-disabled:hover:bg-ink/3 h-9',
-          'justify-start gap-3 px-1.5 py-1'
+          props.compact
+            ? 'justify-center gap-0 p-0'
+            : 'justify-start gap-3 px-1.5 py-1'
         )}
         label={displayName()}
         fullWidth
@@ -881,10 +891,17 @@ const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
       >
         <Show
           when={userId()}
-          fallback={<div class="size-5 shrink-0 rounded-full bg-ink/10" />}
+          fallback={
+            <div
+              class={cn(
+                'shrink-0 rounded-full bg-ink/10',
+                props.compact ? 'size-8' : 'size-5'
+              )}
+            />
+          }
         >
           {(id) => (
-            <div class="size-5 shrink-0">
+            <div class={cn('shrink-0', props.compact ? 'size-8' : 'size-5')}>
               <UserIcon
                 id={id()}
                 size="fill"
@@ -1056,7 +1073,7 @@ const RECENT_LINK: SidebarItem = {
  * their correct positions.
  * Shared by the rendered sidebar (`AppSidebar.visibleLinks`) and the
  * always-mounted `GoToHotkeys` registrar so their link sets can't drift. Call
- * from a reactive context — it reads `ENABLE_CALLS()` / `ENABLE_CRM()`.
+ * from a reactive context — it reads `ENABLE_CALLS` / `isFeatureEnabled(enableCrm)`.
  * `showGettingStarted` is the account-age gate (`useGettingStartedEnabled`),
  * passed in because this runs outside a component; when false the link is
  * fully absent — row, `g s` hotkey, and command menu entry.
@@ -1091,14 +1108,14 @@ const buildSidebarLinks = (
     ];
   }
 
-  if (ENABLE_CALLS()) {
+  if (ENABLE_CALLS) {
     const idx = links.findIndex((l) => l.id === 'channels');
     links = [...links.slice(0, idx + 1), CALLS_LINK, ...links.slice(idx + 1)];
   }
 
-  if (ENABLE_CRM()) {
+  if (isFeatureEnabled(enableCrm)) {
     // Customers sits just after Channels (and Calls when present).
-    const anchorId = ENABLE_CALLS() ? 'calls' : 'channels';
+    const anchorId = ENABLE_CALLS ? 'calls' : 'channels';
     const idx = links.findIndex((l) => l.id === anchorId);
     links = [
       ...links.slice(0, idx + 1),
@@ -1164,9 +1181,7 @@ export const AppSidebar = (props: AppSidebarProps) => {
     { name: 'sidebar-premium-card-dismissed' }
   );
 
-  const newPricingFF = useFeatureFlag('enable-new-pricing', {
-    enabledOverride: ENABLE_NEW_PRICING_OVERRIDE,
-  });
+  const newPricingFF = useFeatureFlag(enableNewPricing);
 
   const gettingStartedEnabled = useGettingStartedEnabled();
   const calendarUiEnabled = useCalendarUiFlag();
@@ -1731,6 +1746,12 @@ interface SidebarOpenInSplitMenuProps {
    */
   onOpened?: (split: SplitHandle, action: SidebarOpenAction) => void;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Overrides the trigger's default `h-7`, which otherwise clips triggers of a
+   * different shape (`SidebarRail`'s are 36px squares). Merged with `cn`, so a
+   * size utility here wins.
+   */
+  triggerClass?: string;
   children: JSX.Element;
 }
 
@@ -1739,7 +1760,7 @@ interface SidebarOpenInSplitMenuProps {
  * split, in a new split, or fullscreen. Wraps any sidebar row — the top-level
  * links and the nested Email account rows both use it.
  */
-const SidebarOpenInSplitMenu = (props: SidebarOpenInSplitMenuProps) => {
+export const SidebarOpenInSplitMenu = (props: SidebarOpenInSplitMenuProps) => {
   const analytics = useAnalytics();
   const layout = useSplitLayout();
 
@@ -1781,7 +1802,7 @@ const SidebarOpenInSplitMenu = (props: SidebarOpenInSplitMenuProps) => {
 
   return (
     <ContextMenu onOpenChange={props.onOpenChange}>
-      <ContextMenu.Trigger class="w-full h-7">
+      <ContextMenu.Trigger class={cn('w-full h-7', props.triggerClass)}>
         {props.children}
       </ContextMenu.Trigger>
 

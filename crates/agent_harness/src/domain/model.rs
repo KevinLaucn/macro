@@ -91,6 +91,9 @@ impl AgentKind {
         match harness {
             "cursor" => Self::Cursor,
             "in-memory" | "macro-inmem" => Self::InMemory,
+            // Registered macrod harnesses are the deliberate external case:
+            // the agent's `harness_id` names whose daemon serves it.
+            harness_id::MACROD_HARNESS_SLUG => Self::External,
             _ => Self::External,
         }
     }
@@ -128,6 +131,11 @@ pub struct AgentRuntimeConfig {
     /// Configured agent instructions, reserved for a dedicated runtime transport.
     pub instructions: String,
 }
+
+/// Whether a user belongs to the Macro staff domain - the egress crate's
+/// predicate, reused so the harness's staff gates and the proxy's can never
+/// disagree about who staff is.
+pub(crate) use agent_egress::domain::model::is_macro_staff;
 
 /// Where a prompt came from, when it came from somewhere the session should
 /// answer back into.
@@ -183,10 +191,47 @@ pub enum HarnessCommand {
     Open(OpenSession),
     /// Act on a session that already exists.
     Deliver(DeliverAction),
+    /// Replace a queued prompt's text before it dispatches.
+    EditQueued {
+        /// The queue entry to edit.
+        action_id: AgentActionId,
+        /// The new raw prompt text.
+        prompt: String,
+        /// The user responsible, judged by the same gates as sending: whoever
+        /// may not prompt a session may not rewrite what it is about to be
+        /// prompted with.
+        actor: Option<MacroUserIdStr<'static>>,
+    },
+    /// Remove a queued action before it dispatches.
+    RemoveQueued {
+        /// The queue entry to remove.
+        action_id: AgentActionId,
+        /// The user responsible, as on [`Self::EditQueued`].
+        actor: Option<MacroUserIdStr<'static>>,
+    },
+    /// The session's runtime answered its in-flight turn: clear the busy
+    /// mark and dispatch the next queued action. Internal - enqueued by the
+    /// turn observer on the managing replica, never forwarded.
+    TurnEnded,
+    /// The session's live actor stopped: clear the busy mark and nothing
+    /// more - resuming a dead runtime stays the next user action's job.
+    /// Internal, like [`Self::TurnEnded`].
+    SessionStopped,
     /// Change the session's sandbox size and the owner's default.
     SetSandboxSize(SandboxSize),
     /// Release a session's live resources and delete it.
     Delete,
+}
+
+/// What executing a command did with it, beyond succeeding.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CommandOutcome {
+    /// The command ran to completion - for a deliver, the action reached the
+    /// runtime.
+    Completed,
+    /// The action waits in the session's queue for the running turn to end.
+    Queued,
 }
 
 impl DeliverAction {
@@ -232,7 +277,7 @@ pub struct AnnouncePrompt {
     pub bot_id: BotId,
     /// Where the mention was posted.
     pub origin: AnnounceOrigin,
-    /// The mention's text, quoted in the announcement.
+    /// The mention's text, shown in the announcement's reply target.
     pub content: String,
     /// Who mentioned the bot.
     pub sender: MacroUserIdStr<'static>,
@@ -249,9 +294,11 @@ pub struct SessionAnnouncement {
     pub origin_channel_id: Uuid,
     /// Thread where the announcement should be posted.
     pub origin_thread_id: Uuid,
+    /// Channel message targeted by the announcement.
+    pub origin_message_id: Uuid,
     /// Folded user message that prompts the anchored agent response.
     pub prompted_message_id: MessageId,
-    /// Text of the prompting message, quoted back in the announcement.
+    /// Text of the prompting message, shown in the reply target.
     pub prompted_content: String,
     /// User whose mention triggered the announcement.
     pub triggered_by: MacroUserIdStr<'static>,

@@ -148,6 +148,7 @@ use utoipa::OpenApi;
         health::health_handler,
         calendar_events::inbound::axum_router::list_occurrences,
         calendar_events::inbound::axum_router::mention_previews,
+        calendar_events::inbound::axum_router::list_team_out_of_office,
 
         // annotations
         annotations::get::get_document_comments_handler,
@@ -254,6 +255,18 @@ use utoipa::OpenApi;
         channels::inbound::axum_router::get_activity_handler,
         channels::inbound::axum_router::post_activity_handler,
 
+        // harnesses
+        harnesses::inbound::axum_router::create_pairing_handler,
+        harnesses::inbound::axum_router::get_pairing_handler,
+        harnesses::inbound::axum_router::approve_pairing_handler,
+        harnesses::inbound::axum_router::claim_pairing_handler,
+        harnesses::inbound::axum_router::list_harnesses_handler,
+        harnesses::inbound::axum_router::delete_harness_handler,
+        harnesses::inbound::axum_router::list_bound_agents_handler,
+        harnesses::inbound::axum_router::get_self_harness_handler,
+        harnesses::inbound::axum_router::delete_self_harness_handler,
+        harnesses::inbound::axum_router::list_harness_sessions_handler,
+
         // bots
         bots::inbound::axum_router::create_agent_handler,
         bots::inbound::axum_router::list_agents_handler,
@@ -282,6 +295,7 @@ use utoipa::OpenApi;
         webhook::inbound::axum_router::list_webhooks,
         webhook::inbound::axum_router::patch_webhook,
         webhook::inbound::axum_router::validate_webhook,
+        webhook::inbound::stream_router::stream_events,
         call::inbound::axum_router::ring_status_handler,
         call::inbound::axum_router::transcript_handler,
 
@@ -454,6 +468,8 @@ use utoipa::OpenApi;
             calendar_events::inbound::axum_router::CalendarMentionPreviewResponse,
             calendar_events::inbound::axum_router::CalendarMentionPreviewItem,
             calendar_events::inbound::axum_router::CalendarMentionPreviewKind,
+            calendar_events::inbound::axum_router::TeamOutOfOfficeItem,
+            calendar_events::inbound::axum_router::TeamOutOfOfficeResponse,
             calendar_events::domain::models::CalendarMentionEvent,
             calendar_events::domain::models::CalendarSyncStatus,
             SoupItemWithProperties,
@@ -563,6 +579,20 @@ use utoipa::OpenApi;
             channels::domain::models::ActivityType,
             ApiActivity,
             PostActivityRequest,
+
+            // Harnesses
+            harnesses::domain::models::Harness,
+            harnesses::domain::models::HarnessOwner,
+            harnesses::domain::models::HarnessAgent,
+            harnesses::domain::models::HarnessSession,
+            harnesses::domain::models::RequestedHarnessScope,
+            harnesses::domain::models::CreatePairingRequest,
+            harnesses::domain::models::CreatedPairing,
+            harnesses::domain::models::PairingDetails,
+            harnesses::domain::models::ApprovePairingRequest,
+            harnesses::domain::models::ClaimPairingRequest,
+            harnesses::domain::models::ClaimedPairing,
+            harnesses::inbound::axum_router::PendingClaimResponse,
 
             // Bots
             bots::domain::models::Agent,

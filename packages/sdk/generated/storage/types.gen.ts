@@ -110,6 +110,7 @@ export type Agent = {
      * Harness used to run the agent.
      */
     harness: string;
+    harness_id?: null | HarnessId;
     /**
      * Instructions supplied to the agent at the start of a conversation.
      */
@@ -965,6 +966,20 @@ export type ApiThreadReply = {
      * When the reply was last updated.
      */
     updated_at: string;
+};
+
+/**
+ * Request to approve a pairing and register the harness.
+ */
+export type ApprovePairingRequest = {
+    /**
+     * Display name override. Defaults to the daemon's requested name.
+     */
+    name?: string | null;
+    /**
+     * Owning team. Omit for a private, user-owned harness.
+     */
+    team_id?: string | null;
 };
 
 /**
@@ -1890,6 +1905,7 @@ export type ChannelCreatedMetadata = {
      * Type of channel that was created.
      */
     channel_type: ChannelType;
+    on_behalf_of?: null | MacroUserIdStr;
     /**
      * Active participants after creation (including the owner).
      */
@@ -2603,6 +2619,32 @@ export type ChatFilters = {
     role?: Array<string>;
 };
 
+/**
+ * Request to claim an approved pairing's credential.
+ *
+ * The daemon serializes this, so both derives are used.
+ */
+export type ClaimPairingRequest = {
+    /**
+     * The claim credential returned when the pairing was created.
+     */
+    device_secret: string;
+};
+
+/**
+ * The credential released to the daemon when a pairing is claimed.
+ */
+export type ClaimedPairing = {
+    /**
+     * The registered harness.
+     */
+    harness: Harness;
+    /**
+     * The raw harness bearer token. Shown only here; only its hash is stored.
+     */
+    token: string;
+};
+
 export type CloudStorageItemType = 'document' | 'chat' | 'project';
 
 /**
@@ -2738,6 +2780,7 @@ export type CreateAgentRequest = {
      * Harness used to run the agent.
      */
     harness: string;
+    harness_id?: null | HarnessId;
     /**
      * Instructions supplied to the agent at the start of a conversation.
      */
@@ -3141,6 +3184,23 @@ export type CreateMarkdownDocumentResponse = {
     token: string;
 };
 
+/**
+ * Request to open a pairing: the daemon asks for a code the user approves.
+ *
+ * The daemon serializes this, so both derives are used.
+ */
+export type CreatePairingRequest = {
+    /**
+     * Display-only description of the machine, e.g. `eric@macbook / darwin`.
+     */
+    host?: string | null;
+    /**
+     * Requested harness display name (typically the machine's hostname).
+     */
+    name: string;
+    scope?: null | RequestedHarnessScope;
+};
+
 export type CreateProjectRequest = {
     /**
      * The name of the project.
@@ -3426,6 +3486,35 @@ export type CreateWebhookResponse = {
      * Owning workspace id.
      */
     workspace_id: string;
+};
+
+/**
+ * A pairing the daemon created, including its claim credential.
+ *
+ * `device_secret` is returned exactly once and never stored raw; the daemon
+ * keeps it to claim the harness credential after approval.
+ */
+export type CreatedPairing = {
+    /**
+     * Human-readable code the user confirms in the web app, `XXXX-XXXX`.
+     */
+    code: string;
+    /**
+     * Claim credential the daemon must present. Shown only here.
+     */
+    device_secret: string;
+    /**
+     * When the pairing expires.
+     */
+    expires_at: string;
+    /**
+     * Pairing id used to poll for the claim.
+     */
+    pairing_id: string;
+    /**
+     * Suggested delay between claim polls.
+     */
+    poll_interval_seconds: number;
 };
 
 /**
@@ -3975,11 +4064,18 @@ export type DocumentCreatedMetadata = {
  * Metadata for [`DocumentTopicEvent::Deleted`].
  */
 export type DocumentDeletedMetadata = {
+    /**
+     * Who mechanically deleted the document. Absent on events published
+     * before attribution, and on user-receipt writes (ingest then uses
+     * [`Self::actor_user_id`]).
+     */
+    actor?: string | null;
     actor_user_id?: null | MacroUserIdStr;
     /**
      * The id of the deleted document.
      */
     document_id: string;
+    on_behalf_of?: null | MacroUserIdStr;
     /**
      * Project the document belonged to, when any.
      */
@@ -4335,6 +4431,11 @@ export type DocumentSubType = 'task' | 'snippet' | 'skill';
  */
 export type DocumentSyncContentUpdatedMetadata = {
     /**
+     * Who mechanically changed the content. Absent on events published
+     * before attribution, and on human-only collab sessions.
+     */
+    actor?: string | null;
+    /**
      * The id of the live-collab document whose content changed.
      */
     document_id: string;
@@ -4346,6 +4447,7 @@ export type DocumentSyncContentUpdatedMetadata = {
      * File type of the sync document (markdown today).
      */
     file_type: FileType;
+    on_behalf_of?: null | MacroUserIdStr;
 };
 
 /**
@@ -4421,6 +4523,12 @@ export type DocumentTopicEvent = {
  * Metadata for [`DocumentTopicEvent::Updated`].
  */
 export type DocumentUpdatedMetadata = {
+    /**
+     * Who mechanically updated the document. Absent on events published
+     * before attribution, and on user-receipt writes (ingest then uses
+     * [`Self::actor_user_id`]).
+     */
+    actor?: string | null;
     actor_user_id?: null | MacroUserIdStr;
     /**
      * The id of the updated document.
@@ -4431,6 +4539,7 @@ export type DocumentUpdatedMetadata = {
      */
     document_name?: string | null;
     file_type?: null | FileTypeUpdate;
+    on_behalf_of?: null | MacroUserIdStr;
     /**
      * The owner of the document.
      */
@@ -5732,6 +5841,136 @@ export type GroupedSoupPage = (GroupedSoupInitialPage & {
  */
 export type GroupedSoupSort = 'viewed_at' | 'created_at' | 'updated_at' | 'viewed_updated';
 
+/**
+ * A registered user-run harness.
+ *
+ * Clients deserialize this, so both derives are used.
+ */
+export type Harness = {
+    /**
+     * Whether the daemon currently holds a runtime connection.
+     */
+    connected: boolean;
+    /**
+     * Creation timestamp.
+     */
+    created_at: string;
+    /**
+     * User that registered this harness.
+     */
+    created_by: string;
+    /**
+     * Harness id.
+     */
+    id: HarnessId;
+    /**
+     * Runtime kind. Currently always `macrod`.
+     */
+    kind: string;
+    /**
+     * When the daemon last attached a runtime connection.
+     */
+    last_connected_at?: string | null;
+    /**
+     * Display name.
+     */
+    name: string;
+    /**
+     * Owner.
+     */
+    owner: HarnessOwner;
+    /**
+     * Update timestamp.
+     */
+    updated_at: string;
+};
+
+/**
+ * An agent bound to a harness, as listed for the daemon.
+ */
+export type HarnessAgent = {
+    /**
+     * The agent's bot id.
+     */
+    bot_id: BotId;
+    /**
+     * Stable `@` handle.
+     */
+    handle: string;
+    /**
+     * Display name.
+     */
+    name: string;
+};
+
+export type HarnessId = string;
+
+/**
+ * Harness owner.
+ *
+ * Exactly one of a user or a team, mirroring the bots owner pattern. There
+ * are no system harnesses.
+ */
+export type HarnessOwner = {
+    type: 'user';
+    /**
+     * Owner user id.
+     */
+    user_id: string;
+} | {
+    /**
+     * Owner team id.
+     */
+    team_id: string;
+    type: 'team';
+};
+
+/**
+ * An agent session running on a harness, as listed for the daemon's UI.
+ */
+export type HarnessSession = {
+    /**
+     * The agent's `@` handle.
+     */
+    bot_handle: string;
+    /**
+     * The agent the session runs for.
+     */
+    bot_id: BotId;
+    /**
+     * The agent's display name.
+     */
+    bot_name: string;
+    /**
+     * Creation timestamp.
+     */
+    created_at: string;
+    /**
+     * Model the session was opened with.
+     */
+    model: string;
+    /**
+     * Last-activity timestamp.
+     */
+    modified_at: string;
+    /**
+     * The session's display name.
+     */
+    name: string;
+    /**
+     * The user the session belongs to.
+     */
+    owner_id: string;
+    /**
+     * The session id.
+     */
+    session_id: string;
+    /**
+     * Session lifecycle status, e.g. `no_messages`, `active`.
+     */
+    status: string;
+};
+
 export type HashMap = {
     [key: string]: (PresignedUrl & {
         type: 'external';
@@ -5893,6 +6132,33 @@ export type NotificationFilters = {
      * notifications; `Some(false)` selects not-seen notifications.
      */
     seen?: boolean | null;
+};
+
+/**
+ * A pending pairing, as shown to the approving user.
+ */
+export type PairingDetails = {
+    /**
+     * The pairing code, normalized to `XXXX-XXXX`.
+     */
+    code: string;
+    /**
+     * When the pairing was created.
+     */
+    created_at: string;
+    /**
+     * When the pairing expires.
+     */
+    expires_at: string;
+    /**
+     * Display-only description of the machine.
+     */
+    host?: string | null;
+    /**
+     * Harness display name the daemon asked for.
+     */
+    requested_name: string;
+    requested_scope?: null | RequestedHarnessScope;
 };
 
 /**
@@ -6131,6 +6397,16 @@ export type PdfPlaceableCommentAnchorRequest = {
     widthPct: number;
     xPct: number;
     yPct: number;
+};
+
+/**
+ * Body returned while a claim is still waiting for approval.
+ */
+export type PendingClaimResponse = {
+    /**
+     * Always `pending`.
+     */
+    status: string;
 };
 
 export type PinRequest = {
@@ -6729,6 +7005,14 @@ export type ReorderPinRequest = {
 };
 
 /**
+ * The ownership scope a daemon's config asks for.
+ *
+ * Advisory, not binding: the approving user confirms it in the dialog, which
+ * arrives preselected to this. Approval is what actually sets ownership.
+ */
+export type RequestedHarnessScope = 'private' | 'team';
+
+/**
  * Per-user status of an incoming-call ring, as reported by the
  * ring-status endpoint while a native client is ringing.
  */
@@ -6972,6 +7256,12 @@ export type SoupApiItem = SoupItem & {
      */
     is_favorited: boolean;
     /**
+     * When the caller was last notified about this entity, present only
+     * when the page was ordered by `notified_at`. Clients keep the notified
+     * feed ordered and date-bucketed on this value.
+     */
+    notified_at?: string | null;
+    /**
      * The caller's latest own mutation of this entity, present only when the
      * page was ordered by `touched_by_me`. Clients keep the touched feed
      * ordered on this value, so it can be bumped optimistically.
@@ -6982,7 +7272,7 @@ export type SoupApiItem = SoupItem & {
 /**
  * Sort options accepted by non-grouped soup API endpoints.
  */
-export type SoupApiSort = 'viewed_at' | 'created_at' | 'updated_at' | 'viewed_updated' | 'frecency' | 'touched_by_me';
+export type SoupApiSort = 'viewed_at' | 'created_at' | 'updated_at' | 'viewed_updated' | 'frecency' | 'touched_by_me' | 'notified_at';
 
 /**
  * Sort direction accepted by non-grouped soup API endpoints.
@@ -8187,6 +8477,40 @@ export type TaskFilters = {
 };
 
 /**
+ * One teammate's out-of-office occurrence.
+ */
+export type TeamOutOfOfficeItem = {
+    /**
+     * The teammate's calendar event id.
+     */
+    eventId: string;
+    /**
+     * Stable occurrence key within the event.
+     */
+    occurrenceKey: string;
+    /**
+     * Macro user id of the teammate who is out.
+     */
+    ownerId: string;
+    /**
+     * Occurrence time span.
+     */
+    time: EventTime;
+    /**
+     * Event title, absent when the event's visibility withholds details.
+     */
+    title?: string | null;
+};
+
+/**
+ * Team out-of-office viewport response.
+ */
+export type TeamOutOfOfficeResponse = {
+    hasMore: boolean;
+    items: Array<TeamOutOfOfficeItem>;
+};
+
+/**
  * The role a user has within a team.
  *
  * Ordered least to most privileged so comparisons reflect access strength.
@@ -8341,6 +8665,7 @@ export type UpdateAgentRequest = {
      * Harness used to run the agent.
      */
     harness: string;
+    harness_id?: null | HarnessId;
     /**
      * Instructions supplied to the agent at the start of a conversation.
      */
@@ -8691,7 +9016,8 @@ export type WebhookFilter = {
 /**
  * Scope that owns a newly-created webhook.
  *
- * Clients serialize this, so both derives are used.
+ * Clients serialize this, so both derives are used. `Display`/`FromStr`
+ * spell the same names as serde, for query strings and config values.
  */
 export type WebhookScope = 'user' | 'team';
 
@@ -9178,6 +9504,58 @@ export type MentionPreviewsResponses = {
 };
 
 export type MentionPreviewsResponse = MentionPreviewsResponses[keyof MentionPreviewsResponses];
+
+export type ListTeamOutOfOfficeData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Inclusive UTC viewport start.
+         */
+        start: string;
+        /**
+         * Exclusive UTC viewport end.
+         */
+        end: string;
+        /**
+         * Inclusive local date boundary for all-day events.
+         */
+        startDate?: string;
+        /**
+         * Exclusive local date boundary for all-day events.
+         */
+        endDate?: string;
+        /**
+         * Maximum number of occurrences, from 1 through 2,000.
+         */
+        limit?: number;
+    };
+    url: '/calendar-events/team-out-of-office';
+};
+
+export type ListTeamOutOfOfficeErrors = {
+    /**
+     * Invalid or unsupported calendar viewport
+     */
+    400: unknown;
+    /**
+     * Authentication required
+     */
+    401: unknown;
+    /**
+     * Calendar query failed
+     */
+    500: unknown;
+};
+
+export type ListTeamOutOfOfficeResponses = {
+    /**
+     * Teammates' out-of-office occurrences in the requested viewport
+     */
+    200: TeamOutOfOfficeResponse;
+};
+
+export type ListTeamOutOfOfficeResponse = ListTeamOutOfOfficeResponses[keyof ListTeamOutOfOfficeResponses];
 
 export type GetActiveCallsData = {
     body?: never;
@@ -12231,6 +12609,239 @@ export type InstallSyncErrors = {
     401: unknown;
 };
 
+export type CreateHarnessPairingData = {
+    body: CreatePairingRequest;
+    path?: never;
+    query?: never;
+    url: '/harness-pairings';
+};
+
+export type CreateHarnessPairingErrors = {
+    400: ErrorResponse;
+    429: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type CreateHarnessPairingError = CreateHarnessPairingErrors[keyof CreateHarnessPairingErrors];
+
+export type CreateHarnessPairingResponses = {
+    201: CreatedPairing;
+};
+
+export type CreateHarnessPairingResponse = CreateHarnessPairingResponses[keyof CreateHarnessPairingResponses];
+
+export type GetHarnessPairingData = {
+    body?: never;
+    path: {
+        /**
+         * Pairing code
+         */
+        code: string;
+    };
+    query?: never;
+    url: '/harness-pairings/{code}';
+};
+
+export type GetHarnessPairingErrors = {
+    400: ErrorResponse;
+    401: ErrorResponse;
+    404: ErrorResponse;
+    410: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type GetHarnessPairingError = GetHarnessPairingErrors[keyof GetHarnessPairingErrors];
+
+export type GetHarnessPairingResponses = {
+    200: PairingDetails;
+};
+
+export type GetHarnessPairingResponse = GetHarnessPairingResponses[keyof GetHarnessPairingResponses];
+
+export type ApproveHarnessPairingData = {
+    body: ApprovePairingRequest;
+    path: {
+        /**
+         * Pairing code
+         */
+        code: string;
+    };
+    query?: never;
+    url: '/harness-pairings/{code}/approve';
+};
+
+export type ApproveHarnessPairingErrors = {
+    400: ErrorResponse;
+    401: ErrorResponse;
+    404: ErrorResponse;
+    410: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type ApproveHarnessPairingError = ApproveHarnessPairingErrors[keyof ApproveHarnessPairingErrors];
+
+export type ApproveHarnessPairingResponses = {
+    200: Harness;
+};
+
+export type ApproveHarnessPairingResponse = ApproveHarnessPairingResponses[keyof ApproveHarnessPairingResponses];
+
+export type ClaimHarnessPairingData = {
+    body: ClaimPairingRequest;
+    path: {
+        /**
+         * Pairing ID
+         */
+        pairing_id: string;
+    };
+    query?: never;
+    url: '/harness-pairings/{pairing_id}/claim';
+};
+
+export type ClaimHarnessPairingErrors = {
+    401: ErrorResponse;
+    404: ErrorResponse;
+    410: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type ClaimHarnessPairingError = ClaimHarnessPairingErrors[keyof ClaimHarnessPairingErrors];
+
+export type ClaimHarnessPairingResponses = {
+    200: ClaimedPairing;
+    202: PendingClaimResponse;
+};
+
+export type ClaimHarnessPairingResponse = ClaimHarnessPairingResponses[keyof ClaimHarnessPairingResponses];
+
+export type ListHarnessesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/harnesses';
+};
+
+export type ListHarnessesErrors = {
+    401: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type ListHarnessesError = ListHarnessesErrors[keyof ListHarnessesErrors];
+
+export type ListHarnessesResponses = {
+    200: Array<Harness>;
+};
+
+export type ListHarnessesResponse = ListHarnessesResponses[keyof ListHarnessesResponses];
+
+export type DeleteSelfHarnessData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/harnesses/me';
+};
+
+export type DeleteSelfHarnessErrors = {
+    401: ErrorResponse;
+    404: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type DeleteSelfHarnessError = DeleteSelfHarnessErrors[keyof DeleteSelfHarnessErrors];
+
+export type DeleteSelfHarnessResponses = {
+    204: void;
+};
+
+export type DeleteSelfHarnessResponse = DeleteSelfHarnessResponses[keyof DeleteSelfHarnessResponses];
+
+export type GetSelfHarnessData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/harnesses/me';
+};
+
+export type GetSelfHarnessErrors = {
+    401: ErrorResponse;
+    404: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type GetSelfHarnessError = GetSelfHarnessErrors[keyof GetSelfHarnessErrors];
+
+export type GetSelfHarnessResponses = {
+    200: Harness;
+};
+
+export type GetSelfHarnessResponse = GetSelfHarnessResponses[keyof GetSelfHarnessResponses];
+
+export type ListHarnessAgentsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/harnesses/me/agents';
+};
+
+export type ListHarnessAgentsErrors = {
+    401: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type ListHarnessAgentsError = ListHarnessAgentsErrors[keyof ListHarnessAgentsErrors];
+
+export type ListHarnessAgentsResponses = {
+    200: Array<HarnessAgent>;
+};
+
+export type ListHarnessAgentsResponse = ListHarnessAgentsResponses[keyof ListHarnessAgentsResponses];
+
+export type ListHarnessSessionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/harnesses/me/sessions';
+};
+
+export type ListHarnessSessionsErrors = {
+    401: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type ListHarnessSessionsError = ListHarnessSessionsErrors[keyof ListHarnessSessionsErrors];
+
+export type ListHarnessSessionsResponses = {
+    200: Array<HarnessSession>;
+};
+
+export type ListHarnessSessionsResponse = ListHarnessSessionsResponses[keyof ListHarnessSessionsResponses];
+
+export type DeleteHarnessData = {
+    body?: never;
+    path: {
+        /**
+         * Harness ID
+         */
+        harness_id: HarnessId;
+    };
+    query?: never;
+    url: '/harnesses/{harness_id}';
+};
+
+export type DeleteHarnessErrors = {
+    401: ErrorResponse;
+    404: ErrorResponse;
+    500: ErrorResponse;
+};
+
+export type DeleteHarnessError = DeleteHarnessErrors[keyof DeleteHarnessErrors];
+
+export type DeleteHarnessResponses = {
+    204: void;
+};
+
+export type DeleteHarnessResponse = DeleteHarnessResponses[keyof DeleteHarnessResponses];
+
 export type HealthHandlerData = {
     body?: never;
     path?: never;
@@ -12389,7 +13000,8 @@ export type GetItemsSoupData = {
         limit?: number;
         /**
          * Sort method. Options are viewed_at, created_at, updated_at,
-         * viewed_updated, frecency, touched_by_me. Defaults to viewed_at.
+         * viewed_updated, frecency, touched_by_me, notified_at. Defaults to
+         * viewed_at.
          */
         sort_method?: SoupApiSort;
         /**
@@ -13512,6 +14124,49 @@ export type EditProjectV2Responses = {
 };
 
 export type EditProjectV2Response = EditProjectV2Responses[keyof EditProjectV2Responses];
+
+export type StreamEventsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Personal or team workspace whose webhook lifecycle events are delivered.
+         */
+        scope: WebhookScope;
+        /**
+         * URL-encoded JSON array of webhook filters, identical to the persisted
+         * webhook `filters` field.
+         */
+        filters?: string;
+    };
+    url: '/webhook/events/stream';
+};
+
+export type StreamEventsErrors = {
+    /**
+     * Bad request
+     */
+    400: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type StreamEventsError = StreamEventsErrors[keyof StreamEventsErrors];
+
+export type StreamEventsResponses = {
+    /**
+     * Server-Sent Events stream of matching broker events
+     */
+    200: string;
+};
+
+export type StreamEventsResponse = StreamEventsResponses[keyof StreamEventsResponses];
 
 export type ListWebhooksData = {
     body?: never;
