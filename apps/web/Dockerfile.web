@@ -4,11 +4,16 @@ WORKDIR /app
 
 # Copy root monorepo manifests and workspaces
 COPY package.json bun.lock bunfig.toml ./
-COPY packages ./packages
+COPY packages/i18n ./packages/i18n
+COPY packages/observability ./packages/observability
+COPY packages/collaboration ./packages/collaboration
+COPY packages/loro-mirror ./packages/loro-mirror
+COPY packages/lexical-core ./packages/lexical-core
 COPY apps/web ./apps/web
 COPY services/ai-editing-worker ./services/ai-editing-worker
 COPY services/bots ./services/bots
 COPY services/lexical-service ./services/lexical-service
+COPY crates/agent_harness/sandbox_sizes.json ./crates/agent_harness/sandbox_sizes.json
 
 # Install dependencies and build web frontend
 RUN bun install --frozen-lockfile
