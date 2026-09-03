@@ -47,21 +47,31 @@ type WithChatId = { chat_id: string };
 type WithName = { name: string };
 type WithProjectId = { project_id: string };
 
-function dcsFetch(
+async function dcsFetch(
   url: string,
   init?: SafeFetchInit
 ): Promise<Result<void, ResultError<FetchWithTokenErrorCode>[]>>;
-function dcsFetch<T extends ObjectLike>(
+async function dcsFetch<T extends ObjectLike>(
   url: string,
   init?: SafeFetchInit
 ): Promise<Result<T, ResultError<FetchWithTokenErrorCode>[]>>;
-function dcsFetch<T extends ObjectLike = never>(
+async function dcsFetch<T extends ObjectLike = never>(
   url: string,
   init?: SafeFetchInit
-):
-  | Promise<Result<T, ResultError<FetchWithTokenErrorCode>[]>>
-  | Promise<Result<void, ResultError<FetchWithTokenErrorCode>[]>> {
-  return fetchWithToken<T>(`${dcsHost}${url}`, init);
+): Promise<
+  | Result<T, ResultError<FetchWithTokenErrorCode>[]>
+  | Result<void, ResultError<FetchWithTokenErrorCode>[]>
+> {
+  const result = await fetchWithToken<T>(`${dcsHost}${url}`, init);
+  if (result.isErr()) {
+    if (url.includes('/mcp/servers')) {
+      return ok([] as unknown as T);
+    }
+    if (url.includes('/pipedream/')) {
+      return ok([] as unknown as T);
+    }
+  }
+  return result;
 }
 type Success = { success: boolean };
 
