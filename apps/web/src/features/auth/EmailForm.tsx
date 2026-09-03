@@ -12,8 +12,16 @@ const REDIRECT_URI = `${protocol}://${window.location.host}/app`;
 
 async function isPasswordLogin(email?: string | null) {
   if (!email) return false;
+  const clean = email.toLowerCase().trim();
 
-  const encodedEmail = new TextEncoder().encode(email.toLowerCase());
+  // 1. Check runtime configured super admin email from VPS .env
+  const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
+  if (runtimeAdmin && clean === runtimeAdmin) {
+    return true;
+  }
+
+  // 2. Check official SHA-256 fallback
+  const encodedEmail = new TextEncoder().encode(clean);
   const hashedBuffer = await crypto.subtle.digest('SHA-256', encodedEmail);
   const hashedEmail = Array.from(new Uint8Array(hashedBuffer))
     .map((b) => b.toString(16).padStart(2, '0'))
@@ -38,10 +46,10 @@ export const sendEmailCode = action(async (formData: FormData) => {
       password,
       email,
     });
-    if (maybeTokens.isErr())
-      throw new Error(
-        'Failed to login. Check your email and password then try again.'
-      );
+    if (maybeTokens.isErr()) {
+      const msg = maybeTokens.error?.message || '登录失败，请检查账号和密码后重试。';
+      throw new Error(msg);
+    }
 
     return 'LoggedIn';
   }
