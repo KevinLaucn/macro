@@ -8600,6 +8600,7 @@ version = "0.1.0"
 dependencies = [
  "askama",
  "macro_env",
+ "macro_env_var",
  "macro_user_id",
  "model-entity",
  "notification",
@@ -9748,7 +9749,9 @@ dependencies = [
 name = "macro_db_migrator"
 version = "0.1.0"
 dependencies = [
+ "macro_env_var",
  "sqlx",
+ "tokio",
  "workspace-hack",
 ]
 
