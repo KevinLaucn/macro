@@ -6,6 +6,9 @@ WORKDIR /app
 COPY package.json bun.lock bunfig.toml ./
 COPY packages ./packages
 COPY apps/web ./apps/web
+COPY services/ai-editing-worker ./services/ai-editing-worker
+COPY services/bots ./services/bots
+COPY services/lexical-service ./services/lexical-service
 
 # Install dependencies and build web app
 RUN bun install --frozen-lockfile
