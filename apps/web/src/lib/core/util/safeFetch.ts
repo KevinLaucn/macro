@@ -289,6 +289,9 @@ function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
   if (path.includes('/items/soup')) {
     return { items: [], next_cursor: null };
   }
+  if (path.includes('/channels/activity') || path.includes('/activity')) {
+    return [];
+  }
   if (path.includes('/channels')) {
     return { items: [], channels: [], next_cursor: null };
   }

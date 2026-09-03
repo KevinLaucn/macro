@@ -20,7 +20,18 @@ const HEARTBEAT_INTERVAL = 300000;
  */
 const HEARTBEAT_TIMEOUT = 5000;
 
-const ws = new WebsocketBuilder(SERVER_HOSTS['websocket-service'])
+const resolveStorageWsUrl = () => {
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname !== 'app.macro.com' ||
+      (window as any).__MACRO_ENV__?.ADMIN_EMAIL)
+  ) {
+    return 'disabled';
+  }
+  return SERVER_HOSTS['websocket-service'];
+};
+
+const ws = new WebsocketBuilder(resolveStorageWsUrl)
   .withBackoff(new ConstantBackoff(2_000))
   .withMaxRetries(20)
   .withHeartbeat({

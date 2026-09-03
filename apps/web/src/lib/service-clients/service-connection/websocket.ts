@@ -36,7 +36,7 @@ async function resolveWsUrl() {
       (window as any).__MACRO_ENV__?.ADMIN_EMAIL) &&
     wsHost.includes('macro.com')
   ) {
-    return '';
+    return 'disabled';
   }
 
   if (ENABLE_BEARER_TOKEN_AUTH) {
