@@ -1,0 +1,15 @@
+{
+  "name": "cache-wasm",
+  "type": "module",
+  "version": "0.6.3",
+  "files": [
+    "cache_wasm_bg.wasm",
+    "cache_wasm.js",
+    "cache_wasm.d.ts"
+  ],
+  "main": "cache_wasm.js",
+  "types": "cache_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

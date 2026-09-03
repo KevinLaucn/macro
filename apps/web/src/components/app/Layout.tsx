@@ -72,6 +72,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  ErrorBoundary,
   type JSX,
   onCleanup,
   onMount,
@@ -520,7 +521,28 @@ function LayoutInner(props: RouteSectionProps) {
           </Show>
 
           <div class="flex-1 w-full min-h-0 font-sans text-ink caret-accent">
-            {props.children}
+            <ErrorBoundary
+              fallback={(error, reset) => (
+                <div class="flex flex-col items-center justify-center size-full gap-3 text-ink-muted p-6 text-center select-none">
+                  <p class="text-sm font-medium">页面内容加载异常</p>
+                  <p class="text-xs text-ink-faint max-w-md">
+                    {error?.message ?? String(error)}
+                  </p>
+                  <button
+                    type="button"
+                    class="mt-1 px-3 py-1.5 text-xs font-medium rounded-md border border-edge hover:bg-surface-raised transition-colors"
+                    onClick={() => {
+                      reset();
+                      window.location.href = '/app';
+                    }}
+                  >
+                    重置并重新加载
+                  </button>
+                </div>
+              )}
+            >
+              {props.children}
+            </ErrorBoundary>
           </div>
         </ItemDndProvider>
       </div>

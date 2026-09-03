@@ -68,6 +68,26 @@ function gitBranchHmrPlugin(): Plugin {
   };
 }
 
+function devRootRedirectPlugin(): Plugin {
+  return {
+    name: 'dev-root-redirect',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const rawUrl = req.url || '';
+        const pathname = rawUrl.split('?')[0];
+        if (pathname === '/' || pathname === '') {
+          const search = rawUrl.includes('?') ? rawUrl.slice(rawUrl.indexOf('?')) : '';
+          res.writeHead(302, { Location: `/app${search}` });
+          res.end();
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 export const createAppViteConfig = (): UserConfigFn => {
   return ({ command, mode }) => {
     const ENV_MODE = process.env.MODE ?? mode;
@@ -94,6 +114,7 @@ export const createAppViteConfig = (): UserConfigFn => {
           root: './',
         }),
         gitBranchHmrPlugin(),
+        devRootRedirectPlugin(),
       ],
       define: defineEnv(ENV_MODE, command),
       clearScreen: false,

@@ -35,6 +35,17 @@ initializeLexical();
 initMonochromeIcons();
 
 const renderApp = () => {
+  if (
+    typeof window !== 'undefined' &&
+    !isTauri() &&
+    (window.location.pathname === '/' || window.location.pathname === '')
+  ) {
+    window.location.replace(
+      '/app' + window.location.search + window.location.hash
+    );
+    return;
+  }
+
   const root = document.getElementById('root');
   if (!root) return console.error('Root element not found');
   document.documentElement.dataset.platform = getPlatform();
