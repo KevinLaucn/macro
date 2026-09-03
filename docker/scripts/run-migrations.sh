@@ -65,7 +65,7 @@ echo "Running migrations from ${MIGRATIONS_DIR}..."
 applied_count=0
 skipped_count=0
 
-for migration_file in $(ls "${MIGRATIONS_DIR}"/*.sql | sort); do
+for migration_file in $(ls "${MIGRATIONS_DIR}"/*.sql | grep -v '\.down\.sql$' | sort); do
   filename=$(basename "$migration_file")
   
   # Extract version: digits before the first underscore
