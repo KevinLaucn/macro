@@ -1,0 +1,13 @@
+FROM alpine:3.20
+
+# Install postgresql client tools and coreutils (for sha384sum, date with nanoseconds)
+RUN apk add --no-cache postgresql16-client coreutils ca-certificates
+
+# Copy the 310 database migration scripts
+COPY crates/macro_db_client/migrations /migrations
+
+# Copy migration runner script
+COPY docker/scripts/run-migrations.sh /usr/local/bin/run-migrations.sh
+RUN chmod +x /usr/local/bin/run-migrations.sh
+
+ENTRYPOINT ["/usr/local/bin/run-migrations.sh"]
