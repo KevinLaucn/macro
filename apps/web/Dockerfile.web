@@ -16,7 +16,7 @@ COPY services/lexical-service ./services/lexical-service
 COPY crates/agent_harness/sandbox_sizes.json ./crates/agent_harness/sandbox_sizes.json
 
 # Install dependencies and build web frontend
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile || bun install
 WORKDIR /app/apps/web
 RUN bun run build
 
