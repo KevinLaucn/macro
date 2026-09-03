@@ -171,6 +171,7 @@
   "(empty)": "(空)",
   "AI Projection Playground": "AI 投影演练场",
   "AND selected clauses": "满足所有已选条件 (AND)",
+  "Active Depth": "活动深度",
   "Agent Name": "助手名称",
   "Agent Prompt": "助手提示词",
   "Agent Settings": "助手设置",
@@ -322,6 +323,7 @@
   "Custom include fields": "自定义包含字段",
   "Limit": "限制数量",
   "Edit JSON": "编辑 JSON",
+  "Email read receipts for": "邮件已读回执适用于",
   "Remove from team": "从团队中移除",
   "Leave team": "退出团队",
   "Manage team": "管理团队",
@@ -441,5 +443,14 @@
   "Discard draft": "舍弃草稿",
   "Save as draft": "保存为草稿",
   "Subject line": "邮件主题",
-  "Add recipients": "添加收件人"
+  "Add recipients": "添加收件人",
+  "Owner@@crm": "负责人",
+  "Owner@@team": "团队所有者",
+  "Call@@call": "通话",
+  "Call@@action": "发起通话",
+  "Open@@state": "已开启",
+  "Open@@action": "打开",
+  "No options match \"{query}\"": "没有与“{query}”匹配的选项",
+  "Delete {0}": "删除 {0}",
+  "Edit {0}": "编辑 {0}"
 }

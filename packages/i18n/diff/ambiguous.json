@@ -104,6 +104,23 @@
     "features/channel/Attachments/SectionHeader.tsx",
     "lib/core/component/ItemPreview.tsx"
   ],
+  "#{name}": [
+    "features/block-call/sidebar/active-call-widget.tsx",
+    "features/settings/Agents.tsx",
+    "features/channel/Channel/Channel.tsx",
+    "features/channel/Call/InCallPanel/InCallPanelView.tsx"
+  ],
+  "{hours}h {minutes}m": [
+    "features/block-call/utils.ts",
+    "features/entity/composed/list-entity/foreign.tsx",
+    "features/channel/Channel/ActiveCallMessage.tsx",
+    "features/channel/Call/InCallPanel/InCallPanelView.tsx"
+  ],
+  "{seconds}s": [
+    "features/block-call/utils.ts",
+    "features/block-pr/side-panel/github-pull-request.tsx",
+    "features/entity/composed/list-entity/foreign.tsx"
+  ],
   "Details": [
     "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
     "features/block-pr/component/sidepanel/PrSidePanelSections.tsx",
@@ -324,7 +341,6 @@
   ],
   "Delete": [
     "features/settings/ApiKeys.tsx",
-    "features/settings/Agents.tsx",
     "features/property/tags/TagEditorDialog.tsx",
     "features/entity/bulk-edit/BulkDeleteView.tsx",
     "features/block-calendar/components/SelectedEventDetails.tsx",
@@ -343,6 +359,11 @@
     "features/block-chat/component/sidepanel/ChatSidePanelSections.tsx",
     "components/app/side-panel/FileSidePanelSections.tsx",
     "lib/core/component/DetailsDrawer.tsx"
+  ],
+  "Delete {name}": [
+    "features/settings/ApiKeys.tsx",
+    "features/settings/Agents.tsx",
+    "features/settings/Appearance.tsx"
   ],
   "Close": [
     "features/settings/ApiKeys.tsx",
@@ -394,13 +415,64 @@
   "No": [
     "features/settings/Tags.tsx",
     "features/property/editors/selectors/PropertyEntitySelector.tsx",
-    "features/property/component/propertyValue/PropertyTooltip.tsx",
     "lib/core/internal/DataDebug.tsx"
   ],
   "Edit tag": [
     "features/settings/Tags.tsx",
     "features/property/tags/TagPicker.tsx",
     "features/property/tags/EntityRowTags.tsx"
+  ],
+  "@{handle}": [
+    "features/settings/BotSettingsList.tsx",
+    "features/channel/Bots/BotCreationResult.tsx",
+    "features/channel/Bots/CreateBotTokenDialog.tsx",
+    "features/channel/Bots/BotInviteSelect.tsx",
+    "features/channel/Participants/ChannelBotRow.tsx",
+    "lib/core/component/AI/component/tool/Bots.tsx"
+  ],
+  "{width}px": [
+    "features/settings/signatureImageResizer.ts",
+    "features/block-md/component/MarkdownPopup.tsx",
+    "features/block-md/history/HistoryScrubber.tsx",
+    "features/setup/primitives.tsx",
+    "features/setup/flow/BrandHandoff.tsx",
+    "features/block-pdf/component/UserHighlight.tsx",
+    "features/channel/Media/MediaGrid.tsx",
+    "features/channel/Media/MediaImage.tsx",
+    "components/view-shell/ViewShell.tsx",
+    "components/app/mobile/MobileTouchMenu.tsx",
+    "lib/core/comments/Thread.tsx",
+    "lib/core/component/ImagePreview.tsx",
+    "lib/core/component/ImageGalleryPreview.tsx",
+    "lib/core/component/LexicalMarkdown/collaboration/remote-cursor.tsx",
+    "lib/core/component/LexicalMarkdown/plugins/find-and-replace/getFloatingSearchHighlightStyle.ts",
+    "lib/core/component/LexicalMarkdown/component/misc/TableSelectionActionBar.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableMoveHandle.tsx",
+    "lib/core/component/LexicalMarkdown/component/core/Highlights.tsx",
+    "lib/core/component/LexicalMarkdown/component/decorator/DocumentCard.tsx",
+    "lib/core/component/LexicalMarkdown/directive/glueToElement.ts"
+  ],
+  "{height}px": [
+    "features/settings/signatureImageResizer.ts",
+    "features/block-md/component/MarkdownPopup.tsx",
+    "features/setup/flow/BrandHandoff.tsx",
+    "features/block-pdf/component/UserHighlight.tsx",
+    "features/channel/Media/MediaImage.tsx",
+    "components/app/mobile/float-regions/FloatRegionHost.tsx",
+    "components/app/mobile/MobileTouchMenu.tsx",
+    "lib/core/component/RecipientSelector.tsx",
+    "lib/core/component/ImagePreview.tsx",
+    "lib/core/component/ImageGalleryPreview.tsx",
+    "lib/core/component/LexicalMarkdown/collaboration/remote-cursor.tsx",
+    "lib/core/component/LexicalMarkdown/plugins/custom-caret/customCaretPlugin.ts",
+    "lib/core/component/LexicalMarkdown/plugins/find-and-replace/getFloatingSearchHighlightStyle.ts",
+    "lib/core/component/LexicalMarkdown/component/misc/TableCellResizer.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableSelectionActionBar.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableMoveHandle.tsx",
+    "lib/core/component/LexicalMarkdown/component/core/StaticMarkdown.tsx",
+    "lib/core/component/LexicalMarkdown/component/core/Highlights.tsx",
+    "lib/core/component/LexicalMarkdown/component/decorator/DocumentCard.tsx",
+    "lib/core/component/LexicalMarkdown/directive/glueToElement.ts"
   ],
   "Try again": [
     "features/home/home-hub.tsx",
@@ -458,16 +530,37 @@
     "features/entity/composed/list-entity/calendar.tsx",
     "features/block-calendar/components/CalendarSearch.tsx"
   ],
+  "macro|{email}": [
+    "features/calendar/components/composer/event-form-model.ts",
+    "lib/core/user/macroId.ts",
+    "lib/core/user/util.ts"
+  ],
   "Calendars": [
     "features/calendar/components/CalendarSettingsDropdown.tsx",
     "features/block-calendar/components/SidePanelSections.tsx",
     "components/app/app-sidebar/calendar-sidebar-preview.tsx"
+  ],
+  "Failed to upload {name}": [
+    "features/sharing/ios-share-sheet/IosShareSheet.tsx",
+    "features/channel/Input/upload-attachments.ts",
+    "lib/service-clients/service-storage/util/upload.ts"
   ],
   "Send": [
     "features/sharing/ios-share-sheet/IosShareSheet.tsx",
     "features/block-agent/ui/AgentInput.tsx",
     "lib/core/component/AI/component/debug/Component.tsx",
     "lib/core/component/AI/component/debug/Attachment.tsx"
+  ],
+  "{y}px": [
+    "features/block-md/comments/CommentMargin.tsx",
+    "features/setup/flow/BrandHandoff.tsx",
+    "features/block-canvas/component/ContextMenu.tsx",
+    "lib/core/component/GeneralizedPopup/Popup.tsx",
+    "lib/core/component/AI/component/input/ChatAttachMenu.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableInsertButton.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableMoveHandle.tsx",
+    "lib/core/component/LexicalMarkdown/directive/floatWithElement.ts",
+    "lib/core/component/LexicalMarkdown/directive/floatWithSelection.ts"
   ],
   "Folder": [
     "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
@@ -486,6 +579,29 @@
     "features/block-md/component/TaskDuplicateMatches.tsx",
     "features/paywall/PaywallComponent.tsx",
     "components/app/app-sidebar/sidebar-promo.tsx"
+  ],
+  "{left}px": [
+    "features/block-md/component/MarkdownPopup.tsx",
+    "features/block-md/history/UserHoverTag.tsx",
+    "features/block-md/history/HistoryScrubber.tsx",
+    "features/block-pdf/component/UserHighlight.tsx",
+    "components/app/Layout.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableCellResizer.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableSelectionActionBar.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableMoveHandle.tsx",
+    "lib/tauri/TauriProvider.tsx"
+  ],
+  "{top}px": [
+    "features/block-md/component/MarkdownPopup.tsx",
+    "features/block-md/history/UserHoverTag.tsx",
+    "features/block-pdf/component/UserHighlight.tsx",
+    "components/app/Layout.tsx",
+    "lib/core/comments/MeasureContainer.tsx",
+    "lib/core/component/LexicalMarkdown/plugins/custom-caret/customCaretPlugin.ts",
+    "lib/core/component/LexicalMarkdown/component/misc/TableCellResizer.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableSelectionActionBar.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableMoveHandle.tsx",
+    "lib/tauri/TauriProvider.tsx"
   ],
   "Welcome to Macro": [
     "features/auth/mobile-onboarding/MobileAuthWelcome.tsx",
@@ -509,6 +625,11 @@
     "features/property/editors/selectors/PropertyEntitySelector.tsx",
     "features/setup/flow/SummaryStep.tsx",
     "lib/core/internal/DataDebug.tsx"
+  ],
+  "{name} | {email}": [
+    "features/property/editors/selectors/entityUtils.ts",
+    "lib/core/context/quickAccess/QuickAccessSource.tsx",
+    "lib/core/component/LexicalMarkdown/utils/mentionsUtils.ts"
   ],
   "Enter a date or duration": [
     "features/property/editors/selectors/PropertyDateSelector.tsx",
@@ -545,6 +666,11 @@
     "features/block-agent/debug/Gallery.tsx",
     "lib/core/internal/PixelArtIconDemo.tsx",
     "lib/core/component/AI/component/tool/EditDocument.tsx"
+  ],
+  "{length} items": [
+    "features/property/extractors/PropertyText.tsx",
+    "features/activity/property-change-label.ts",
+    "lib/core/component/AI/component/tool/ReadProject.tsx"
   ],
   "more": [
     "features/property/editor/PropertyEditorModal.tsx",
@@ -588,6 +714,18 @@
     "features/block-email/component/email-date-selector.tsx",
     "features/block-email/component/date-selector.tsx"
   ],
+  "Bearer {apiToken}": [
+    "features/entity/queries/email.ts",
+    "lib/service-clients/service-storage/graphql-soup.ts",
+    "lib/service-clients/service-auth/fetch.ts"
+  ],
+  "{type}:{id}": [
+    "features/entity/queries/rename.ts",
+    "components/app/split-layout/layoutManager.ts",
+    "lib/core/orchestrator.tsx",
+    "lib/core/component/AI/component/message/AssistantMessageParts.tsx",
+    "lib/core/component/LexicalMarkdown/component/menu/MentionsMenu/MentionsMenu.tsx"
+  ],
   "Emails": [
     "features/contacts/Contact/ContactEmailsSection.tsx",
     "features/companies/Company/CompanyEmailsSection.tsx",
@@ -598,6 +736,29 @@
     "features/setup/flow/EmailStep.tsx",
     "features/channel/Call/InCallPanel/InCallParticipantsListPopover.tsx",
     "features/channel/Call/ChannelCallTab.tsx"
+  ],
+  "{x}px": [
+    "features/setup/flow/BrandHandoff.tsx",
+    "features/block-canvas/component/ContextMenu.tsx",
+    "lib/core/component/GeneralizedPopup/Popup.tsx",
+    "lib/core/component/AI/component/input/ChatAttachMenu.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableInsertButton.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableMoveHandle.tsx",
+    "lib/core/component/LexicalMarkdown/directive/floatWithElement.ts",
+    "lib/core/component/LexicalMarkdown/directive/floatWithSelection.ts"
+  ],
+  "HTTP error! status: {status}": [
+    "features/block-pdf/component/TopBar.tsx",
+    "lib/core/util/safeFetch.ts",
+    "lib/core/util/fetchWithToken.ts",
+    "lib/service-clients/service-storage/util/fetchBinary.ts",
+    "lib/service-clients/service-storage/util/fetchPresigned.ts",
+    "lib/service-clients/service-storage/client.ts",
+    "lib/service-clients/service-properties/client.ts",
+    "lib/service-clients/service-email/client.ts",
+    "lib/service-clients/service-auth/client.ts",
+    "lib/service-clients/service-auth/fetch.ts",
+    "lib/service-clients/service-cognition/client.ts"
   ],
   "Failed": [
     "features/block-agent/ui/QueuedPromptList.tsx",
@@ -625,6 +786,11 @@
     "lib/core/component/AI/component/tool/ReadCallRecord.tsx",
     "lib/core/component/AI/component/tool/ReadThread.tsx"
   ],
+  "Remove {name}": [
+    "features/channel/Bots/ChannelMultiSelect.tsx",
+    "features/channel/Participants/ChannelBotRow.tsx",
+    "features/channel/Input/Attachments.tsx"
+  ],
   "Reply": [
     "features/channel/StandaloneThread/Replies.tsx",
     "features/channel/Thread/ChannelThread.tsx",
@@ -632,11 +798,21 @@
     "features/block-email/component/BottomReplyButtons.tsx",
     "lib/core/comments/discussion/Discussion.tsx"
   ],
+  "{width} / {height}": [
+    "features/channel/Media/MediaGrid.tsx",
+    "lib/core/component/ImagePreview.tsx",
+    "lib/core/component/ImageGalleryPreview.tsx"
+  ],
   "preview": [
     "features/channel/Media/MediaImage.tsx",
     "lib/core/component/Lightbox/Lightbox.tsx",
     "lib/core/component/ImagePreview.tsx",
     "lib/core/component/ImageGalleryPreview.tsx"
+  ],
+  "var(--color-{token})": [
+    "features/theme/utils/themeUtils.ts",
+    "features/theme/utils/themeVNext.ts",
+    "features/theme/components/ThemeTokenEditor.tsx"
   ],
   "From": [
     "features/theme/components/ThemeTokenEditor.tsx",
@@ -669,6 +845,16 @@
     "features/block-email/component/EmailMessageTopBar.tsx",
     "features/block-email/component/BaseInput.tsx"
   ],
+  "An unknown error occurred: {error}": [
+    "lib/core/util/safeFetch.ts",
+    "lib/service-clients/service-storage/util/fetchBinary.ts",
+    "lib/service-clients/service-storage/util/fetchPresigned.ts"
+  ],
+  "Uploaded {name}": [
+    "lib/core/util/upload.ts",
+    "lib/service-clients/service-storage/util/upload.ts",
+    "lib/utils/handleFileUpload.ts"
+  ],
   "Copy Link": [
     "lib/core/component/DocumentPreview.tsx",
     "lib/core/component/TopBar/ShareButton.tsx",
@@ -698,5 +884,51 @@
     "lib/core/component/AI/component/debug/Component.tsx",
     "lib/core/component/AI/component/debug/StaticMarkdownStream.tsx",
     "lib/core/component/AI/component/debug/HttpStream.tsx"
+  ],
+  "translate({left}px, {top}px)": [
+    "lib/core/component/LexicalMarkdown/collaboration/remote-cursor.tsx",
+    "lib/core/component/LexicalMarkdown/plugins/find-and-replace/getFloatingSearchHighlightStyle.ts",
+    "lib/core/component/LexicalMarkdown/component/core/Highlights.tsx"
+  ],
+  "@{groupAlias}": [
+    "lib/core/component/LexicalMarkdown/component/decorator/GroupMention.tsx",
+    "lib/core/component/LexicalMarkdown/component/menu/MentionsMenu/utils/entityUtils.ts",
+    "lib/core/component/LexicalMarkdown/utils/mentionsUtils.ts"
+  ],
+  "{dcsHost}{url}": [
+    "lib/service-clients/service-cognition/client.ts",
+    "lib/service-clients/service-cognition/onboarding.ts",
+    "lib/service-clients/service-cognition/import.ts"
+  ],
+  "graphql-cache:{scope}": [
+    "lib/graphql-cache/worker/coordinator-protocol.ts",
+    "lib/graphql-cache/worker/browser-test/cutover-harness.ts",
+    "lib/graphql-cache/legacy-idb-cleanup.ts"
+  ],
+  "graphql-cache-wp08-production-tabs:{scope}": [
+    "lib/graphql-cache/worker/browser-test/production-tab.ts",
+    "lib/graphql-cache/worker/browser-test/cache-recovery-harness.ts",
+    "lib/graphql-cache/worker/browser-test/production-harness.ts"
+  ],
+  "graphql-cache-wp08:{scope}": [
+    "lib/graphql-cache/worker/browser-test/fake-cache.engine-worker.ts",
+    "lib/graphql-cache/worker/browser-test/harness.ts",
+    "lib/graphql-cache/worker/browser-test/fake-coordinator.shared-worker.ts"
+  ],
+  "timed out waiting for {description}": [
+    "lib/graphql-cache/worker/browser-test/cache-recovery-harness.ts",
+    "lib/graphql-cache/worker/browser-test/production-harness.ts",
+    "lib/graphql-cache/worker/browser-test/harness.ts"
+  ],
+  "graphql-cache-wp08-production:{scope}": [
+    "lib/graphql-cache/worker/browser-test/cache-recovery-harness.ts",
+    "lib/graphql-cache/worker/browser-test/production-harness.ts",
+    "lib/graphql-cache/worker/browser-test/production-cache.engine-worker.ts",
+    "lib/graphql-cache/worker/browser-test/host-harness.ts"
+  ],
+  "{scope}:{tabId}": [
+    "lib/graphql-cache/worker/browser-test/cache-recovery-harness.ts",
+    "lib/graphql-cache/worker/browser-test/production-harness.ts",
+    "lib/graphql-cache/worker/browser-test/harness.ts"
   ]
 }

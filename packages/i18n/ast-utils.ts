@@ -61,6 +61,10 @@ export function shouldTranslateText(text: string): boolean {
   if (/^[a-z0-9-_]+:[a-z0-9-_]+$/i.test(normalized)) return false;
   if (/^[a-z0-9_-]+\/[a-z0-9_.-]+$/i.test(normalized)) return false; // e.g. application/json
   if (/^(--|\$|\.)[a-z0-9_-]+/i.test(normalized)) return false; // css variables or classes
+  if (/^\[data-/.test(normalized)) return false; // css attribute selectors
+  if (/^(property|header|category|loadmore):/i.test(normalized)) return false;
+  if (normalized.includes("{DOCS_BASE}")) return false;
+  if (/^\{[a-z0-9_-]+\}\/\{[a-z0-9_-]+\}/i.test(normalized)) return false; // e.g. {owner}/{repo}
   return true;
 }
 
@@ -72,5 +76,90 @@ export function getContextKey(filePath: string): string | undefined {
   if (norm.includes("activity")) return "activity";
   if (norm.includes("email")) return "email";
   if (norm.includes("chat") || norm.includes("channel")) return "chat";
+  return undefined;
+}
+
+export interface InterpolatedUnit {
+  template: string;
+  variables: { name: string; start: number; end: number }[];
+}
+
+export function getExpressionName(node: any): string | undefined {
+  if (!node) return undefined;
+  if (node.type === "Identifier") {
+    return node.name;
+  }
+  if (node.type === "MemberExpression" && node.property?.type === "Identifier") {
+    return node.property.name;
+  }
+  return undefined;
+}
+
+export function parseMixedChildren(children: any[]): InterpolatedUnit | undefined {
+  if (!children || children.length <= 1) return undefined;
+
+  let hasText = false;
+  let hasExpression = false;
+  let templateParts: string[] = [];
+  const variables: { name: string; start: number; end: number }[] = [];
+
+  for (const child of children) {
+    if (child.type === "JSXText") {
+      const norm = child.value.replace(/\s+/g, " ");
+      if (norm.trim()) {
+        hasText = true;
+      }
+      templateParts.push(norm);
+    } else if (child.type === "JSXExpressionContainer") {
+      const exp = child.expression;
+      const varName = getExpressionName(exp);
+      if (varName) {
+        hasExpression = true;
+        templateParts.push(`{${varName}}`);
+        variables.push({ name: varName, start: exp.start, end: exp.end });
+      } else {
+        // Complex expression (e.g. ternary, function call, nested JSX) -> skip combining
+        return undefined;
+      }
+    } else {
+      // Nested JSXElement -> skip combining
+      return undefined;
+    }
+  }
+
+  if (hasText && hasExpression) {
+    const fullTemplate = templateParts.join("").trim().replace(/\s+/g, " ");
+    if (shouldTranslateText(fullTemplate)) {
+      return { template: fullTemplate, variables };
+    }
+  }
+
+  return undefined;
+}
+
+export function parseSimpleTemplateLiteral(node: any): InterpolatedUnit | undefined {
+  if (node.type !== "TemplateLiteral") return undefined;
+  const { quasis, expressions } = node;
+  if (!expressions || expressions.length === 0) return undefined;
+
+  const variables: { name: string; start: number; end: number }[] = [];
+  let template = "";
+
+  for (let i = 0; i < quasis.length; i++) {
+    template += quasis[i].value.raw.replace(/\s+/g, " ");
+    if (i < expressions.length) {
+      const exp = expressions[i];
+      const varName = getExpressionName(exp);
+      if (!varName) return undefined; // Complex expression, skip
+      template += `{${varName}}`;
+      variables.push({ name: varName, start: exp.start, end: exp.end });
+    }
+  }
+
+  const normalized = template.trim().replace(/\s+/g, " ");
+  if (shouldTranslateText(normalized)) {
+    return { template: normalized, variables };
+  }
+
   return undefined;
 }

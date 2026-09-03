@@ -9,6 +9,8 @@ import {
   normalizeText,
   shouldTranslateText,
   getContextKey,
+  parseMixedChildren,
+  parseSimpleTemplateLiteral,
 } from "./ast-utils";
 
 const traverse = (traverseModule as any).default || traverseModule;
@@ -58,6 +60,42 @@ export function i18nAstPlugin(): Plugin {
           const tagName = path.node.openingElement.name.name;
           if (IGNORED_TAGS.has(tagName)) {
             path.skip();
+            return;
+          }
+          const unit = parseMixedChildren(path.node.children);
+          if (unit && path.node.children.length > 0) {
+            const firstChild = path.node.children[0];
+            const lastChild = path.node.children[path.node.children.length - 1];
+            const escaped = JSON.stringify(unit.template);
+            const varObj = `{ ${unit.variables
+              .map((v) => `${v.name}: ${code.slice(v.start, v.end)}`)
+              .join(", ")} }`;
+            s.overwrite(
+              firstChild.start,
+              lastChild.end,
+              `{__t(${escaped}, ${varObj}${ctxArg})}`
+            );
+            transformed = true;
+            path.skip();
+            return;
+          }
+        },
+        JSXExpressionContainer(path: any) {
+          if (path.node.expression?.type === "TemplateLiteral") {
+            const unit = parseSimpleTemplateLiteral(path.node.expression);
+            if (unit) {
+              const escaped = JSON.stringify(unit.template);
+              const varObj = `{ ${unit.variables
+                .map((v) => `${v.name}: ${code.slice(v.start, v.end)}`)
+                .join(", ")} }`;
+              s.overwrite(
+                path.node.expression.start,
+                path.node.expression.end,
+                `__t(${escaped}, ${varObj}${ctxArg})`
+              );
+              transformed = true;
+              path.skip();
+            }
           }
         },
         JSXText(path: any) {

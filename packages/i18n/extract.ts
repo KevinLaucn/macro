@@ -9,6 +9,8 @@ import {
   normalizeText,
   shouldTranslateText,
   getContextKey,
+  parseMixedChildren,
+  parseSimpleTemplateLiteral,
 } from "./ast-utils";
 
 const traverse = (traverseModule as any).default || traverseModule;
@@ -57,6 +59,19 @@ async function run() {
         JSXElement(p: any) {
           if (IGNORED_TAGS.has(p.node.openingElement.name.name)) {
             p.skip();
+            return;
+          }
+          const unit = parseMixedChildren(p.node.children);
+          if (unit) {
+            currentStrings.set(unit.template, [...(currentStrings.get(unit.template) || []), rel]);
+            p.skip();
+            return;
+          }
+        },
+        TemplateLiteral(p: any) {
+          const unit = parseSimpleTemplateLiteral(p.node);
+          if (unit) {
+            currentStrings.set(unit.template, [...(currentStrings.get(unit.template) || []), rel]);
           }
         },
         JSXText(p: any) {
