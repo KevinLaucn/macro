@@ -287,7 +287,7 @@ function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
   if (path.includes('/contacts')) {
     return { contacts: [], total: 0 };
   }
-  if (path.includes('/properties/definitions')) {
+  if (path.includes('/properties')) {
     return [];
   }
   if (path.includes('/items/soup/ast/grouped')) {
