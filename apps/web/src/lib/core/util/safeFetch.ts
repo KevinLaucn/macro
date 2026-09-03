@@ -302,6 +302,15 @@ function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
   if (path.includes('/calendar-events')) {
     return { occurrences: [], next_cursor: null };
   }
+  if (path.includes('/favorites')) {
+    return { favorites: [] };
+  }
+  if (path.includes('/history')) {
+    return { data: [] };
+  }
+  if (path.includes('/jwt/refresh')) {
+    return { access_token: 'local-super-admin-token', refresh_token: 'local-super-admin-refresh' };
+  }
   if (path.includes('/bots') || path.includes('/agents')) {
     return [];
   }
