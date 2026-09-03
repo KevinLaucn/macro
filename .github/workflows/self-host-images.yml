@@ -44,7 +44,7 @@ jobs:
   services:
     name: macro-services
     needs: check-drift
-    runs-on: namespace-profile-linux-mid
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.value }}
     steps:
@@ -53,18 +53,15 @@ jobs:
           persist-credentials: 'false'
       - id: version
         run: echo "value=${{ inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
-      - name: Mount /nix cache volume
-        uses: namespacelabs/nscloud-cache-action@15799a6b54e5765f85b2aac25b3f0df43ed571c0
-        with:
-          cache: nix
-        continue-on-error: true
       - name: Setup Nix
         uses: './.github/actions/setup-nix'
-        with:
-          nix-cache-url: ${{ vars.NIX_CACHE_URL }}
-          nix-cache-public-key: ${{ vars.NIX_CACHE_PUBLIC_KEY }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build diagnostics before build
+        run: |
+          echo "=== Memory ==="
+          free -h
+          echo "=== Disk ==="
+          df -h
 
       - name: Build service binaries
         run: |
@@ -113,6 +110,11 @@ jobs:
             -p macro_db_migrator --features cli --bin macro_db_migrate
           cp target/release/macro_db_migrate self-host/build/bin/
 
+      - name: Build diagnostics after build
+        run: |
+          echo "=== Disk after build ==="
+          df -h
+
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
           registry: ${{ env.REGISTRY }}
@@ -132,18 +134,20 @@ jobs:
   web:
     name: macro-web
     needs: check-drift
-    runs-on: namespace-profile-linux-mid
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: 'false'
       - name: Setup Nix
         uses: './.github/actions/setup-nix'
-        with:
-          nix-cache-url: ${{ vars.NIX_CACHE_URL }}
-          nix-cache-public-key: ${{ vars.NIX_CACHE_PUBLIC_KEY }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build diagnostics before build
+        run: |
+          echo "=== Memory ==="
+          free -h
+          echo "=== Disk ==="
+          df -h
 
       - name: Build the frontend bundle
         # `same-origin` is what makes one image work on any hostname: the app
@@ -152,9 +156,10 @@ jobs:
         run: |
           set -euo pipefail
           nix develop --command bash -c '
-            bun install
+            bun install --frozen-lockfile
             cd apps/web
             MODE=development NODE_ENV=production \
+            NODE_OPTIONS=--max-old-space-size=6144 \
             VITE_LOCAL_SERVERS=ALL \
             VITE_LOCAL_BACKEND_ORIGIN=same-origin \
             VITE_AI_EDITING_WORKER_URL=/ai-editing \
@@ -163,6 +168,11 @@ jobs:
           mkdir -p self-host/build/dist
           cp -a apps/web/dist/. self-host/build/dist/
           test -f self-host/build/dist/index.html
+
+      - name: Build diagnostics after build
+        run: |
+          echo "=== Disk after build ==="
+          df -h
 
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
@@ -208,7 +218,7 @@ jobs:
   workers:
     name: ${{ matrix.image }}
     needs: check-drift
-    runs-on: namespace-profile-linux-mid
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
