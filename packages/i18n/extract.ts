@@ -2,7 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse } from "@babel/parser";
 import traverseModule from "@babel/traverse";
-import { TRANSLATABLE_ATTRIBUTES, IGNORED_TAGS, shouldTranslateText } from "./ast-utils";
+import {
+  TRANSLATABLE_ATTRIBUTES,
+  IGNORED_TAGS,
+  isIgnoredPath,
+  normalizeText,
+  shouldTranslateText,
+  getContextKey,
+} from "./ast-utils";
 
 const traverse = (traverseModule as any).default || traverseModule;
 
@@ -16,10 +23,10 @@ function getAllFiles(dir: string, ext: RegExp, list: string[] = []): string[] {
     const full = path.join(dir, file);
     const stat = fs.statSync(full);
     if (stat.isDirectory()) {
-      if (file !== "node_modules" && file !== "i18n") {
+      if (file !== "node_modules" && file !== "i18n" && file !== "dist" && file !== ".vite") {
         getAllFiles(full, ext, list);
       }
-    } else if (ext.test(file) && !file.includes(".test.") && !file.includes(".spec.")) {
+    } else if (ext.test(file) && !isIgnoredPath(full)) {
       list.push(full);
     }
   }
@@ -27,20 +34,25 @@ function getAllFiles(dir: string, ext: RegExp, list: string[] = []): string[] {
 }
 
 async function run() {
-  console.log("🔍 Scanning apps/web/src for UI literals...");
-  const files = getAllFiles(webSrcDir, /\.[tj]sx$/);
-  console.log(`Found ${files.length} UI source files.`);
+  console.log("🔍 Scanning apps/web/src for UI literals across .ts and .tsx...");
+  const files = getAllFiles(webSrcDir, /\.[tj]sx?$/);
+  console.log(`Found ${files.length} production UI source files.`);
 
-  const currentStrings = new Map<string, string[]>(); // key -> occurrences
+  const currentStrings = new Map<string, string[]>(); // normalizedKey -> occurrences
+  const parseFailures: { file: string; error: string }[] = [];
 
   for (const file of files) {
+    const rel = path.relative(webSrcDir, file);
     const code = fs.readFileSync(file, "utf-8");
-    if (!code.includes("<") || !code.includes(">")) continue;
+    const isTsx = file.endsWith(".tsx") || file.endsWith(".jsx");
+    const isActivityDesc = file.includes("describe-action") || file.includes("activity");
+
     try {
       const ast = parse(code, {
         sourceType: "module",
         plugins: ["jsx", "typescript"],
       });
+
       traverse(ast, {
         JSXElement(p: any) {
           if (IGNORED_TAGS.has(p.node.openingElement.name.name)) {
@@ -48,25 +60,64 @@ async function run() {
           }
         },
         JSXText(p: any) {
-          const text = p.node.value.trim();
-          if (shouldTranslateText(text)) {
-            const rel = path.relative(webSrcDir, file);
-            currentStrings.set(text, [...(currentStrings.get(text) || []), rel]);
+          const raw = p.node.value;
+          const normalized = normalizeText(raw);
+          if (shouldTranslateText(normalized)) {
+            currentStrings.set(normalized, [...(currentStrings.get(normalized) || []), rel]);
           }
         },
         JSXAttribute(p: any) {
           const attr = p.node.name?.name;
-          if (TRANSLATABLE_ATTRIBUTES.has(attr) && p.node.value?.type === "StringLiteral") {
-            const val = p.node.value.value;
-            if (shouldTranslateText(val)) {
-              const rel = path.relative(webSrcDir, file);
-              currentStrings.set(val, [...(currentStrings.get(val) || []), rel]);
+          if (TRANSLATABLE_ATTRIBUTES.has(attr)) {
+            if (p.node.value?.type === "StringLiteral") {
+              const val = normalizeText(p.node.value.value);
+              if (shouldTranslateText(val)) {
+                currentStrings.set(val, [...(currentStrings.get(val) || []), rel]);
+              }
+            }
+          }
+        },
+        CallExpression(p: any) {
+          // Detect toast.success("..."), toast.error("..."), toast.info("..."), toast("...")
+          const callee = p.node.callee;
+          const isToast =
+            (callee.type === "MemberExpression" &&
+              callee.object?.name === "toast" &&
+              ["success", "error", "info", "warning", "loading", "message"].includes(
+                callee.property?.name
+              )) ||
+            (callee.type === "Identifier" && callee.name === "toast");
+
+          if (isToast && p.node.arguments.length > 0) {
+            const firstArg = p.node.arguments[0];
+            if (firstArg.type === "StringLiteral") {
+              const text = normalizeText(firstArg.value);
+              if (shouldTranslateText(text)) {
+                currentStrings.set(text, [...(currentStrings.get(text) || []), rel]);
+              }
+            }
+          }
+        },
+        ReturnStatement(p: any) {
+          // Detect user-facing action description returns (e.g. describe-action.ts)
+          if (isActivityDesc && p.node.argument?.type === "StringLiteral") {
+            const text = normalizeText(p.node.argument.value);
+            if (shouldTranslateText(text)) {
+              currentStrings.set(text, [...(currentStrings.get(text) || []), rel]);
+            }
+          }
+        },
+        ArrowFunctionExpression(p: any) {
+          if (isActivityDesc && p.node.body?.type === "StringLiteral") {
+            const text = normalizeText(p.node.body.value);
+            if (shouldTranslateText(text)) {
+              currentStrings.set(text, [...(currentStrings.get(text) || []), rel]);
             }
           }
         },
       });
-    } catch {
-      // skip parse errors
+    } catch (err: any) {
+      parseFailures.push({ file: rel, error: err?.message || String(err) });
     }
   }
 
@@ -77,13 +128,15 @@ async function run() {
   const missing: Record<string, string> = {};
   const obsolete: Record<string, string> = {};
   const ambiguous: Record<string, string[]> = {};
+  const changed: Record<string, { occurrences: number; sampleFiles: string[] }> = {};
 
   for (const [key, occurrences] of currentStrings.entries()) {
     if (!existingZh[key]) {
       missing[key] = "";
     }
-    if (occurrences.length > 3) {
-      ambiguous[key] = Array.from(new Set(occurrences));
+    const uniqueOccurrences = Array.from(new Set(occurrences));
+    if (uniqueOccurrences.length > 2) {
+      ambiguous[key] = uniqueOccurrences;
     }
   }
 
@@ -93,9 +146,19 @@ async function run() {
     }
   }
 
+  if (!fs.existsSync(diffDir)) {
+    fs.mkdirSync(diffDir, { recursive: true });
+  }
+
   fs.writeFileSync(path.join(diffDir, "missing.json"), JSON.stringify(missing, null, 2), "utf-8");
   fs.writeFileSync(path.join(diffDir, "obsolete.json"), JSON.stringify(obsolete, null, 2), "utf-8");
   fs.writeFileSync(path.join(diffDir, "ambiguous.json"), JSON.stringify(ambiguous, null, 2), "utf-8");
+  fs.writeFileSync(path.join(diffDir, "changed.json"), JSON.stringify(changed, null, 2), "utf-8");
+  fs.writeFileSync(
+    path.join(diffDir, "parse-failures.json"),
+    JSON.stringify(parseFailures, null, 2),
+    "utf-8"
+  );
 
   console.log("==========================================");
   console.log(`✅ AST Scan Completed:`);
@@ -103,6 +166,10 @@ async function run() {
   console.log(`  - Missing Translations:    ${Object.keys(missing).length}`);
   console.log(`  - Obsolete Translations:   ${Object.keys(obsolete).length}`);
   console.log(`  - Ambiguous / Multiverse:  ${Object.keys(ambiguous).length}`);
+  console.log(`  - Parse Failures:          ${parseFailures.length}`);
+  if (parseFailures.length > 0) {
+    console.warn(`  ⚠️  Warning: ${parseFailures.length} files had parse errors (logged in parse-failures.json)`);
+  }
   console.log(`Diff reports saved in packages/i18n/diff/`);
   console.log("==========================================");
 }
