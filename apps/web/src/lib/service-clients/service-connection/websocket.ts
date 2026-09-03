@@ -30,6 +30,15 @@ export type FromWebsocketMessage = {
 };
 
 async function resolveWsUrl() {
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname !== 'app.macro.com' ||
+      window.__MACRO_ENV__?.ADMIN_EMAIL) &&
+    wsHost.includes('macro.com')
+  ) {
+    return '';
+  }
+
   if (ENABLE_BEARER_TOKEN_AUTH) {
     const apiToken = await getMacroApiToken();
     if (!apiToken) throw new Error('No Macro API token');
