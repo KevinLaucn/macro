@@ -15,7 +15,7 @@ x-env: &env
 
 x-service: &service
   <<: *env
-  image: ${MACRO_IMAGE_SERVICES:-ghcr.io/kevinlaucn/macro-services-email}:${MACRO_VERSION:-latest}
+  image: ${MACRO_IMAGE_SERVICES:-ghcr.io/kevinlaucn/macro-services-email}:${MACRO_VERSION:?set MACRO_VERSION in .env}
   restart: unless-stopped
 
 x-healthcheck: &healthcheck
@@ -64,7 +64,7 @@ services:
 
   # One-shot: unpack the built frontend bundle into the volume Caddy serves.
   web_assets:
-    image: ${MACRO_IMAGE_WEB:-ghcr.io/macro-inc/macro-web}:${MACRO_VERSION:-latest}
+    image: ${MACRO_IMAGE_WEB:-ghcr.io/kevinlaucn/macro-web}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     command: ["sh", "-c", "rm -rf /out/* && cp -a /srv/frontend/. /out/"]
     volumes:
       - web_assets:/out
@@ -75,7 +75,7 @@ services:
   # every `macroctl up` and is a no-op once the stack is provisioned.
   init:
     <<: *env
-    image: ${MACRO_IMAGE_INIT:-ghcr.io/kevinlaucn/macro-init-email}:${MACRO_VERSION:-latest}
+    image: ${MACRO_IMAGE_INIT:-ghcr.io/kevinlaucn/macro-init-email}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: "no"
     depends_on:
       postgres:
@@ -205,6 +205,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: ${KAFKA_CLUSTER_ID:-MacroSelfHostCluster1}
+      KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xmx1g -Xms1g}
     volumes:
       - kafka_data:/var/lib/kafka/data
     networks:
@@ -614,7 +615,7 @@ services:
   # ==========================================================================
   sync_service:
     <<: *env
-    image: ${MACRO_IMAGE_SYNC:-ghcr.io/macro-inc/macro-sync-service}:${MACRO_VERSION:-latest}
+    image: ${MACRO_IMAGE_SYNC:-ghcr.io/kevinlaucn/macro-sync-service}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: unless-stopped
     environment:
       INTERNAL_API_SECRET_KEY: ${INTERNAL_API_SECRET_KEY}
@@ -636,7 +637,7 @@ services:
 
   lexical_service:
     <<: *env
-    image: ${MACRO_IMAGE_LEXICAL:-ghcr.io/macro-inc/macro-lexical-service}:${MACRO_VERSION:-latest}
+    image: ${MACRO_IMAGE_LEXICAL:-ghcr.io/kevinlaucn/macro-lexical-service}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: unless-stopped
     environment:
       PORT: 8096
@@ -657,7 +658,7 @@ services:
   ai_editing_worker:
     profiles: ["full"]
     <<: *env
-    image: ${MACRO_IMAGE_AI_EDITING:-ghcr.io/macro-inc/macro-ai-editing-worker}:${MACRO_VERSION:-latest}
+    image: ${MACRO_IMAGE_AI_EDITING:-ghcr.io/kevinlaucn/macro-ai-editing-worker}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: unless-stopped
     depends_on:
       sync_service:
@@ -670,7 +671,7 @@ services:
           - ai-editing-worker
 
   websocket_service:
-    image: ${MACRO_IMAGE_WEBSOCKET:-ghcr.io/macro-inc/macro-websocket-service}:${MACRO_VERSION:-latest}
+    image: ${MACRO_IMAGE_WEBSOCKET:-ghcr.io/kevinlaucn/macro-websocket-service}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: unless-stopped
     networks:
       services:
@@ -682,7 +683,7 @@ services:
   analytics_proxy:
     <<: *env
     profiles: ["analytics"]
-    image: ${MACRO_IMAGE_ANALYTICS:-ghcr.io/macro-inc/macro-analytics-proxy}:${MACRO_VERSION:-latest}
+    image: ${MACRO_IMAGE_ANALYTICS:-ghcr.io/kevinlaucn/macro-analytics-proxy}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: unless-stopped
     networks:
       services:

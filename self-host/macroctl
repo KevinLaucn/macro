@@ -4,6 +4,8 @@
 #   ./macroctl generate-secrets   write .env with fresh secrets for your domain
 #   ./macroctl up                 provision and start (add --profile agents)
 #   ./macroctl down               stop, keeping all data
+#   ./macroctl pull               pull all images
+#   ./macroctl restart [service]  restart services
 #   ./macroctl status             container and endpoint state
 #   ./macroctl logs [service]     follow logs
 #   ./macroctl backup [dir]       dump database + object storage + config
@@ -254,6 +256,8 @@ cmd_up() {
 cmd_down()    { need_env; "${COMPOSE[@]}" down; }
 cmd_status()  { need_env; "${COMPOSE[@]}" ps; }
 cmd_logs()    { need_env; "${COMPOSE[@]}" logs -f --tail=200 "$@"; }
+cmd_pull()    { need_env; bold "Pulling images"; "${COMPOSE[@]}" pull "$@"; }
+cmd_restart() { need_env; bold "Restarting services"; "${COMPOSE[@]}" restart "$@"; }
 
 cmd_destroy() {
   need_env
@@ -285,7 +289,7 @@ cmd_upgrade() {
   # consumers for them fail on a stack that only ever ran `up` once.
   "${COMPOSE[@]}" run --rm init
   "${COMPOSE[@]}" run --rm kafka_init
-  "${COMPOSE[@]}" up -d
+  "${COMPOSE[@]}" up -d --remove-orphans
   bold "Upgraded."
 }
 
@@ -368,6 +372,8 @@ case "${1:-}" in
   init)     shift; cmd_init "$@" ;;
   up)       shift; cmd_up "$@" ;;
   down)     shift; cmd_down "$@" ;;
+  pull)     shift; cmd_pull "$@" ;;
+  restart)  shift; cmd_restart "$@" ;;
   status)   shift; cmd_status "$@" ;;
   logs)     shift; cmd_logs "$@" ;;
   backup)   shift; cmd_backup "$@" ;;
