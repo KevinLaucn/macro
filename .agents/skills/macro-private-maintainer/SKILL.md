@@ -276,6 +276,43 @@ Local PostgreSQL / Search / Storage
 
 ---
 
+## 十五.一、生产环境基础设施连接规范 (Production VPS SSH & Deploy Spec)
+
+在执行远程部署、运维排障、日志审查或容器重启时，使用以下标准生产环境凭据与配置：
+
+- **主机别名**: `tencent-us2h8g`
+- **服务器 IP**: `43.135.149.165`
+- **SSH 端口**: `18222`
+- **登录用户**: `root`
+- **密钥路径**: `~/.ssh/us2h8g.pem`
+- **SSH 配置模板**:
+  ```ssh-config
+  Host tencent-us2h8g
+      HostName 43.135.149.165
+      User root
+      Port 18222
+      IdentityFile ~/.ssh/us2h8g.pem
+      IdentitiesOnly yes
+      PubkeyAuthentication yes
+      PreferredAuthentications publickey
+      PasswordAuthentication no
+      ServerAliveInterval 30
+      ServerAliveCountMax 6
+      TCPKeepAlive yes
+  ```
+- **生产部署绝对路径**:
+  - Compose 与环境文件：`/app/macro/docker-compose.yml`、`/app/macro/.env`
+  - 数据持久化目录：`/app/macro/data/` (`postgres/`, `redis/`)
+  - 1Panel / OpenResty 反向代理站点配置：`/app/1panel/www/conf.d/macro.chnprints.com.conf`
+  - 1Panel / OpenResty 站点专属反代扩展目录：`/app/1panel/www/sites/macro.chnprints.com/proxy/root.conf`
+- **生产运维高频检查命令**:
+  - 容器状态：`ssh -p 18222 -i ~/.ssh/us2h8g.pem root@43.135.149.165 "docker ps -a"`
+  - 服务健康状态：`ssh -p 18222 -i ~/.ssh/us2h8g.pem root@43.135.149.165 "docker logs --tail 100 macro-web"`
+  - 生产镜像快速更新拉取：`ssh -p 18222 -i ~/.ssh/us2h8g.pem root@43.135.149.165 "cd /app/macro && docker compose pull macro-web && docker compose up -d --force-recreate macro-web"`
+
+
+---
+
 ## 十六、核心重点保护业务
 
 重点保护四大核心支柱：

@@ -629,7 +629,7 @@ export const SoupViewContextProvider: FlowComponent<
 
   const groupByField = createMemo((): GroupByField | undefined => {
     const id = soup.grouping.activeGroupId();
-    if (!id) return undefined;
+    if (typeof id !== 'string' || !id) return undefined;
     if (id === 'date') return undefined;
     if (id === 'entity_type') return { type: 'entity_type' };
     if (id === 'project') return { type: 'project' };

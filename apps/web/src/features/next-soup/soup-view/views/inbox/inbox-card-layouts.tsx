@@ -446,7 +446,8 @@ const channelLocation = (entity: EntityData): string | undefined => {
     return undefined;
   }
   if (entity.channelType === 'direct_message') return undefined;
-  return entity.name?.startsWith('#') ? entity.name.slice(1) : (entity.name ?? '');
+  const name = typeof entity.name === 'string' ? entity.name : undefined;
+  return name?.startsWith('#') ? name.slice(1) : (name ?? '');
 };
 
 const entityLocation = (entity: EntityData): string | undefined => {

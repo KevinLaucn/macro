@@ -79,9 +79,10 @@ function resolveProxyOrigin(configured: string | undefined) {
 }
 
 export const SERVER_HOSTS: Servers =
-  import.meta.env.MODE === 'development'
+  proxyServers() ??
+  (import.meta.env.MODE === 'development'
     ? selectLocalServers()
-    : serverHostRemote;
+    : serverHostRemote);
 
 function proxyServers(): Servers | undefined {
   if (!proxyOrigin || !wsProxyOrigin) return undefined;
@@ -168,19 +169,11 @@ function selectSyncServiceHost():
       ws: `wss://${overrideHost}`,
     };
   }
+  if (proxyOrigin && wsProxyOrigin) {
+    return { worker: `${proxyOrigin}/sync`, ws: `${wsProxyOrigin}/sync` };
+  }
   if (import.meta.env.MODE !== 'development') {
     return syncServiceHostRemote;
-  }
-  const selectedLocalServers: string = import.meta.env.VITE_LOCAL_SERVERS;
-  if (
-    selectedLocalServers === 'ALL' ||
-    selectedLocalServers?.includes('sync-service')
-  ) {
-    // Route sync through the single-origin proxy when it is in use.
-    if (proxyOrigin && wsProxyOrigin) {
-      return { worker: `${proxyOrigin}/sync`, ws: `${wsProxyOrigin}/sync` };
-    }
-    return syncServiceHostLocal;
   }
   return syncServiceHostRemote;
 }
