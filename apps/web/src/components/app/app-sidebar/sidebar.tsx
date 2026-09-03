@@ -1142,7 +1142,7 @@ export const AppSidebar = (props: AppSidebarProps) => {
   const isTabAvailable = useSettingsTabAvailable();
   const currentTeamQuery = useCurrentTeamQuery();
   const userInvitesQuery = useUserInvitesQuery();
-  const firstTeamInvite = () => userInvitesQuery.data?.invites.at(0);
+  const firstTeamInvite = () => userInvitesQuery.data?.invites?.at(0);
   const [sectionVisibility, setSectionVisibility] = makePersisted(
     createSignal<Partial<SidebarSectionVisibility>>(DEFAULT_SECTION_VISIBILITY),
     { name: 'sidebar-section-visibility' }

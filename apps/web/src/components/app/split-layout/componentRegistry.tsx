@@ -149,18 +149,21 @@ export function resolveComponent(
   name: string,
   params?: ComponentParams
 ): ResolvedComponent {
-  const registration = REGISTRY.get(name);
+  const safeName = name || 'inbox';
+  const registration = REGISTRY.get(safeName);
   if (!registration) {
-    if (name.startsWith(REMINDER_VIEW_PREFIX)) {
+    if (safeName?.startsWith(REMINDER_VIEW_PREFIX)) {
       const base = REGISTRY.get('reminder-view');
       if (base) {
-        const reminderId = name.slice(REMINDER_VIEW_PREFIX.length);
+        const reminderId = safeName.slice(REMINDER_VIEW_PREFIX.length);
         return {
           element: () => base.factory({ ...(params ?? {}), reminderId }),
           initialMeta: base.initialMeta,
         };
       }
     }
+    const fallback = REGISTRY.get('inbox');
+    if (fallback) return fallback;
     throw new Error(`Component '${name}' not registered`);
   }
   return {

@@ -313,6 +313,12 @@ function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
   if (path.includes('/jwt/refresh')) {
     return { access_token: 'local-super-admin-token', refresh_token: 'local-super-admin-refresh' };
   }
+  if (path.includes('/invites')) {
+    return { invites: [] };
+  }
+  if (path.includes('/profile_pictures') || path.includes('/profile-pictures')) {
+    return { pictures: [] };
+  }
   if (path.includes('/bots') || path.includes('/agents')) {
     return [];
   }
