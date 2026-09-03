@@ -235,12 +235,11 @@ export type TextResponse = { contentType: 'text/plain'; body: string };
  *   console.log('User data:', user);
  * }
  */
-export async function safeFetch<
-  T extends (ObjectLike & (TextResponse | {})) | Uint8Array,
 function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
   if (typeof window === 'undefined') return undefined;
   const isCustomHost = window.location.hostname !== 'app.macro.com';
-  if (!isCustomHost && !window.__MACRO_ENV__?.ADMIN_EMAIL) {
+  const macroEnv = (window as any).__MACRO_ENV__;
+  if (!isCustomHost && !macroEnv?.ADMIN_EMAIL) {
     return undefined;
   }
 
@@ -272,7 +271,7 @@ function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
       members: [
         {
           id: '00000000-0000-0000-0000-000000000001',
-          email: window.__MACRO_ENV__?.ADMIN_EMAIL ?? 'admin@macro.local',
+          email: macroEnv?.ADMIN_EMAIL ?? 'admin@macro.local',
           role: 'owner',
         },
       ],

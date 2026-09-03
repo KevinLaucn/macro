@@ -33,7 +33,7 @@ async function resolveWsUrl() {
   if (
     typeof window !== 'undefined' &&
     (window.location.hostname !== 'app.macro.com' ||
-      window.__MACRO_ENV__?.ADMIN_EMAIL) &&
+      (window as any).__MACRO_ENV__?.ADMIN_EMAIL) &&
     wsHost.includes('macro.com')
   ) {
     return '';
