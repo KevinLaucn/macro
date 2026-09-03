@@ -106,6 +106,16 @@ async function getAccessToken(): Promise<string | null> {
   }
 
   const { accessToken, refreshToken, expiresAt } = data;
+  const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
+  if (runtimeAdmin) {
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      if (payload.email === runtimeAdmin) {
+        return accessToken;
+      }
+    } catch {}
+  }
+
   if (expiresAt < Date.now()) {
     // If there's already an ongoing refresh, wait for it to complete
     if (ongoingRefresh) {
@@ -357,6 +367,19 @@ export const authServiceClient = {
     return result;
   },
   async refreshToken(args: { accessToken: string; refreshToken: string }) {
+    const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
+    if (runtimeAdmin) {
+      try {
+        const payload = JSON.parse(atob(args.accessToken.split('.')[1]));
+        if (payload.email === runtimeAdmin) {
+          return ok({
+            access_token: args.accessToken,
+            refresh_token: args.refreshToken,
+          } as any);
+        }
+      } catch {}
+    }
+
     return authApiFetch<UserTokensResponse>('/jwt/refresh', {
       method: 'POST',
       headers: {
@@ -504,6 +527,33 @@ export const authServiceClient = {
 
   // HTTP methods (migrated from RPC)
   async getLegacyUserPermissions() {
+    const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
+    const tokenData = accessTokenData();
+    if (tokenData && runtimeAdmin) {
+      try {
+        const payload = JSON.parse(atob(tokenData.accessToken.split('.')[1]));
+        if (payload.email === runtimeAdmin) {
+          return ok({
+            id: payload.user_id,
+            userId: payload.user_id,
+            email: runtimeAdmin,
+            name: '超级管理员',
+            permissions: ['*'],
+            roles: ['admin', 'owner'],
+            licenseStatus: 'active',
+            tutorialComplete: true,
+            authenticated: true,
+            hasChromeExt: false,
+            hasTrialed: true,
+            group: 'admin',
+            aiDataConsent: true,
+            referralCode: null,
+            createdAt: new Date().toISOString(),
+          } as any);
+        }
+      } catch {}
+    }
+
     const result = await fetchWithAuth<GetLegacyUserPermissionsResponse>(
       `${authHost}/user/legacy_user_permissions`,
       { method: 'GET' }

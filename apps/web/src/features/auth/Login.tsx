@@ -636,20 +636,17 @@ export function Login(props: { signupMode?: boolean }) {
                 </div>
               </Show>
 
-              <Stepper
-                step={stepIndex()}
-                transition={Stepper.transitions.scale}
-              >
-                <Stepper.Step>
+              <Stepper step={stepIndex()}>
+                <Stepper.Step noTransition>
                   <LoginPicker
                     setStage={onStageChange}
                     signupMode={props.signupMode}
                   />
                 </Stepper.Step>
-                <Stepper.Step>
+                <Stepper.Step noTransition>
                   <EmailFormNew setStage={onStageChange} onBack={onBack} />
                 </Stepper.Step>
-                <Stepper.Step>
+                <Stepper.Step noTransition>
                   <VerifyFormNew setStage={onStageChange} onBack={onBack} />
                 </Stepper.Step>
               </Stepper>
