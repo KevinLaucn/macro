@@ -71,7 +71,7 @@ fn ensure_valid(raw: &str) -> Result<()> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, EnumIter)]
 #[repr(u16)]
 pub enum Port {
-    Postgres = 5432,
+    Postgres = 5433,
     Redis = 6379,
     RedisUi = 8001,
     OpenSearch = 9200,

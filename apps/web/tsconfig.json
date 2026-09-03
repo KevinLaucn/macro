@@ -68,6 +68,12 @@
       "@core/*": [
         "./src/lib/core/*"
       ],
+      "@macro/i18n": [
+        "../../packages/i18n/context.tsx"
+      ],
+      "@macro/i18n/*": [
+        "../../packages/i18n/*"
+      ],
       "@macro/tauri": [
         "./src/lib/tauri"
       ],

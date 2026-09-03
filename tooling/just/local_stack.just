@@ -1,5 +1,8 @@
 # LocalStack recipes for local AWS emulation
 export AWS_PAGER := ""
+export AWS_DEFAULT_REGION := "us-east-1"
+export AWS_ACCESS_KEY_ID := "test"
+export AWS_SECRET_ACCESS_KEY := "test"
 
 # Start LocalStack for local AWS emulation
 # Pinned to v4 — `latest` requires LOCALSTACK_AUTH_TOKEN for all features.

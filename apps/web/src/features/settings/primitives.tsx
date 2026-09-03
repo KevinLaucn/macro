@@ -1,5 +1,6 @@
 import { cn, Layer } from '@ui';
 import { type JSX, Show } from 'solid-js';
+import { __t } from '@macro/i18n';
 
 /*
  * Shared building blocks for the settings panels. Every settings tab composes
@@ -40,9 +41,15 @@ export function SettingsPage(props: {
             while the cards themselves stay full-width. */}
         <header class="flex items-start justify-between gap-4 px-6">
           <div class="flex flex-col gap-1.5 min-w-0">
-            <h1 class="text-2xl/tight font-semibold text-ink">{props.title}</h1>
+            <h1 class="text-2xl/tight font-semibold text-ink">
+              {typeof props.title === 'string' ? __t(props.title) : props.title}
+            </h1>
             <Show when={props.description}>
-              <p class="text-sm text-ink-muted">{props.description}</p>
+              <p class="text-sm text-ink-muted">
+                {typeof props.description === 'string'
+                  ? __t(props.description)
+                  : props.description}
+              </p>
             </Show>
           </div>
           <Show when={props.actions}>
@@ -73,10 +80,16 @@ export function SettingsSection(props: {
         <div class="flex items-end justify-between gap-4 px-6">
           <div class="flex flex-col gap-0.5 min-w-0">
             <Show when={props.title}>
-              <h2 class="text-[15px] font-semibold text-ink">{props.title}</h2>
+              <h2 class="text-[15px] font-semibold text-ink">
+                {typeof props.title === 'string' ? __t(props.title) : props.title}
+              </h2>
             </Show>
             <Show when={props.description}>
-              <p class="text-sm text-ink-muted">{props.description}</p>
+              <p class="text-sm text-ink-muted">
+                {typeof props.description === 'string'
+                  ? __t(props.description)
+                  : props.description}
+              </p>
             </Show>
           </div>
           <Show when={props.actions}>
@@ -151,7 +164,9 @@ export function SettingsRow(props: {
       )}
     >
       <div class="flex flex-col gap-0.5 min-w-0">
-        <div class="text-sm text-ink">{props.label}</div>
+        <div class="text-sm text-ink">
+          {typeof props.label === 'string' ? __t(props.label) : props.label}
+        </div>
         <Show when={props.description}>
           <div
             class={cn(
@@ -159,7 +174,9 @@ export function SettingsRow(props: {
               props.hideDescriptionOnMobile && 'mobile:hidden'
             )}
           >
-            {props.description}
+            {typeof props.description === 'string'
+              ? __t(props.description)
+              : props.description}
           </div>
         </Show>
       </div>
@@ -201,11 +218,17 @@ export function IntegrationRow(props: {
       </div>
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-2 min-w-0">
-          <div class="text-sm font-medium text-ink truncate">{props.title}</div>
+          <div class="text-sm font-medium text-ink truncate">
+            {typeof props.title === 'string' ? __t(props.title) : props.title}
+          </div>
           <Show when={props.status}>{props.status}</Show>
         </div>
         <Show when={props.description}>
-          <div class="text-sm text-ink-muted truncate">{props.description}</div>
+          <div class="text-sm text-ink-muted truncate">
+            {typeof props.description === 'string'
+              ? __t(props.description)
+              : props.description}
+          </div>
         </Show>
       </div>
       <Show when={props.children}>

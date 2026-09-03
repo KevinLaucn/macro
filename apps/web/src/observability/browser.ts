@@ -10,7 +10,7 @@ async function browserTelemetryEnabled(hasExporter: boolean): Promise<boolean> {
   if (override === 'false') return false;
   if (override === 'true') return true;
 
-  if (import.meta.hot) return hasExporter;
+  if (import.meta.hot) return Boolean(import.meta.env.VITE_OTEL_EXPORTER_URL);
 
   if (!import.meta.env.VITE_POSTHOG_API_KEY) return false;
 
@@ -46,7 +46,9 @@ async function browserTelemetryEnabled(hasExporter: boolean): Promise<boolean> {
 export async function initializeBrowserObservability(): Promise<void> {
   const tracesUrl =
     import.meta.env.VITE_OTEL_EXPORTER_URL ??
-    (import.meta.hot ? 'http://localhost:8098/i/otlp/v1/traces' : undefined);
+    (import.meta.env.VITE_ENABLE_BROWSER_OTEL === 'true' && import.meta.hot
+      ? 'http://localhost:8098/i/otlp/v1/traces'
+      : undefined);
   const telemetryConfig = {
     serviceName: 'web-app',
     environment:

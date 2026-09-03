@@ -26,6 +26,7 @@ import CaretLeftIcon from '@phosphor/caret-left.svg';
 import SignOutIcon from '@phosphor/sign-out.svg';
 import { useLocation } from '@solidjs/router';
 import { Button, cn, Layer, SideNav } from '@ui';
+import { __t } from '@macro/i18n';
 import {
   createRenderEffect,
   createSignal,
@@ -324,7 +325,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
             </Show>
             <For each={groups()}>
               {(group) => (
-                <SideNav.Group label={group.label}>
+                <SideNav.Group label={__t(group.label)}>
                   <For each={group.items}>
                     {(item) => (
                       <SideNav.Item
@@ -333,7 +334,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
                         onSelect={() => handleTabChange(item.tab)}
                         class="text-xs py-1.5"
                       >
-                        {item.label}
+                        {__t(item.label)}
                       </SideNav.Item>
                     )}
                   </For>

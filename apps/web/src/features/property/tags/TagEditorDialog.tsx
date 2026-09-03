@@ -13,6 +13,7 @@ import type { TagScope } from '@service-properties/generated/schemas/tagScope';
 import { Button, CommandMenuShell, cn, Dialog, Hotkey, Tooltip } from '@ui';
 import type { JSX } from 'solid-js';
 import { createEffect, createMemo, createSignal, For, Show } from 'solid-js';
+import { __t } from '@macro/i18n';
 import { TagDot } from './TagDot';
 import { DEFAULT_TAG_COLOR, TAG_COLOR_OPTIONS } from './tagColors';
 
@@ -56,7 +57,7 @@ function EditorRow(props: { label: string; children: JSX.Element }) {
   return (
     <div class="flex min-h-12 items-center gap-5 px-4 py-3">
       <div class="w-22 shrink-0 text-xs font-medium text-ink-extra-muted">
-        {props.label}
+        {__t(props.label)}
       </div>
       <div class="min-w-0 flex-1">{props.children}</div>
     </div>
@@ -193,7 +194,7 @@ export function TagEditorDialog(props: {
             as="span"
             class="min-w-0 flex-1 truncate text-sm font-semibold text-ink-extra-muted"
           >
-            {title()}
+            {__t(title())}
           </Dialog.Title>
           <Dialog.CloseButton
             as={Button}

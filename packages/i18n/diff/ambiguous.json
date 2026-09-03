@@ -1,0 +1,547 @@
+{
+  "Ask AI": [
+    "features/next-soup/soup-view/search-ask-ai-button.tsx",
+    "features/command/CommandMenu.tsx",
+    "features/command/mobile/MobileSearchInput.tsx"
+  ],
+  "Add inbox": [
+    "features/next-soup/soup-view/filters-bar/mobile-filter-drawer.tsx",
+    "features/settings/Email.tsx",
+    "features/inbox/AddInboxDialog.tsx"
+  ],
+  "No results": [
+    "features/next-soup/soup-view/filters-bar/mobile-filter-drawer.tsx",
+    "features/next-soup/soup-view/filters-bar/search/mobile-search-filter-drawer.tsx",
+    "features/block-code/component/CodeFileTypeChip.tsx",
+    "lib/core/component/AI/component/input/ChatAttachMenu.tsx",
+    "lib/core/component/LexicalMarkdown/component/menu/AgentCommandsMenu/AgentCommandsMenu.tsx",
+    "lib/core/component/LexicalMarkdown/component/menu/ActionsMenu.tsx",
+    "lib/core/component/LexicalMarkdown/component/menu/EmojiMenu.tsx",
+    "lib/core/component/LexicalMarkdown/component/menu/MentionsMenu/MentionsMenu.tsx"
+  ],
+  "Clear all": [
+    "features/next-soup/soup-view/filters-bar/mobile-filter-drawer.tsx",
+    "features/next-soup/soup-view/filters-bar/search/mobile-search-filter-drawer.tsx",
+    "features/next-soup/soup-view/filters-bar/soup-active-filters-bar.tsx",
+    "features/property/editor/PropertyEditorModal.tsx"
+  ],
+  "Status": [
+    "features/next-soup/soup-view/filters-bar/unified-filter-dropdown.tsx",
+    "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
+    "features/block-pr/side-panel/github-pull-request.tsx",
+    "features/block-agent/component/sidepanel/AgentSidePanelSections.tsx"
+  ],
+  "Tags": [
+    "features/next-soup/soup-view/filters-bar/unified-filter-dropdown.tsx",
+    "features/settings/Tags.tsx",
+    "features/property/tags/EntityRowTags.tsx",
+    "features/property/side-panel/properties/EntityPropertiesSection.tsx",
+    "features/property/editor/PropertyEditorModal.tsx"
+  ],
+  "Owner": [
+    "features/next-soup/soup-view/filters-bar/unified-filter-dropdown.tsx",
+    "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/property/component/modal/CreatePropertyModal.tsx",
+    "features/block-chat/component/sidepanel/ChatSidePanelSections.tsx",
+    "components/app/side-panel/FileSidePanelSections.tsx",
+    "lib/core/component/DetailsDrawer.tsx",
+    "lib/core/component/TopBar/ShareButton.tsx"
+  ],
+  "Save": [
+    "features/next-soup/soup-view/views/companies/CompanyViewsMenu.tsx",
+    "features/settings/Team.tsx",
+    "features/settings/Harness.tsx",
+    "features/settings/SignatureSection.tsx",
+    "features/property/tags/TagEditorDialog.tsx",
+    "lib/core/internal/PixelArtIconDemo.tsx"
+  ],
+  "or": [
+    "features/next-soup/soup-view/FolderDropZone.tsx",
+    "features/onboarding/lessons/sidebar-nav.tsx",
+    "features/onboarding/lessons/create-entity.tsx",
+    "lib/core/component/TopBar/LoginButton.tsx"
+  ],
+  "Search": [
+    "features/next-soup/soup-view/soup-view.tsx",
+    "features/channel/Participants/ParticipantsSearchInput.tsx",
+    "features/command/CommandMenu.tsx",
+    "components/app/app-sidebar/sidebar.tsx",
+    "lib/core/component/FindBar.tsx",
+    "lib/core/component/AI/component/tool/Search.tsx"
+  ],
+  "Loading...": [
+    "features/next-soup/soup-view/soup-view.tsx",
+    "features/next-soup/debug/DocumentWherePlayground.tsx",
+    "features/property/editors/popover/EntityEditor.tsx",
+    "features/property/editors/selectors/PropertyEntitySelector.tsx",
+    "features/channel/Attachments/SectionHeader.tsx",
+    "features/notifications/components/Playground.tsx",
+    "lib/core/component/ItemPreview.tsx"
+  ],
+  "Details": [
+    "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
+    "features/block-pr/component/sidepanel/PrSidePanelSections.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/contacts/Contact/Contact.tsx",
+    "features/block-agent/component/sidepanel/AgentSidePanelSections.tsx",
+    "features/block-chat/component/sidepanel/ChatSidePanelSections.tsx",
+    "features/companies/Company/Company.tsx",
+    "features/block-project/component/sidepanel/ProjectSidePanelSections.tsx",
+    "components/app/side-panel/FileSidePanelSections.tsx",
+    "lib/core/component/DetailsDrawer.tsx"
+  ],
+  "Properties": [
+    "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/block-chat/component/sidepanel/ChatSidePanelSections.tsx",
+    "features/companies/Company/Company.tsx",
+    "features/block-email/component/sidepanel/EmailSidePanelSections.tsx",
+    "features/block-project/component/sidepanel/ProjectSidePanelSections.tsx",
+    "components/app/side-panel/FileSidePanelSections.tsx"
+  ],
+  "Sharing": [
+    "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/property/tags/TagEditorDialog.tsx",
+    "features/contacts/Contact/Contact.tsx",
+    "features/companies/Company/Company.tsx"
+  ],
+  "Share with team": [
+    "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
+    "features/settings/Tags.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/channel/Call/CallOverlay.tsx",
+    "features/channel/Call/CallControls/CallControlsPanelSmallRow.tsx"
+  ],
+  "References": [
+    "features/block-call/component/sidepanel/CallSidePanelSections.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/block-email/component/sidepanel/EmailSidePanelSections.tsx",
+    "lib/core/component/ReferencesModal.tsx"
+  ],
+  "Actions": [
+    "features/block-call/component/CallRecording/CallRecordingBody.tsx",
+    "features/block-md/component/Notebook.tsx",
+    "features/activity/action-graph.tsx",
+    "features/entity/EntitySelectionToolbarModal.tsx",
+    "features/block-pdf/component/sidepanel/PdfSidePanelSections.tsx",
+    "features/block-email/component/Email.tsx",
+    "components/app/split-layout/components/SplitFileMenu.tsx"
+  ],
+  "Settings": [
+    "features/settings/Settings.tsx",
+    "features/channel/Call/CallControls/CallControlsDefaultAndPanelRow.tsx",
+    "features/onboarding/components/MockAppChrome.tsx",
+    "components/app/app-sidebar/sidebar.tsx",
+    "components/app/mobile/MobileDockRow.tsx"
+  ],
+  "Cancel": [
+    "features/settings/Crm.tsx",
+    "features/settings/Team.tsx",
+    "features/settings/Email.tsx",
+    "features/settings/Account.tsx",
+    "features/settings/PipedreamIntegrations.tsx",
+    "features/settings/ApiKeys.tsx",
+    "features/settings/Agents.tsx",
+    "features/settings/Tags.tsx",
+    "features/settings/Integrations.tsx",
+    "features/block-automation/component/AutomationComposer.tsx",
+    "features/calendar/components/composer/EventForm.tsx",
+    "features/calendar/components/TurnOffCalendarDialog.tsx",
+    "features/sharing/ios-share-sheet/IosShareSheet.tsx",
+    "features/inbox/AddInboxDialog.tsx",
+    "features/inbox/ShareInboxConflictDialog.tsx",
+    "features/property/component/modal/CreatePropertyModal.tsx",
+    "features/property/tags/TagEditorDialog.tsx",
+    "features/entity/bulk-edit/BulkRenameEntitiesView.tsx",
+    "features/entity/bulk-edit/BulkMoveToProjectView.tsx",
+    "features/entity/bulk-edit/BulkDeleteView.tsx",
+    "features/entity/entity-modal/EntityModal.tsx",
+    "features/block-calendar/components/EventRsvpSection.tsx",
+    "features/block-pdf/component/MarkupToolbar.tsx",
+    "features/team-invitations/invite-modal.tsx",
+    "features/channel/Bots/CreateBotTokenDialog.tsx",
+    "features/channel/Bots/BotDeleteDialog.tsx",
+    "features/channel/Bots/BotCreatePage.tsx",
+    "features/channel/Channel/create-delete-message-confirmation.tsx",
+    "features/reminders/ReminderForm.tsx",
+    "lib/core/internal/PixelArtIconDemo.tsx",
+    "lib/core/internal/ThemeDebug.tsx",
+    "lib/core/component/ForwardToChannel.tsx",
+    "lib/core/component/AI/component/input/useAiDataConsent.tsx"
+  ],
+  "Type": [
+    "features/settings/Crm.tsx",
+    "features/settings/Team.tsx",
+    "features/property/component/modal/CreatePropertyModal.tsx",
+    "components/ui/components/DeleteDialog.tsx"
+  ],
+  "Remove": [
+    "features/settings/Team.tsx",
+    "features/settings/Email.tsx",
+    "features/settings/Account.tsx",
+    "features/settings/PipedreamIntegrations.tsx",
+    "features/settings/SignatureSection.tsx",
+    "features/settings/Integrations.tsx",
+    "features/block-agent/ui/QueuedPromptList.tsx",
+    "lib/core/component/LexicalMarkdown/component/decorator/MediaButtons.tsx",
+    "lib/core/component/LexicalMarkdown/component/decorator/HorizontalRule.tsx"
+  ],
+  "Team": [
+    "features/settings/Team.tsx",
+    "features/settings/Agents.tsx",
+    "features/settings/Tags.tsx"
+  ],
+  "Name": [
+    "features/settings/Team.tsx",
+    "features/settings/ApiKeys.tsx",
+    "features/settings/Agents.tsx",
+    "features/settings/Integrations.tsx",
+    "features/block-automation/component/AutomationComposer.tsx",
+    "features/property/component/modal/CreatePropertyModal.tsx",
+    "features/property/tags/TagEditorDialog.tsx",
+    "features/channel/Bots/BotProfileFields.tsx",
+    "features/channel/CreateChannelModal.tsx",
+    "features/companies/CreateContactModal.tsx",
+    "features/companies/CreateCompanyModal.tsx"
+  ],
+  "Connected": [
+    "features/settings/Email.tsx",
+    "features/settings/Harness.tsx",
+    "features/setup/primitives.tsx",
+    "features/setup/ConnectorRow.tsx",
+    "features/setup/flow/EmailStep.tsx"
+  ],
+  "Connect": [
+    "features/settings/Email.tsx",
+    "features/settings/PipedreamIntegrations.tsx",
+    "features/settings/GitHub.tsx",
+    "features/settings/Integrations.tsx",
+    "features/home/home-hub.tsx",
+    "features/setup/ConnectorRow.tsx",
+    "features/setup/flow/EmailStep.tsx"
+  ],
+  "Loading…": [
+    "features/settings/Harness.tsx",
+    "features/settings/GitHub.tsx",
+    "features/block-automation/component/Automation.tsx",
+    "features/contacts/Contact/ContactSharingSection.tsx",
+    "features/contacts/Contact/ContactEmailsSection.tsx",
+    "features/contacts/Contact/ContactMetadataSection.tsx",
+    "features/dynamic-ui/widgets/List.tsx",
+    "features/dynamic-ui/render.tsx",
+    "features/companies/Company/CompanySharingSection.tsx",
+    "features/companies/Company/CompanyMetadataSection.tsx",
+    "features/companies/Company/CompanyEmailsSection.tsx",
+    "features/companies/Company/CompanyContactsSection.tsx",
+    "lib/core/linked-conversation/debug/Demo.tsx"
+  ],
+  "Notifications": [
+    "features/settings/Account.tsx",
+    "features/settings/Notifications.tsx",
+    "features/calendar/components/composer/EventPropertyPills.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "lib/core/component/NotificationsModal.tsx"
+  ],
+  "Retry": [
+    "features/settings/PipedreamIntegrations.tsx",
+    "features/settings/Integrations.tsx",
+    "features/block-calendar/components/Page.tsx",
+    "features/setup/primitives.tsx",
+    "features/block-agent/ui/QueuedPromptList.tsx"
+  ],
+  "Delete": [
+    "features/settings/ApiKeys.tsx",
+    "features/settings/Agents.tsx",
+    "features/property/tags/TagEditorDialog.tsx",
+    "features/entity/bulk-edit/BulkDeleteView.tsx",
+    "features/block-calendar/components/SelectedEventDetails.tsx",
+    "features/block-pdf/component/MarkupToolbar.tsx",
+    "features/channel/Bots/BotDeleteDialog.tsx",
+    "features/channel/Channel/create-delete-message-confirmation.tsx",
+    "lib/core/internal/PixelArtIconDemo.tsx",
+    "lib/core/component/DocumentPreview.tsx",
+    "lib/core/component/LexicalMarkdown/component/decorator/PasteNode.tsx",
+    "lib/core/component/LexicalMarkdown/component/decorator/DocumentCard.tsx"
+  ],
+  "Created": [
+    "features/settings/ApiKeys.tsx",
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/block-agent/component/sidepanel/AgentSidePanelSections.tsx",
+    "features/block-chat/component/sidepanel/ChatSidePanelSections.tsx",
+    "components/app/side-panel/FileSidePanelSections.tsx",
+    "lib/core/component/DetailsDrawer.tsx"
+  ],
+  "Close": [
+    "features/settings/ApiKeys.tsx",
+    "features/block-md/component/ComposeSkill.tsx",
+    "features/block-md/component/ComposeTask.tsx",
+    "features/property/component/modal/CreatePropertyModal.tsx",
+    "features/property/tags/TagEditorDialog.tsx",
+    "features/channel/Bots/CreateBotTokenDialog.tsx",
+    "features/channel/CreateChannelModal.tsx",
+    "features/channel/Media/MediaViewerDialog.tsx",
+    "features/command/CommandMenu.tsx",
+    "features/companies/CreateContactModal.tsx",
+    "features/companies/CreateCompanyModal.tsx",
+    "components/app/split-layout/components/SplitDrawer.tsx",
+    "components/app/split-layout/components/SplitPanel.tsx",
+    "components/app/split-layout/SplitButtons.tsx",
+    "lib/core/component/Lightbox/Lightbox.tsx",
+    "lib/core/component/AI/component/input/useAiDataConsent.tsx",
+    "routes/Root.tsx"
+  ],
+  "Done": [
+    "features/settings/ApiKeys.tsx",
+    "features/block-automation/component/AutomationTimePicker.tsx",
+    "features/channel/Bots/BotCreationResult.tsx",
+    "features/channel/Bots/CreateBotTokenDialog.tsx"
+  ],
+  "Channels": [
+    "features/settings/Agents.tsx",
+    "features/channel/Bots/BotCreatePage.tsx",
+    "features/channel/Bots/BotDetailPage.tsx"
+  ],
+  "Share": [
+    "features/settings/Agents.tsx",
+    "features/block-md/component/MarkdownPopup.tsx",
+    "features/block-unknown/component/Block.tsx",
+    "lib/core/component/ForwardToChannel.tsx",
+    "lib/core/component/TopBar/ShareButton.tsx"
+  ],
+  "No": [
+    "features/settings/Tags.tsx",
+    "features/property/editors/selectors/PropertyEntitySelector.tsx",
+    "features/property/component/propertyValue/PropertyTooltip.tsx",
+    "lib/core/internal/DataDebug.tsx"
+  ],
+  "Try again": [
+    "features/home/home-hub.tsx",
+    "features/home/home-section-boundary.tsx",
+    "features/channel/Call/ChannelCallTab.tsx",
+    "routes/TaskRoute.tsx"
+  ],
+  "Open": [
+    "features/home/home-hub.tsx",
+    "features/command/CommandMenu.tsx",
+    "components/app/app-sidebar/calendar-sidebar-preview.tsx",
+    "lib/core/internal/App.tsx"
+  ],
+  "Rename": [
+    "features/block-automation/component/AutomationRenameModal.tsx",
+    "features/entity/bulk-edit/BulkRenameEntitiesView.tsx",
+    "features/entity/entity-modal/RenameView.tsx",
+    "lib/core/component/AI/component/tool/RenameDocument.tsx"
+  ],
+  "Time": [
+    "features/block-automation/component/AutomationComposer.tsx",
+    "features/block-automation/component/Automation.tsx",
+    "features/reminders/ReminderForm.tsx",
+    "features/block-email/component/date-selector.tsx"
+  ],
+  "New event": [
+    "features/calendar/components/composer/EventForm.tsx",
+    "features/calendar/components/CalendarGrid.tsx",
+    "features/block-calendar/components/Header.tsx",
+    "components/app/app-sidebar/calendar-sidebar-preview.tsx"
+  ],
+  "to": [
+    "features/calendar/components/composer/EventDateTimeRangeFields.tsx",
+    "features/property/editor/PropertyEditorModal.tsx",
+    "features/activity/property-change.tsx",
+    "features/block-email/component/EmailMessageTopBar.tsx",
+    "lib/core/component/AI/component/tool/ChannelMutations.tsx",
+    "lib/core/component/AI/component/tool/MoveToProject.tsx",
+    "lib/core/component/AI/component/tool/RenameDocument.tsx",
+    "lib/core/component/AI/component/tool/ReadActivity.tsx"
+  ],
+  "Repeats": [
+    "features/calendar/components/composer/EventPropertyPills.tsx",
+    "features/entity/composed/list-entity/calendar.tsx",
+    "features/block-calendar/components/CalendarSearch.tsx"
+  ],
+  "Calendar settings": [
+    "features/calendar/components/CalendarSettingsDropdown.tsx",
+    "components/app/app-sidebar/calendar-sidebar-preview.tsx"
+  ],
+  "Calendars": [
+    "features/calendar/components/CalendarSettingsDropdown.tsx",
+    "features/block-calendar/components/SidePanelSections.tsx",
+    "components/app/app-sidebar/calendar-sidebar-preview.tsx"
+  ],
+  "Send": [
+    "features/sharing/ios-share-sheet/IosShareSheet.tsx",
+    "features/block-agent/ui/AgentInput.tsx",
+    "lib/core/component/AI/component/debug/Component.tsx",
+    "lib/core/component/AI/component/debug/Attachment.tsx"
+  ],
+  "Folder": [
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/block-chat/component/sidepanel/ChatSidePanelSections.tsx",
+    "components/app/side-panel/FileSidePanelSections.tsx",
+    "lib/core/component/DetailsDrawer.tsx"
+  ],
+  "Last updated": [
+    "features/block-md/component/sidepanel/MarkdownSidePanelSections.tsx",
+    "features/block-agent/component/sidepanel/AgentSidePanelSections.tsx",
+    "features/block-chat/component/sidepanel/ChatSidePanelSections.tsx",
+    "components/app/side-panel/FileSidePanelSections.tsx",
+    "lib/core/component/DetailsDrawer.tsx"
+  ],
+  "Split cell": [
+    "features/block-md/component/FormatTools.tsx",
+    "lib/core/component/LexicalMarkdown/component/misc/TableMoveHandle.tsx"
+  ],
+  "Comment": [
+    "features/block-md/component/FormatTools.tsx",
+    "features/block-pdf/component/MarkupToolbar.tsx"
+  ],
+  "Welcome to Macro": [
+    "features/auth/mobile-onboarding/MobileAuthWelcome.tsx",
+    "features/auth/mobile-onboarding/OnboardingCreateAccount.tsx",
+    "features/auth/Login.tsx",
+    "features/onboarding/InteractiveOnboardingModal.tsx"
+  ],
+  "Empty": [
+    "features/property/editors/inline/InlineNumberEditor.tsx",
+    "features/property/editors/inline/InlineTextEditor.tsx",
+    "features/property/editors/inline/InlineLinkEditor.tsx",
+    "features/property/side-panel/properties/EntityPropertiesSection.tsx",
+    "features/property/composed/PropertyDisplay.tsx"
+  ],
+  "Create": [
+    "features/property/component/modal/CreatePropertyModal.tsx",
+    "features/entity/bulk-edit/BulkMoveToProjectView.tsx",
+    "features/command/sidebar/sidebar-create-menu.tsx",
+    "features/command/Launcher.tsx",
+    "features/onboarding/components/MockAppChrome.tsx",
+    "features/block-project/component/ProjectCreateMenu.tsx",
+    "components/app/mobile/MobileDockRow.tsx",
+    "lib/core/component/AI/component/tool/CreateDocument.tsx"
+  ],
+  "Edit": [
+    "features/property/tags/EntityRowTags.tsx",
+    "features/block-agent/debug/Gallery.tsx",
+    "lib/core/internal/PixelArtIconDemo.tsx",
+    "lib/core/component/AI/component/tool/EditDocument.tsx"
+  ],
+  "more": [
+    "features/property/editor/PropertyEditorModal.tsx",
+    "features/entity/bulk-edit/BulkRenameEntitiesView.tsx",
+    "features/entity/bulk-edit/BulkMoveToProjectView.tsx",
+    "features/entity/bulk-edit/BulkDeleteView.tsx",
+    "features/entity/extractors-notification/notification-content.tsx",
+    "features/command/CommandMenu.tsx"
+  ],
+  "None": [
+    "features/property/debug/PropertyDebug.tsx",
+    "features/entity/extractors-property/entity-key-properties.tsx",
+    "features/channel/Call/CallControls/CallControlsDefaultAndPanelRow.tsx",
+    "features/companies/Company/CompanyMetadataSection.tsx"
+  ],
+  "from": [
+    "features/activity/property-change.tsx",
+    "features/setup/flow/SummaryStep.tsx",
+    "features/channel/Message/FromPill.tsx",
+    "features/block-email/component/compose/ComposeLayout.tsx"
+  ],
+  "Move": [
+    "features/entity/bulk-edit/BulkMoveToProjectView.tsx",
+    "features/block-canvas/component/ToolBar.tsx",
+    "lib/core/component/AI/component/tool/MoveToProject.tsx"
+  ],
+  "Clear": [
+    "features/entity/EntitySelectionToolbarModal.tsx",
+    "features/integrations/import-linear/ImportLinear.tsx",
+    "features/block-email/component/email-date-selector.tsx",
+    "features/block-email/component/date-selector.tsx"
+  ],
+  "Connecting…": [
+    "features/setup/ConnectorRow.tsx",
+    "features/setup/flow/EmailStep.tsx",
+    "features/channel/Call/InCallPanel/InCallParticipantsListPopover.tsx",
+    "features/channel/Call/ChannelCallTab.tsx"
+  ],
+  "Failed": [
+    "features/block-agent/ui/QueuedPromptList.tsx",
+    "features/block-agent/component/parts/ToolCallPart.tsx",
+    "lib/core/component/AI/component/tool/TextEditorCodeExecution.tsx",
+    "lib/core/component/AI/component/tool/BaseTool.tsx"
+  ],
+  "Agent": [
+    "features/block-agent/component/sidepanel/AgentSidePanelSections.tsx",
+    "features/channel/Bots/BotAgentSection.tsx",
+    "features/channel/Message/AgentBadge.tsx",
+    "lib/core/component/LexicalMarkdown/component/menu/MentionsMenu/components/MentionsMenuItem.tsx"
+  ],
+  "Read": [
+    "features/block-agent/debug/Gallery.tsx",
+    "lib/core/component/AI/component/tool/ReadMetadata.tsx",
+    "lib/core/component/AI/component/tool/ReadChannel.tsx",
+    "lib/core/component/AI/component/tool/ReadChat.tsx",
+    "lib/core/component/AI/component/tool/ReadContent.tsx",
+    "lib/core/component/AI/component/tool/ReadCallRecord.tsx",
+    "lib/core/component/AI/component/tool/ReadThread.tsx"
+  ],
+  "Go to Home": [
+    "features/team-invitations/TeamInviteAcceptance.tsx",
+    "features/channel-invitations/ChannelInviteAcceptance.tsx"
+  ],
+  "Copied": [
+    "features/channel/Bots/CredentialField.tsx",
+    "lib/core/component/AI/component/McpSetupCards.tsx",
+    "lib/core/component/AI/component/AIChatEmptyState.tsx"
+  ],
+  "Reply": [
+    "features/channel/StandaloneThread/Replies.tsx",
+    "features/channel/Thread/ChannelThread.tsx",
+    "features/block-email/component/MessageActions.tsx",
+    "features/block-email/component/BottomReplyButtons.tsx",
+    "lib/core/comments/discussion/Discussion.tsx"
+  ],
+  "Search emojis": [
+    "features/channel/Message/EmojiReactionPopover.tsx",
+    "features/channel/Mobile/ActionDrawer.tsx"
+  ],
+  "Alpha": [
+    "features/theme/components/ColorPickerPopover.tsx",
+    "features/theme/components/ThemeTokenEditor.tsx"
+  ],
+  "then": [
+    "features/command/CommandItem.tsx",
+    "features/onboarding/components/MockAppChrome.tsx",
+    "components/ui/components/Tooltip.tsx"
+  ],
+  "Cc": [
+    "features/block-email/component/compose/ComposeLayout.tsx",
+    "features/block-email/component/EmailMessageTopBar.tsx",
+    "features/block-email/component/BaseInput.tsx"
+  ],
+  "Bcc": [
+    "features/block-email/component/compose/ComposeLayout.tsx",
+    "features/block-email/component/EmailMessageTopBar.tsx",
+    "features/block-email/component/BaseInput.tsx"
+  ],
+  "This Menu Item": [
+    "lib/core/internal/App.tsx"
+  ],
+  "Copy": [
+    "lib/core/component/AI/component/McpSetupCards.tsx",
+    "lib/core/component/AI/component/AIChatEmptyState.tsx",
+    "lib/core/component/LexicalMarkdown/component/decorator/PasteNode.tsx",
+    "lib/core/component/LexicalMarkdown/component/debug/LexicalStateDebugger.tsx",
+    "lib/core/collab-surface/debug/CollabSurfaceDemoPage.tsx"
+  ],
+  "Stream": [
+    "lib/core/component/AI/component/debug/stream/StreamDebugger.tsx",
+    "lib/core/component/AI/component/debug/Component.tsx",
+    "lib/core/component/AI/component/debug/StaticMarkdownStream.tsx"
+  ],
+  "Reset": [
+    "lib/core/component/AI/component/debug/stream/StreamDebugger.tsx",
+    "lib/core/component/AI/component/debug/Component.tsx",
+    "lib/core/component/AI/component/debug/StaticMarkdownStream.tsx",
+    "lib/core/component/AI/component/debug/HttpStream.tsx"
+  ]
+}

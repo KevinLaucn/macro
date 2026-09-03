@@ -93,6 +93,7 @@ import GearIcon from '@phosphor/gear.svg';
 import MagnifyingGlassIcon from '@phosphor/magnifying-glass.svg';
 import SignOutIcon from '@phosphor/sign-out.svg';
 import UsersThreeIcon from '@phosphor/users-three.svg';
+import { __t } from '@macro/i18n';
 import XIcon from '@phosphor/x.svg';
 import { isRealNamePart, useOwnUserName } from '@queries/auth/user-name-self';
 import { useActiveCallsQuery } from '@queries/call/call';
@@ -621,7 +622,7 @@ const TryCardRow = (props: { item: TryCardItem }) => {
       <span class="size-5 shrink-0 flex items-center justify-center">
         <Dynamic component={props.item.icon} triggerAnimation={isHovering()} />
       </span>
-      <span class="min-w-0 flex-1 truncate text-left">{props.item.label}</span>
+      <span class="min-w-0 flex-1 truncate text-left">{__t(props.item.label)}</span>
     </button>
   );
 };
@@ -760,7 +761,7 @@ const SidebarDropdownLink = (
           <Dynamic component={props.icon} triggerAnimation={isHovering()} />
         </div>
       </Show>
-      <span class="min-w-0 flex-1 truncate text-ink">{props.label}</span>
+      <span class="min-w-0 flex-1 truncate text-ink">{__t(props.label)}</span>
       <Hotkey token={props.hotkeyToken} theme="subtle" class="ml-6" />
     </Dropdown.Item>
   );
@@ -1940,7 +1941,7 @@ const SidebarLinkRow = (props: SidebarLinkProps) => {
       </Show>
 
       <div class="flex items-center gap-1 group-data-[slim=true]/sidebar:hidden">
-        <span class="whitespace-nowrap">{props.label}</span>
+        <span class="whitespace-nowrap">{__t(props.label)}</span>
       </div>
 
       <Show when={props.trailing}>

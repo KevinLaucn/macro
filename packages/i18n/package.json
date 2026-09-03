@@ -1,0 +1,18 @@
+{
+  "name": "@macro/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./context.tsx",
+    "./vite-plugin": "./vite-plugin.ts",
+    "./locales/*": "./locales/*"
+  },
+  "scripts": {
+    "extract": "bun extract.ts",
+    "merge": "bun merge.ts"
+  },
+  "dependencies": {
+    "solid-js": "^1.9.7"
+  }
+}

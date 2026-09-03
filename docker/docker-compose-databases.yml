@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 15
     ports:
-      - '5432:5432'
+      - '${MACRO_POSTGRES_PORT:-5433}:5432'
     expose:
       - '5432'
     environment:

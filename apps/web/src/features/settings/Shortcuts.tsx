@@ -6,6 +6,7 @@ import {
 } from '@ui/components/ScreencastHotkeys';
 import { createMemo, createSignal, For, Index, type JSX } from 'solid-js';
 import { SettingsCard, SettingsPage } from './primitives';
+import { __t } from '@macro/i18n';
 
 interface ShortcutItem {
   description: JSX.Element;
@@ -1038,7 +1039,9 @@ function ShortcutRow(props: { item: ShortcutItem; spacer?: string }) {
         </Index>
       </div>
       <span class="text-sm text-ink-muted group-hover:text-accent transition-colors">
-        {props.item.description}
+        {typeof props.item.description === 'string'
+          ? __t(props.item.description)
+          : props.item.description}
       </span>
     </div>
   );
@@ -1048,7 +1051,9 @@ function ShortcutSectionComponent(props: { section: ShortcutSection }) {
   return (
     <div class="mb-4">
       <h3 class="text-[15px] font-semibold text-ink mb-1.5 flex items-center gap-2">
-        {props.section.title}
+        {typeof props.section.title === 'string'
+          ? __t(props.section.title)
+          : props.section.title}
       </h3>
       <div class="flex flex-col">
         <For each={props.section.items}>
@@ -1089,7 +1094,7 @@ export function Shortcuts() {
           {/* Unified List - spans both columns with its own 2-column layout */}
           <div class="@[600px]:col-span-2">
             <h3 class="text-[15px] font-semibold text-ink mb-1.5 flex items-center gap-2">
-              {shortcutSections[2].title}
+              {__t(shortcutSections[2].title)}
             </h3>
             <div class="grid grid-cols-1 @[600px]:grid-cols-2 gap-x-8">
               <For each={shortcutSections[2].items}>

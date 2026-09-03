@@ -1,2 +1,2 @@
-# Local dev database URL used by cloud-storage justfiles.
-DATABASE_URL := "postgres://user:password@localhost:5432/macrodb"
+MACRO_POSTGRES_PORT := env_var_or_default("MACRO_POSTGRES_PORT", "5433")
+DATABASE_URL := env_var_or_default("DATABASE_URL", "postgres://user:password@localhost:" + MACRO_POSTGRES_PORT + "/macrodb")

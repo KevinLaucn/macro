@@ -10,6 +10,7 @@ import wasm from 'vite-plugin-wasm';
 import tsconfigpaths from 'vite-tsconfig-paths';
 // @ts-ignore
 import { version } from './package.json';
+import { i18nAstPlugin } from '../../packages/i18n/vite-plugin';
 import { keepImportMetaDev } from './scripts/keep-import-meta-dev';
 
 function readShortSha(): string {
@@ -84,6 +85,7 @@ export const createAppViteConfig = (): UserConfigFn => {
       },
       plugins: [
         // solidDevtools({ autoname: true }),
+        i18nAstPlugin(),
         solid(),
         wasm(),
         tailwind(),

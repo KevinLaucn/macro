@@ -43,6 +43,7 @@ import {
 } from '@queries/auth/user-name-self';
 import { authServiceClient } from '@service-auth/client';
 import { invoke } from '@tauri-apps/api/core';
+import { __t } from '@macro/i18n';
 import { Button, Dialog, Dropdown, Panel, ToggleSwitch, Tooltip } from '@ui';
 import {
   createEffect,
@@ -654,7 +655,7 @@ export function Account() {
 function Row(props: { label: string; children?: any }) {
   return (
     <div class="bg-surface flex items-center justify-between gap-4 min-h-15.25 px-6 py-3">
-      <div class="text-sm">{props.label}</div>
+      <div class="text-sm">{__t(props.label)}</div>
       <div class="text-right">{props.children}</div>
     </div>
   );

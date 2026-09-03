@@ -25,7 +25,7 @@ fn default_instance_uses_fixed_ports() {
     let inst = Instance::derive(None, None).unwrap();
     assert!(inst.is_default());
     assert_eq!(inst.project_name(), "macro");
-    assert_eq!(inst.port(Port::Postgres), 5432);
+    assert_eq!(inst.port(Port::Postgres), 5433);
     assert_eq!(inst.port(Port::Auth), 8080);
     assert_eq!(inst.port(Port::DocStorage), 8086);
     assert_eq!(inst.port(Port::SdkWebhookSsh), 8788);

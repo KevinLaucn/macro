@@ -25,6 +25,7 @@ import { useCurrentTeamQuery, useIsTeamOwner } from '@queries/team/teams';
 import type { Agent } from '@service-storage/generated/schemas/agent';
 import { Avatar, Button, Dialog, Panel } from '@ui';
 import { createMemo, createSignal, For, Show } from 'solid-js';
+import { __t } from '@macro/i18n';
 import { botAssignableChannelOptions } from '../channel/Bots/botChannelOptions';
 import { canDeleteBot } from '../channel/Bots/botPermissions';
 import { ChannelMultiSelect } from '../channel/Bots/ChannelMultiSelect';
@@ -355,12 +356,19 @@ function AgentRow(props: {
             @{props.agent.tag}
           </span>
           <span class="shrink-0 rounded-full border border-edge-muted px-2 py-0.5 text-xxs font-medium uppercase text-ink-extra-muted">
-            {props.agent.share}
+            {typeof props.agent.share === 'string'
+              ? __t(props.agent.share)
+              : props.agent.share}
           </span>
         </div>
         <p class="mt-0.5 text-xs text-ink-extra-muted">
-          {props.agent.harness} · {props.agent.defaultModel} ·{' '}
-          {props.agent.channelSummary}
+          {typeof props.agent.harness === 'string'
+            ? __t(props.agent.harness)
+            : props.agent.harness}{' '}
+          · {props.agent.defaultModel} ·{' '}
+          {typeof props.agent.channelSummary === 'string'
+            ? __t(props.agent.channelSummary)
+            : props.agent.channelSummary}
         </p>
       </div>
       <div class="flex shrink-0 items-center gap-1">
