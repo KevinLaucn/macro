@@ -173,10 +173,7 @@ pub async fn fetch_and_attach_forwarded_attachments(
 /// or retrigger pixels from quoted sent messages. Tracking is deliberately
 /// best-effort: a tracking failure must never block delivery of the email.
 #[tracing::instrument(skip(db, message_to_send), fields(message_db_id = ?message_to_send.db_id))]
-pub async fn attach_open_tracking_pixel(
-    db: &PgPool,
-    message_to_send: &mut message::MessageToSend,
-) {
+pub async fn attach_open_tracking_pixel(db: &PgPool, message_to_send: &mut message::MessageToSend) {
     let _ = try_attach_open_tracking_pixel(db, message_to_send)
         .await
         .inspect_err(|error| {
@@ -205,9 +202,10 @@ async fn try_attach_open_tracking_pixel(
 
     let mut new_html = email_utils::open_tracking::strip_open_tracking_pixels(html, &base_url);
 
-    let enabled = email_db_client::settings::fetch_read_receipts_enabled(db, message_to_send.link_id)
-        .await
-        .context("unable to fetch read receipt settings")?;
+    let enabled =
+        email_db_client::settings::fetch_read_receipts_enabled(db, message_to_send.link_id)
+            .await
+            .context("unable to fetch read receipt settings")?;
 
     if enabled {
         let token = Uuid::new_v4();

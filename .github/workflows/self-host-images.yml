@@ -98,9 +98,41 @@ jobs:
       - name: Verify production image contents
         run: |
           set -euo pipefail
-          test -x self-host/build/bin/authentication_service
-          test ! -e self-host/build/bin/seed_cli
-          echo "email production binaries are present; seed CLI is not shipped"
+          expected=(
+            authentication_service
+            connection_gateway_service
+            contacts_service
+            document_storage_service
+            email_service
+            pubsub_workers
+            image_proxy_service
+            notification_service
+            static_file_service
+            unfurl_service
+            search_processing_service
+            document_upload_finalizer_local_worker
+            macro_db_migrate
+          )
+
+          for bin in "${expected[@]}"; do
+            test -x "self-host/build/bin/$bin"
+          done
+
+          forbidden=(
+            seed_cli
+            agent_harness_service
+            agent_trigger_service
+            document_cognition_service
+            convert_service
+            mcp_server
+            service
+          )
+
+          for bin in "${forbidden[@]}"; do
+            test ! -e "self-host/build/bin/$bin"
+          done
+
+          echo "email production binary inventory matches the self-host profile"
 
       - name: Build diagnostics after build
         run: |

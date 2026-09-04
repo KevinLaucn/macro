@@ -459,6 +459,7 @@
           serviceName = "document-storage-service";
           packageName = "document_storage_service";
           binaries = [ "document_storage_service" ];
+          featureArgs = "--no-default-features";
         }
         {
           serviceName = "email-service";
@@ -506,13 +507,13 @@
           serviceName = "local-authentication";
           packageName = "authentication_service";
           binaries = [ "authentication_service" ];
-          featureArgs = "--no-default-features --features return_passwordless_code";
+          featureArgs = "--no-default-features --features self-host-email,return_passwordless_code";
         }
         {
           serviceName = "local-search-processing";
           packageName = "search_processing_service";
           binaries = [ "search_processing_service" ];
-          featureArgs = "--no-default-features --features processing,service";
+          featureArgs = "--no-default-features --features email-processing,service";
         }
         {
           serviceName = "local-upload-finalizer";
@@ -642,6 +643,7 @@
           serviceName = "authentication-service";
           packageName = "authentication_service";
           binaries = [ "authentication_service" ];
+          featureArgs = "--no-default-features --features self-host-email";
         }
         {
           serviceName = "connection-gateway";
@@ -665,6 +667,7 @@
             "email_service"
             "pubsub_workers"
           ];
+          featureArgs = "--no-default-features";
         }
         {
           serviceName = "image-proxy-service";
@@ -690,7 +693,7 @@
           serviceName = "search-processing-service";
           packageName = "search_processing_service";
           binaries = [ "search_processing_service" ];
-          featureArgs = "--no-default-features --features processing,service";
+          featureArgs = "--no-default-features --features email-processing,service";
         }
         {
           serviceName = "upload-finalizer";

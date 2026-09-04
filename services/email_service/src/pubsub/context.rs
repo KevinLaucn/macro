@@ -16,6 +16,9 @@ use crm::outbound::apollo_resolver::ApolloCompanyMetadataResolver;
 use crm::outbound::companies_repo::CompaniesRepositoryImpl;
 use crm::outbound::unfurl_resolver::UnfurlCompanyMetadataResolver;
 use document_storage_service_client::DocumentStorageServiceClient;
+#[cfg(not(feature = "event_broker"))]
+use macro_event_broker::NoopMacroEventBroker;
+#[cfg(feature = "event_broker")]
 use macro_event_broker::{KafkaEventPublisher, MacroEventBrokerService};
 use notification::domain::service::SqsNotificationIngress;
 use notification::outbound::queue::SqsQueue;
@@ -23,10 +26,14 @@ use sqlx::PgPool;
 use static_file_service_client::StaticFileServiceClient;
 use std::sync::Arc;
 use system_properties::{PgSystemPropertiesRepository, SystemPropertiesServiceImpl};
+#[cfg(feature = "event_broker")]
 use tokio_util::task::TaskTracker;
 
 /// The event broker used by pubsub workers, with publish tasks tracked for graceful shutdown.
+#[cfg(feature = "event_broker")]
 pub type PubSubEventBroker = MacroEventBrokerService<KafkaEventPublisher, TaskTracker>;
+#[cfg(not(feature = "event_broker"))]
+pub type PubSubEventBroker = NoopMacroEventBroker;
 
 /// The concrete notification ingress service type.
 pub type NotificationIngressType = SqsNotificationIngress<SqsQueue>;

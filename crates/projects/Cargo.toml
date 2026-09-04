@@ -55,7 +55,7 @@ uuid = { workspace = true }
 
 # Domain models (always included)
 bot_id = { path = "../bot_id" }
-entity_access = { path = "../entity_access" }
+entity_access = { path = "../entity_access", default-features = false, features = ["ports"] }
 entity_access_management = { path = "../entity_access_management", default-features = false, features = [
   "outbound",
   "ports",
@@ -67,7 +67,7 @@ macro_event_topics = { path = "../macro_event_topics" }
 entity_mutation = { path = "../entity_mutation" }
 macro_user_id = { path = "../macro_user_id" }
 macro_uuid = { path = "../macro_uuid" }
-model = { path = "../model" }
+model = { path = "../model", default-features = false }
 model-entity = { path = "../model-entity" }
 models_bulk_upload = { path = "../models_bulk_upload" }
 models_permissions = { path = "../models_permissions" }

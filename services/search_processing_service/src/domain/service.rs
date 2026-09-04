@@ -14,13 +14,15 @@ use futures::{StreamExt, TryStreamExt, stream};
 use tokio_util::sync::CancellationToken;
 
 use super::jobs::JobProgress;
+use super::models::{BackfillError, BackfillReceipt, EmailBackfillRequest, SourcePage};
+#[cfg(feature = "full-processing")]
 use super::models::{
-    BackfillError, BackfillReceipt, CalendarEventBackfillRequest, CallBackfillRequest,
-    ChannelBackfillRequest, ChatBackfillRequest, DocumentBackfillRequest, EmailBackfillRequest,
-    ProjectBackfillRequest, PropertiesBackfillRequest, PropertySourcePage, SourcePage,
+    CalendarEventBackfillRequest, CallBackfillRequest, ChannelBackfillRequest, ChatBackfillRequest,
+    DocumentBackfillRequest, ProjectBackfillRequest, PropertiesBackfillRequest, PropertySourcePage,
 };
 use super::ports::{BackfillSource, PropertyBackfillIndexer, SearchEventPublisher};
 
+#[cfg(feature = "full-processing")]
 /// Drive a source by repeatedly calling `fetch(cursor)`, publishing each
 /// page's messages, and stopping when the source reports zero rows
 /// consumed. Identical loop shape to [`drain_source`] but the state
@@ -69,24 +71,28 @@ where
 /// layer is responsible for spawning these onto a background task and
 /// reporting progress through `progress`.
 pub trait BackfillService: Send + Sync + 'static {
+    #[cfg(feature = "full-processing")]
     fn backfill_calls(
         &self,
         req: CallBackfillRequest,
         progress: Arc<JobProgress>,
         cancel: CancellationToken,
     ) -> impl Future<Output = Result<BackfillReceipt, BackfillError>> + Send;
+    #[cfg(feature = "full-processing")]
     fn backfill_chats(
         &self,
         req: ChatBackfillRequest,
         progress: Arc<JobProgress>,
         cancel: CancellationToken,
     ) -> impl Future<Output = Result<BackfillReceipt, BackfillError>> + Send;
+    #[cfg(feature = "full-processing")]
     fn backfill_channels(
         &self,
         req: ChannelBackfillRequest,
         progress: Arc<JobProgress>,
         cancel: CancellationToken,
     ) -> impl Future<Output = Result<BackfillReceipt, BackfillError>> + Send;
+    #[cfg(feature = "full-processing")]
     fn backfill_documents(
         &self,
         req: DocumentBackfillRequest,
@@ -99,18 +105,21 @@ pub trait BackfillService: Send + Sync + 'static {
         progress: Arc<JobProgress>,
         cancel: CancellationToken,
     ) -> impl Future<Output = Result<BackfillReceipt, BackfillError>> + Send;
+    #[cfg(feature = "full-processing")]
     fn backfill_entity_properties(
         &self,
         req: PropertiesBackfillRequest,
         progress: Arc<JobProgress>,
         cancel: CancellationToken,
     ) -> impl Future<Output = Result<BackfillReceipt, BackfillError>> + Send;
+    #[cfg(feature = "full-processing")]
     fn backfill_projects(
         &self,
         req: ProjectBackfillRequest,
         progress: Arc<JobProgress>,
         cancel: CancellationToken,
     ) -> impl Future<Output = Result<BackfillReceipt, BackfillError>> + Send;
+    #[cfg(feature = "full-processing")]
     fn backfill_calendar_events(
         &self,
         req: CalendarEventBackfillRequest,
@@ -180,6 +189,7 @@ where
     Ok(BackfillReceipt { enqueued })
 }
 
+#[cfg(feature = "full-processing")]
 /// Drain typed property pages with a bounded number of direct reindexes.
 /// Cancellation is observed only at page boundaries so each started page is
 /// either completed and counted or fails without updating progress.
@@ -233,6 +243,7 @@ where
     P: SearchEventPublisher,
     I: PropertyBackfillIndexer,
 {
+    #[cfg(feature = "full-processing")]
     async fn backfill_calls(
         &self,
         req: CallBackfillRequest,
@@ -245,6 +256,7 @@ where
         .await
     }
 
+    #[cfg(feature = "full-processing")]
     async fn backfill_chats(
         &self,
         req: ChatBackfillRequest,
@@ -257,6 +269,7 @@ where
         .await
     }
 
+    #[cfg(feature = "full-processing")]
     async fn backfill_channels(
         &self,
         req: ChannelBackfillRequest,
@@ -269,6 +282,7 @@ where
         .await
     }
 
+    #[cfg(feature = "full-processing")]
     async fn backfill_documents(
         &self,
         req: DocumentBackfillRequest,
@@ -293,6 +307,7 @@ where
         .await
     }
 
+    #[cfg(feature = "full-processing")]
     async fn backfill_entity_properties(
         &self,
         req: PropertiesBackfillRequest,
@@ -305,6 +320,7 @@ where
         .await
     }
 
+    #[cfg(feature = "full-processing")]
     async fn backfill_projects(
         &self,
         req: ProjectBackfillRequest,
@@ -317,6 +333,7 @@ where
         .await
     }
 
+    #[cfg(feature = "full-processing")]
     async fn backfill_calendar_events(
         &self,
         req: CalendarEventBackfillRequest,

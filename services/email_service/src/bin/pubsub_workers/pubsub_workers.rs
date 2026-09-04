@@ -10,6 +10,9 @@ use email_service::pubsub::CrmMetadataResolver;
 use email_service::util::redis::RedisClient;
 use macro_entrypoint::{MacroEntrypoint, shutdown_signal};
 use macro_env::Environment;
+#[cfg(not(feature = "event_broker"))]
+use macro_event_broker::NoopMacroEventBroker;
+#[cfg(feature = "event_broker")]
 use macro_event_broker::{KafkaEventPublisher, MacroEventBrokerService};
 use macro_service_urls::{
     AuthServiceUrl, ConnectionGatewayUrl, DocumentStorageServiceUrl, StaticFileServiceUrl,
@@ -20,10 +23,13 @@ use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use static_file_service_client::StaticFileServiceClient;
 use std::sync::Arc;
+#[cfg(feature = "event_broker")]
 use std::time::Duration;
 use system_properties::{PgSystemPropertiesRepository, SystemPropertiesServiceImpl};
-use tokio_util::{sync::CancellationToken, task::TaskTracker};
+use tokio_util::sync::CancellationToken;
+use tokio_util::task::TaskTracker;
 
+#[cfg(feature = "event_broker")]
 const EVENT_BROKER_DRAIN_TIMEOUT: Duration = Duration::from_secs(10);
 
 fn compose_email_api(
@@ -120,6 +126,7 @@ async fn main() -> anyhow::Result<()> {
 
     let worker_cancellation_token = CancellationToken::new();
     let worker_tracker = TaskTracker::new();
+    #[cfg(feature = "event_broker")]
     let event_broker_tracker = TaskTracker::new();
 
     worker_tracker.spawn(email_service::calendar_outbox::run(
@@ -131,11 +138,14 @@ async fn main() -> anyhow::Result<()> {
         config.calendar_sync_enabled,
         worker_cancellation_token.clone(),
     ));
+    #[cfg(feature = "event_broker")]
     let macro_event_broker = MacroEventBrokerService::new(
         KafkaEventPublisher::new(config.kafka_brokers.as_ref())
             .context("failed to create kafka event publisher")?,
         event_broker_tracker.clone(),
     );
+    #[cfg(not(feature = "event_broker"))]
+    let macro_event_broker = NoopMacroEventBroker;
 
     let contacts_ingress = Arc::new(contacts::domain::service::SqsContactsIngress {
         queue: contacts::outbound::ingress::SqsContactsQueue::new(
@@ -671,15 +681,18 @@ async fn main() -> anyhow::Result<()> {
     worker_tracker.wait().await;
     tracing::info!("Email workers stopped");
 
-    event_broker_tracker.close();
-    tracing::info!("Waiting for event broker publishes to drain");
-    match tokio::time::timeout(EVENT_BROKER_DRAIN_TIMEOUT, event_broker_tracker.wait()).await {
-        Ok(()) => tracing::info!("Event broker publishes drained"),
-        Err(error) => tracing::warn!(
-            error = ?error,
-            timeout_seconds = EVENT_BROKER_DRAIN_TIMEOUT.as_secs(),
-            "Timed out waiting for event broker publishes to drain"
-        ),
+    #[cfg(feature = "event_broker")]
+    {
+        event_broker_tracker.close();
+        tracing::info!("Waiting for event broker publishes to drain");
+        match tokio::time::timeout(EVENT_BROKER_DRAIN_TIMEOUT, event_broker_tracker.wait()).await {
+            Ok(()) => tracing::info!("Event broker publishes drained"),
+            Err(error) => tracing::warn!(
+                error = ?error,
+                timeout_seconds = EVENT_BROKER_DRAIN_TIMEOUT.as_secs(),
+                "Timed out waiting for event broker publishes to drain"
+            ),
+        }
     }
 
     tracing::info!("Shutdown signal received, exiting gracefully...");

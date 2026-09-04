@@ -7,9 +7,11 @@ use tower_cookies::CookieManagerLayer;
 use url::Url;
 
 mod account_link;
+#[cfg(feature = "full-saas")]
 mod github;
 mod google;
 mod login;
+#[cfg(feature = "full-saas")]
 mod microsoft;
 
 #[cfg(test)]
@@ -134,6 +136,7 @@ pub(in crate::api) async fn handler(
 
     // Clean up failed Microsoft account-link callbacks before validating the
     // redirect so an invalid original_url cannot leave the pending link behind.
+    #[cfg(feature = "full-saas")]
     if params.code.is_none()
         && provider == "microsoft"
         && let Some(link_id) = state.link_id.as_ref()
@@ -189,10 +192,12 @@ pub(in crate::api) async fn handler(
 
     match provider.as_str() {
         "google" => google::handler(&ctx, cookies, &code, &state).await,
+        #[cfg(feature = "full-saas")]
         "github" => github::handler(&ctx, cookies, &code, &state)
             .await
             .map(|r| r.into_response())
             .map_err(|e| e.into_response()),
+        #[cfg(feature = "full-saas")]
         "microsoft" => microsoft::handler(&ctx, &code, &state).await,
         _ => Err((
             StatusCode::NOT_IMPLEMENTED,

@@ -1568,7 +1568,6 @@ dependencies = [
  "mockall",
  "model",
  "model-entity",
- "model_notifications",
  "models_permissions",
  "native_app_service",
  "non_empty",

@@ -4,25 +4,31 @@ use axum::Router;
 use axum::http::HeaderName;
 use macro_auth::constant::MACRO_REFRESH_TOKEN_HEADER;
 use macro_tower_layers::MacroRequestIdAndTracingLayer;
-use native_app_service::inbound::RouterState;
 use std::net::SocketAddr;
 use std::time::Duration;
 use tower_http::compression::CompressionLayer;
+#[cfg(feature = "full-saas")]
 use utoipa::OpenApi;
+#[cfg(feature = "full-saas")]
 use utoipa_swagger_ui::SwaggerUi;
 
 // Utilities
 pub(crate) mod context;
 
 // Routes
+#[cfg(feature = "full-saas")]
 mod cursor_api_key;
+#[cfg(feature = "full-saas")]
 #[allow(unused_imports)]
 mod email;
 mod link;
+#[cfg(feature = "full-saas")]
 #[allow(unused_imports)]
 mod merge;
+#[cfg(feature = "full-saas")]
 mod mobile_welcome_email;
 
+#[cfg(feature = "full-saas")]
 mod github_pull_requests;
 mod health;
 mod internal;
@@ -41,6 +47,7 @@ mod webhooks;
 
 // Misc
 mod middleware;
+#[cfg(feature = "full-saas")]
 pub(crate) mod swagger;
 mod utils;
 
@@ -56,9 +63,11 @@ pub async fn setup_and_serve(state: ApiContext, port: usize) -> anyhow::Result<(
         .layer(MacroRequestIdAndTracingLayer::new(Duration::from_millis(200)).into_inner())
         // The health router is attached here so we don't attach the logging middleware to it
         .merge(health::router())
-        .layer(cors)
-        .merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", swagger::ApiDoc::openapi()))
-        .layer(CompressionLayer::new());
+        .layer(cors);
+    #[cfg(feature = "full-saas")]
+    let app =
+        app.merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", swagger::ApiDoc::openapi()));
+    let app = app.layer(CompressionLayer::new());
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
@@ -78,12 +87,7 @@ pub async fn setup_and_serve(state: ApiContext, port: usize) -> anyhow::Result<(
 }
 
 fn api_router(state: ApiContext) -> Router<ApiContext> {
-    Router::new()
-        .merge(native_app_service::inbound::native_app_router(
-            RouterState {
-                inner: state.native_app_service.clone(),
-            },
-        ))
+    let router = Router::new()
         .nest("/internal", internal::router())
         .nest("/permissions", permissions::router())
         .nest("/login", login::router(state.clone()))
@@ -92,6 +96,22 @@ fn api_router(state: ApiContext) -> Router<ApiContext> {
         .nest("/oauth2", oauth2::router())
         .nest("/user", user::router())
         .nest("/link", link::router())
+        .nest("/jwt", jwt::router())
+        .nest("/session", session::router())
+        .nest(
+            "/webhooks",
+            webhooks::router().layer(axum::middleware::from_fn(
+                macro_middleware::connection_drop_prevention_handler,
+            )),
+        );
+
+    #[cfg(feature = "full-saas")]
+    let router = router
+        .merge(native_app_service::inbound::native_app_router(
+            native_app_service::inbound::RouterState {
+                inner: state.native_app_service.clone(),
+            },
+        ))
         .nest("/cursor-api-key", cursor_api_key::router())
         .nest("/github_pull_requests", github_pull_requests::router())
         .nest(
@@ -114,13 +134,7 @@ fn api_router(state: ApiContext) -> Router<ApiContext> {
                 },
             ),
         )
-        .nest("/jwt", jwt::router())
-        .nest("/session", session::router())
-        .merge(mobile_welcome_email::router(state.clone()))
-        .nest(
-            "/webhooks",
-            webhooks::router().layer(axum::middleware::from_fn(
-                macro_middleware::connection_drop_prevention_handler,
-            )),
-        )
+        .merge(mobile_welcome_email::router(state.clone()));
+
+    router
 }

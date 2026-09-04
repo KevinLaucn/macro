@@ -26,10 +26,14 @@ use macro_auth::middleware::decode_jwt::JwtValidationArgs;
 use macro_authorization::{
     MacroAuthJwtValidator, MacroAuthorizationServiceImpl, MacroAuthorizationState,
 };
+#[cfg(not(feature = "event_broker"))]
+use macro_event_broker::NoopMacroEventBroker;
+#[cfg(feature = "event_broker")]
 use macro_event_broker::{KafkaEventPublisher, MacroEventBrokerService};
 use static_file_service_client::StaticFileServiceClient;
 use std::sync::Arc;
 use system_properties::{PgSystemPropertiesRepository, SystemPropertiesServiceImpl};
+#[cfg(feature = "event_broker")]
 use tokio_util::task::TaskTracker;
 
 pub(crate) type AuthorizationService = MacroAuthorizationServiceImpl<MacroAuthJwtValidator>;
@@ -43,7 +47,10 @@ pub(crate) type CalendarMutationSvc = CalendarMutationServiceImpl<
 pub(crate) type EmailEntityAccessService = EntityAccessServiceImpl<PgAccessRepository>;
 pub(crate) type EmailEntityAccessManagementService =
     EntityAccessManagementServiceImpl<entity_access_management::outbound::PgRepository>;
+#[cfg(feature = "event_broker")]
 pub(crate) type EmailEventBroker = MacroEventBrokerService<KafkaEventPublisher, TaskTracker>;
+#[cfg(not(feature = "event_broker"))]
+pub(crate) type EmailEventBroker = NoopMacroEventBroker;
 pub(crate) type EmailSvc = EmailServiceImpl<
     EmailPgRepo,
     FrecencyQueryServiceImpl<FrecencyPgStorage>,
