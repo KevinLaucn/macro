@@ -13,7 +13,6 @@ import { UnreadIndicator } from '../../components/UnreadIndicator';
 import { Entity } from '../../entity';
 import {
   isAutomationEntity,
-  isCallEntity,
   isChannelEntity,
   isChannelMessageEntity,
   isChatEntity,
@@ -28,7 +27,6 @@ import {
 import { isSearchEntity } from '../../types/search';
 import { AutomationWideContent } from './automation';
 import { CalendarStamp, CalendarWideContent } from './calendar';
-import { CallParticipants, CallWideContent } from './call';
 import {
   ChannelActiveCallBadge,
   ChannelJoinButton,
@@ -137,15 +135,6 @@ export function WideLayout(props: LayoutProps) {
               />
             )}
           </Match>
-          <Match when={isCallEntity(props.entity) && props.entity}>
-            {(entity) => (
-              <CallWideContent
-                entity={entity()}
-                setContainerRef={props.setSnippetContainerRef}
-                chars={props.chars}
-              />
-            )}
-          </Match>
           <Match when={isAutomationEntity(props.entity) && props.entity}>
             {(entity) => <AutomationWideContent entity={entity()} />}
           </Match>
@@ -214,16 +203,6 @@ export function WideLayout(props: LayoutProps) {
             <RowTags
               entityId={entity().id}
               entityType={EntityType.CHAT}
-              properties={entity().properties}
-              onFilterByTag={soupView?.filterByTag}
-            />
-          )}
-        </Show>
-        <Show when={isCallEntity(props.entity) && props.entity}>
-          {(entity) => (
-            <RowTags
-              entityId={entity().id}
-              entityType={EntityType.CALL_RECORD}
               properties={entity().properties}
               onFilterByTag={soupView?.filterByTag}
             />

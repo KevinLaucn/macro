@@ -1,11 +1,9 @@
-import { useMaybeSoupView } from '@app/features/next-soup/soup-view/soup-view-context';
 import { cn } from '@ui';
 import { Match, Show, Switch } from 'solid-js';
 import { MultiSelectCheckbox } from '../../components/MultiSelectCheckbox';
 import { UnreadIndicator } from '../../components/UnreadIndicator';
 import { Entity } from '../../entity';
 import {
-  isCallEntity,
   isChannelEntity,
   isChannelMessageEntity,
   isEmailEntity,
@@ -17,7 +15,6 @@ import {
   filterNotDoneNotifications,
   filterValidNotifications,
 } from '../../utils/notification';
-import { CallNarrowBody } from './call';
 import {
   ChannelLatestMessageNarrowBody,
   ChannelMessageNarrowBody,
@@ -27,7 +24,6 @@ import { InboxDivider, type LayoutProps } from './shared';
 import { TaskNarrowBody } from './task';
 
 export function NarrowInboxLayout(props: LayoutProps) {
-  const soupView = useMaybeSoupView();
   const isDirectMessage = () =>
     isChannelEntity(props.entity) &&
     props.entity.channelType === 'direct_message';
@@ -153,16 +149,6 @@ export function NarrowInboxLayout(props: LayoutProps) {
             entity={props.entity}
             notification={firstNotification()}
           />
-        </Match>
-        <Match when={isCallEntity(props.entity) && props.entity}>
-          {(entity) => (
-            <CallNarrowBody
-              entity={entity()}
-              showAttendanceBadge={(soupView?.activeTab() ?? 'all') === 'all'}
-              setContainerRef={props.setSnippetContainerRef}
-              chars={props.chars}
-            />
-          )}
         </Match>
         <Match when={true}>
           <Entity.Slot placement="body" class="pb-2 min-h-[2lh] pr-4" />

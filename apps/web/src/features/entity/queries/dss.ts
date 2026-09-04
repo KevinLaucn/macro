@@ -7,7 +7,6 @@ import {
 import { toast } from '@core/component/Toast/Toast';
 import { throwOnErr } from '@core/util/result';
 import { scheduledActionKeys } from '@queries/agent-schedule/keys';
-import { callKeys } from '@queries/call/keys';
 import { queryClient } from '@queries/client';
 import { notificationKeys } from '@queries/notification/keys';
 import { reminderKeys } from '@queries/reminders/keys';
@@ -59,9 +58,6 @@ export function createBulkDeleteDssItemsMutation() {
           return deleteItem({ id: e.id, itemType: e.type });
         })
       );
-      if (deletable.some((e) => e.type === 'call')) {
-        queryClient.invalidateQueries({ queryKey: callKeys._def });
-      }
       if (deletable.some((e) => e.type === 'reminder')) {
         // The reminder lists are their own queries; the soup cache is already
         // handled by the shared optimistic removal in onMutate. Notifications

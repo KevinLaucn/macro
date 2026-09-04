@@ -94,7 +94,6 @@ import { hasSendableInputContent } from '../Input/utils/sendable-content';
 import { ChannelThread } from '../Thread';
 import { buildReplyTargetValue } from '../Thread/utils/message-actions';
 import { isUnifiedInputMode } from '../unified-input-mode';
-import { ActiveCallMessage } from './ActiveCallMessage';
 import { ChannelDropZone } from './ChannelDropZone';
 import { createChannelDragState } from './create-channel-drag-state';
 import { createChannelFindBar } from './create-channel-find-bar';
@@ -863,9 +862,6 @@ export function Channel(props: ChannelProps) {
                       </Show>
                     </div>
                   </Show>
-                  <DebugSuspense name="Channel.active-call">
-                    <ActiveCallMessage channelId={props.channelId} />
-                  </DebugSuspense>
                 </div>
                 <DebugSuspense name="Channel.input">
                   <FloatRegionOrInline region="accessory">
