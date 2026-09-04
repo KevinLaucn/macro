@@ -51,6 +51,13 @@ mod middleware;
 pub(crate) mod swagger;
 mod utils;
 
+#[cfg(test)]
+mod test;
+
+/// Path prefix the shared gateway ALB forwards unmodified. Dual-mounted
+/// alongside `/` so the dedicated ALB keeps working during cutover.
+const GATEWAY_PATH_PREFIX: &str = "/auth";
+
 pub async fn setup_and_serve(state: ApiContext, port: usize) -> anyhow::Result<()> {
     let cors = macro_cors::cors_layer_with_headers(vec![HeaderName::from_static(
         MACRO_REFRESH_TOKEN_HEADER,
@@ -63,11 +70,11 @@ pub async fn setup_and_serve(state: ApiContext, port: usize) -> anyhow::Result<(
         .layer(MacroRequestIdAndTracingLayer::new(Duration::from_millis(200)).into_inner())
         // The health router is attached here so we don't attach the logging middleware to it
         .merge(health::router())
-        .layer(cors);
+        .layer(cors)
+        .layer(CompressionLayer::new());
+    let app = mount_at_root_and_prefix(app);
     #[cfg(feature = "full-saas")]
-    let app =
-        app.merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", swagger::ApiDoc::openapi()));
-    let app = app.layer(CompressionLayer::new());
+    let app = app.merge(swagger_ui());
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
@@ -84,6 +91,22 @@ pub async fn setup_and_serve(state: ApiContext, port: usize) -> anyhow::Result<(
     .with_graceful_shutdown(macro_entrypoint::shutdown_signal())
     .await
     .context("error starting service")
+}
+
+fn mount_at_root_and_prefix(inner: Router) -> Router {
+    Router::new()
+        .merge(inner.clone())
+        .nest(GATEWAY_PATH_PREFIX, inner)
+}
+
+#[cfg(feature = "full-saas")]
+fn swagger_ui() -> Router {
+    Router::new()
+        .merge(SwaggerUi::new("/docs").url("/api-doc/openapi.json", swagger::ApiDoc::openapi()))
+        .merge(
+            SwaggerUi::new("/auth/docs")
+                .url("/auth/api-doc/openapi.json", swagger::ApiDoc::openapi()),
+        )
 }
 
 fn api_router(state: ApiContext) -> Router<ApiContext> {

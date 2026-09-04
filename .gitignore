@@ -42,12 +42,13 @@ infra/local/generated/
 /recordings/
 
 # Per-developer macrod daemon config and the state files it writes next to
-# it (the credentials file holds this machine's harness bearer token).
+# it (the credentials files hold this machine's harness bearer token).
 /macro.toml
 /macro.credentials.json
 /macro.webhook-state.json
+/macrod.toml
+/macrod.webhook-state.json
 
 # Local-only production infrastructure credentials and specs
 **/.local*
 *.local.md
-
