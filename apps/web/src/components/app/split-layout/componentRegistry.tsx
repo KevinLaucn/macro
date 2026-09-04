@@ -426,44 +426,9 @@ registerComponent(
 
 
 
-function LegacyChannelsView() {
-  const preset = getViewPreset('channels');
-
-  return (
-    <SoupView
-      viewName="Channels"
-      initialFilters={preset?.filters}
-      initialClientFilters={preset?.clientFilters}
-      initialGroupBy={preset?.groupBy}
-    />
-  );
-}
-
-function FeatureGatedChannelsView() {
-  const newAppViews = useNewAppViews();
-
-  return (
-    <Show when={newAppViews.ready()} fallback={<LoadingBlock />}>
-      <Show when={newAppViews.enabled()} fallback={<LegacyChannelsView />}>
-        <ChannelsView />
-      </Show>
-    </Show>
-  );
-}
-
 function RegisteredChannelsView() {
   usePageViewTracking('channels');
-
-  return (
-    <Switch>
-      <Match when={isTouchDevice()}>
-        <LegacyChannelsView />
-      </Match>
-      <Match when={!isTouchDevice()}>
-        <FeatureGatedChannelsView />
-      </Match>
-    </Switch>
-  );
+  return <ChannelsView />;
 }
 
 registerComponent('channels', withAuth(RegisteredChannelsView));
