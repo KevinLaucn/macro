@@ -60,10 +60,11 @@ runs:
 
         write_conf() {
           sudo mkdir -p /etc/nix
+          current_user="$(id -un 2>/dev/null || echo runner)"
           # The minimal config the Determinate installer would have written.
           {
             echo "experimental-features = nix-command flakes"
-            echo "trusted-users = root runner"
+            echo "trusted-users = root ${current_user}"
             echo "build-users-group = nixbld"
             if $cache_enabled; then
               echo "extra-substituters = $NIX_CACHE_URL"
