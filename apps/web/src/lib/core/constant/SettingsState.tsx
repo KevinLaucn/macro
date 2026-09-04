@@ -25,7 +25,6 @@ export type SettingsTab =
   | 'AI Memory'
   | 'Inbox'
   | 'Shortcuts'
-  | 'Mobile App'
   | 'Agent'
   | 'Agents'
   | 'Harness'

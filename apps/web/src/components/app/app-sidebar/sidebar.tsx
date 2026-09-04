@@ -148,7 +148,7 @@ type SidebarSectionLinkId =
 
 type SidebarSectionVisibility = Record<SidebarSectionLinkId, boolean>;
 
-type TryItemId = 'connect' | 'invite' | 'mobile';
+type TryItemId = 'connect' | 'invite';
 
 type TryItemVisibility = Record<TryItemId, boolean>;
 
@@ -175,7 +175,6 @@ const DEFAULT_SECTION_VISIBILITY: SidebarSectionVisibility = {
 const DEFAULT_TRY_VISIBILITY: TryItemVisibility = {
   connect: true,
   invite: true,
-  mobile: true,
 };
 
 const markdownDocumentsQuery = buildDocumentTypeQuery(['doc-markdown']);
@@ -1389,7 +1388,6 @@ export const AppSidebar = (props: AppSidebarProps) => {
     setTryVisibility({
       connect: false,
       invite: false,
-      mobile: false,
     });
   };
 
@@ -1398,13 +1396,21 @@ export const AppSidebar = (props: AppSidebarProps) => {
       .map((id) => findLink(id))
       .filter((link): link is SidebarItem => link !== undefined)
       .map((link) => ({
-        id: link.id as SidebarSectionLinkId,
         label: link.label,
-        checked: isSectionVisible(link.id as SidebarSectionLinkId),
+        checked: sectionVisibility()[link.id as SidebarSectionLinkId] ?? true,
+        onToggle: () => toggleSection(link.id as SidebarSectionLinkId),
       }));
 
-  const tryItems = createMemo<TryCardItem[]>(() => {
-    const items: TryCardItem[] = [];
+  const tryItems = createMemo(() => {
+    const isTabAvailable = useSettingsTabAvailable();
+    const items: Array<{
+      id: TryItemId;
+      label: string;
+      icon: Component<{ class?: string }>;
+      onClick: () => void;
+      onDismiss: () => void;
+    }> = [];
+
     const addTryItem = (
       id: TryItemId,
       label: string,
@@ -1412,7 +1418,6 @@ export const AppSidebar = (props: AppSidebarProps) => {
       onClick: () => void
     ) => {
       if (!tryVisibility()[id]) return;
-
       items.push({
         id,
         label,
@@ -1421,6 +1426,7 @@ export const AppSidebar = (props: AppSidebarProps) => {
           onClick();
           dismissTryItem(id);
         },
+        onDismiss: () => dismissTryItem(id),
       });
     };
 
@@ -1435,12 +1441,6 @@ export const AppSidebar = (props: AppSidebarProps) => {
       setInviteModalOpen(true)
     );
 
-    const mobile = getSettingsTabItem('Mobile App');
-    if (mobile && isTabAvailable('Mobile App')) {
-      addTryItem('mobile', 'Mobile', mobile.icon, () =>
-        openSettingsTab('Mobile App')
-      );
-    }
     return items;
   });
 

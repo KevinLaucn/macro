@@ -5,7 +5,6 @@ import BugIcon from '@phosphor/bug.svg';
 import BuildingsIcon from '@phosphor/buildings.svg';
 import CpuIcon from '@phosphor/cpu.svg';
 import CreditCardIcon from '@phosphor/credit-card.svg';
-import DeviceMobileIcon from '@phosphor/device-mobile-speaker.svg';
 import HardDrivesIcon from '@phosphor/hard-drives.svg';
 import KeyIcon from '@phosphor/key.svg';
 import KeyboardIcon from '@phosphor/keyboard.svg';
@@ -22,7 +21,6 @@ import { isTouchDevice } from '../mobile/isTouchDevice';
 import {
   botManagement,
   DEV_MODE_ENV,
-  ENABLE_APP_STORE_QR_CODE,
   enableChatV3Agents,
   enableCrm,
   enableNotificationSettings,
@@ -58,7 +56,6 @@ export const SETTINGS_TAB_GROUPS: SettingsTabGroup[] = [
       { tab: 'Notifications', label: 'Notifications', icon: BellIcon },
       { tab: 'Billing', label: 'Billing', icon: CreditCardIcon },
       { tab: 'Appearance', label: 'Appearance', icon: SwatchesIcon },
-      { tab: 'Mobile App', label: 'Mobile App', icon: DeviceMobileIcon },
       { tab: 'Shortcuts', label: 'Shortcuts', icon: KeyboardIcon },
     ],
   },
@@ -111,7 +108,6 @@ const SETTINGS_TAB_SLUGS: Record<SettingsTab, string> = {
   'AI Memory': 'ai-memory',
   Inbox: 'inbox',
   Shortcuts: 'shortcuts',
-  'Mobile App': 'mobile-app',
   Agent: 'mcp-server',
   Agents: 'agents',
   Harness: 'harness',
@@ -185,8 +181,6 @@ export const useSettingsTabAvailable = () => {
         return true;
       case 'Shortcuts':
         return !isTouchDevice();
-      case 'Mobile App':
-        return ENABLE_APP_STORE_QR_CODE && !isNativeMobilePlatform();
       case 'Agent':
         return !isNativeMobilePlatform();
       // Configurable agents are still rolling out; keep both tabs behind the
