@@ -180,6 +180,65 @@ FullStorageAdapter       EmailStorageAdapter (如 Gmail Lazy Fetch)
 
 ---
 
+## 三、二开削减计划器 (Change Planner: cargo x slim-plan 与 CodeGraph 协同)
+
+在实施任何依赖瘦身与功能裁剪前，严禁凭直觉删除依赖。必须使用 Macro 二开专用依赖剖析工具 `cargo x slim-plan` 计算反事实边际削减（Counterfactual Marginal Reduction），并与 CodeGraph 协同定位代码修改点。
+
+### 1. 核心命令与使用模式
+```bash
+# 模式 A：分析指定根包对目标依赖的切断收益与阻碍
+cargo x slim-plan -p <root_crate> <target_crate>
+# 示例：分析在 email_service 中切除 calendar_events
+cargo x slim-plan -p email_service calendar_events
+
+# 模式 B：全依赖树权重扫描，按真实边际削减体积降序排列
+cargo x slim-plan -p <root_crate> --top-heavy
+```
+
+### 2. 反事实边际削减（Counterfactual Elimination）算法原理
+在具有复杂依赖交织的 Monorepo 中：
+- **Raw Transitive Closure（原始传递闭包）**：目标 crate 下游引用的所有依赖集合。如 `calendar_events` 下游包含 31 个 crate。
+- **Real Marginal Removable Closure（真实边际可削减闭包）**：
+  $$\text{Marginal} = \text{BaseClosure}(Root) \setminus \text{NewClosure}(Root \setminus \{Target\})$$
+  模拟从 Root 的直接依赖中切断 Target 边后，真正能从 Root 构建图中彻底消失的 crate。
+- **Shared Blockers（共享阻碍者）**：目标 crate 的下游依赖同时也被 Root 的其它分支（如 crm, email, auth）直接或间接依赖。只有所有引用分支全部切断，Shared Blockers 才会级联退出构建闭包。
+
+### 3. Change Planner 标准工作流 (4 步法)
+1. **第一步：边际削减测算**  
+   执行 `cargo x slim-plan -p <service> <target>`，获取：
+   - 依赖类型（mandatory / optional / feature-gated）
+   - 激活该依赖的 Cargo Feature 集合
+   - 真实净减 crate 数量与 Shared Blockers 清单。
+2. **第二步：语法级调用排查 (CodeGraph)**  
+   执行 `codegraph explore "<target>"` 与 `codegraph callers "<symbol>"`，秒级定位 service 中所有涉及该依赖的注入、路由、上下文与后台 Worker。
+3. **第三步：条件编译与 Feature Gate (Zero-Overhead Decoupling)**  
+   - 在 `Cargo.toml` 中设为 `optional = true`，并创建对应 feature（如 `calendar = ["dep:calendar_events"]`）；
+   - 在 Rust 源码中使用 `#[cfg(feature = "...")]` 封装调用，并在 `not(feature = "...")` 分支提供轻量 stub 或空占位；
+   - 对仅限该特性的子二进制（如 worker、openapi），在 `Cargo.toml` 中配置 `required-features`。
+4. **第四步：双轨闭包与零漂移验证**  
+   - 精简构建验证：`cargo check -p <service> --bin <service> --no-default-features`
+   - 依赖树清零验证：`cargo tree -p <service> --no-default-features -i <target>`（确认无匹配）
+   - Workspace 闭包同步与检查：`cargo run -p xtask -- deps` & `cargo run -p xtask -- deps --check`
+
+---
+
+## 四、真实实战样例：email_service 解耦 calendar_events
+
+以 `email_service` 切断 `calendar_events` 为例：
+1. **依赖可选化**：在 `services/email_service/Cargo.toml` 将 `calendar_events` 设为 `optional = true`，并引入 `calendar = ["dep:calendar_events"]`。
+2. **路由与上下文 Gate**：
+   - `src/api.rs`：使用 `#[cfg(feature = "calendar")]` 挂载 `/calendar` 路由；
+   - `src/api/context.rs`：`CalendarGrantService` 与 `CalendarMutationSvc` 受 feature gate 保护；
+   - `src/api/email/links.rs`：`/{link_id}/calendar` 仅在启用 calendar 时挂载；
+   - `src/api/swagger.rs`：为有无 calendar 分别派生包含与精简版的 OpenAPI `ApiDoc`。
+3. **Worker 与事件 Gate**：
+   - `src/pubsub/context.rs`：`CalendarBackfillServices` 在未开启时提供 0 依赖空实现；
+   - `src/pubsub/backfill/process.rs`：`BackfillOperation::CalendarGoogleBackfill` 在未开启时快速通过；
+   - `pubsub_workers` binary：在 `Cargo.toml` 标记 `required-features = ["calendar"]`。
+4. **效果**：在精简构建（未激活 `calendar` feature）下，`calendar_events` 从 `email_service` 编译依赖图中彻底剔除。
+
+---
+
 ## 五、Full Profile 保留原则 (Full Profile Preservation)
 
 > **Decouple Email without unnecessarily breaking Full.**  

@@ -1,5 +1,6 @@
 use anyhow::Context;
 use axum::Router;
+#[cfg(feature = "calendar")]
 use calendar_events::inbound::mutation_router::CalendarMutationRouterState;
 use context::ApiContext;
 use tower::ServiceBuilder;
@@ -10,6 +11,7 @@ use utoipa_swagger_ui::SwaggerUi;
 // Routes
 mod health;
 
+#[cfg(feature = "calendar")]
 mod calendar_watch;
 mod email;
 mod tracking;
@@ -51,26 +53,35 @@ pub async fn setup_and_serve(state: ApiContext) -> anyhow::Result<()> {
 }
 
 fn api_router(state: ApiContext) -> Router<ApiContext> {
-    // Calendar mutations follow the calendar sync kill switch: without sync
-    // a provider write would never be reflected locally.
-    let calendar_router = if state.config.calendar_sync_enabled {
-        calendar_watch::router().merge(
-            calendar_events::inbound::mutation_router::calendar_mutation_router(
-                CalendarMutationRouterState::new(
-                    state.calendar_mutation_service.clone(),
-                    state.authorization_state.clone(),
-                ),
-            ),
-        )
-    } else {
-        calendar_watch::router()
-    };
-    Router::new()
-        .nest("/email", email::router(state))
+    let router = Router::new()
+        .nest("/email", email::router(state.clone()))
         .nest("/gmail", gmail::router())
         // Public tracking pixel endpoint. Recipient mail clients cannot
         // authenticate, so this intentionally sits outside the email auth tree.
         .nest("/t", tracking::router())
-        .nest("/internal", internal::router())
-        .nest("/calendar", calendar_router)
+        .nest("/internal", internal::router());
+
+    #[cfg(feature = "calendar")]
+    {
+        // Calendar mutations follow the calendar sync kill switch: without sync
+        // a provider write would never be reflected locally.
+        let calendar_router = if state.config.calendar_sync_enabled {
+            calendar_watch::router().merge(
+                calendar_events::inbound::mutation_router::calendar_mutation_router(
+                    CalendarMutationRouterState::new(
+                        state.calendar_mutation_service.clone(),
+                        state.authorization_state.clone(),
+                    ),
+                ),
+            )
+        } else {
+            calendar_watch::router()
+        };
+        router.nest("/calendar", calendar_router)
+    }
+
+    #[cfg(not(feature = "calendar"))]
+    {
+        router
+    }
 }

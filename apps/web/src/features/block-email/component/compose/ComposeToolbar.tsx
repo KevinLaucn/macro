@@ -19,6 +19,7 @@ import Trash from '@phosphor/trash.svg';
 import { Button, SendButton, Tooltip } from '@ui';
 import { FORMAT_TEXT_COMMAND, type LexicalEditor } from 'lexical';
 import { createSignal, Show } from 'solid-js';
+import { t } from '@macro/i18n';
 import { useCompose } from './ComposeContext';
 
 export function EmailComposeToolbar(props: {
@@ -96,7 +97,7 @@ export function EmailComposeToolbar(props: {
                       onSelect: handleAddAttachments,
                     }))
                   }
-                  tooltip="Attach"
+                  tooltip={t("Attach")}
                   size="icon-sm"
                   disabled={ctx.disabled()}
                 >
@@ -105,7 +106,7 @@ export function EmailComposeToolbar(props: {
               </div>
             </Show>
             <Button
-              tooltip="Format"
+              tooltip={t("Format")}
               size="icon-sm"
               disabled={ctx.disabled()}
               onClick={() => {
@@ -118,7 +119,7 @@ export function EmailComposeToolbar(props: {
               <div aria-hidden="true" class="mx-1 h-4 w-px bg-edge-muted/70" />
               <Button
                 onclick={ctx.onDelete}
-                tooltip="Delete draft"
+                tooltip={t("Delete draft")}
                 size="icon-sm"
               >
                 <Trash />
@@ -136,7 +137,7 @@ export function EmailComposeToolbar(props: {
                 variant="outline"
                 size="sm"
               >
-                {ctx.isSavingDraft?.() ? 'Saving…' : 'Save Draft'}
+                {ctx.isSavingDraft?.() ? t('Saving…') : t('Save Draft')}
               </Button>
             </Show>
             <Show when={ENABLE_EMAIL_SCHEDULED_SEND && ctx.onSendTimeChange}>
@@ -146,7 +147,7 @@ export function EmailComposeToolbar(props: {
                 disabled={ctx.scheduleSendDisabled?.()}
               />
             </Show>
-            <Tooltip label={ctx.sendTime() ? 'Send time is scheduled' : ''}>
+            <Tooltip label={ctx.sendTime() ? t('Send time is scheduled') : ''}>
               <SendButton
                 onClick={() => ctx.onSend()}
                 disabled={
@@ -156,7 +157,7 @@ export function EmailComposeToolbar(props: {
                   ctx.disabled()
                 }
                 pending={ctx.isSending()}
-                tooltip="Send email"
+                tooltip={t("Send email")}
                 shortcut="cmd+enter"
               />
             </Tooltip>

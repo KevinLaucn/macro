@@ -6,7 +6,7 @@ import {
 } from '@ui/components/ScreencastHotkeys';
 import { createMemo, createSignal, For, Index, type JSX } from 'solid-js';
 import { SettingsCard, SettingsPage } from './primitives';
-import { __t } from '@macro/i18n';
+import { t } from '@macro/i18n';
 
 interface ShortcutItem {
   description: JSX.Element;
@@ -1040,7 +1040,7 @@ function ShortcutRow(props: { item: ShortcutItem; spacer?: string }) {
       </div>
       <span class="text-sm text-ink-muted group-hover:text-accent transition-colors">
         {typeof props.item.description === 'string'
-          ? __t(props.item.description)
+          ? t(props.item.description)
           : props.item.description}
       </span>
     </div>
@@ -1052,7 +1052,7 @@ function ShortcutSectionComponent(props: { section: ShortcutSection }) {
     <div class="mb-4">
       <h3 class="text-[15px] font-semibold text-ink mb-1.5 flex items-center gap-2">
         {typeof props.section.title === 'string'
-          ? __t(props.section.title)
+          ? t(props.section.title)
           : props.section.title}
       </h3>
       <div class="flex flex-col">
@@ -1067,10 +1067,10 @@ function ShortcutSectionComponent(props: { section: ShortcutSection }) {
 export function Shortcuts() {
   return (
     <SettingsPage
-      title="Keyboard shortcuts"
+      title={t("Keyboard shortcuts")}
       actions={
         <div class="flex items-center gap-2">
-          <span class="text-sm text-ink-muted">Screencast keys</span>
+          <span class="text-sm text-ink-muted">{t("Screencast keys")}</span>
           <ToggleSwitch
             size="md"
             onChange={setEnableScreencastHotkeys}
@@ -1094,7 +1094,7 @@ export function Shortcuts() {
           {/* Unified List - spans both columns with its own 2-column layout */}
           <div class="@[600px]:col-span-2">
             <h3 class="text-[15px] font-semibold text-ink mb-1.5 flex items-center gap-2">
-              {__t(shortcutSections[2].title)}
+              {t(shortcutSections[2].title)}
             </h3>
             <div class="grid grid-cols-1 @[600px]:grid-cols-2 gap-x-8">
               <For each={shortcutSections[2].items}>

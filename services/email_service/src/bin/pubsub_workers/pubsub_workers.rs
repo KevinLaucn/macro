@@ -129,6 +129,7 @@ async fn main() -> anyhow::Result<()> {
     #[cfg(feature = "event_broker")]
     let event_broker_tracker = TaskTracker::new();
 
+    #[cfg(feature = "calendar")]
     worker_tracker.spawn(email_service::calendar_outbox::run(
         db.clone(),
         sqs_client.clone(),

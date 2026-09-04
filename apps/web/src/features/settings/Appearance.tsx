@@ -6,8 +6,7 @@ import ClipboardIcon from '@phosphor/clipboard.svg';
 import PencilIcon from '@phosphor/pencil-simple.svg';
 import PlusIcon from '@phosphor/plus.svg';
 import TrashIcon from '@phosphor/trash.svg';
-import { locale, setLocale, type SupportedLocale } from '@macro/i18n';
-import { ThemeChipPill } from '@theme/components/ThemeChipPill';
+import { locale, setLocale, t, type SupportedLocale } from '@macro/i18n';
 import { ThemeChips } from '@theme/components/ThemeChips';
 import { ThemeEditor } from '@theme/components/ThemeEditor';
 import { DEFAULT_THEMES } from '@theme/constants';
@@ -729,17 +728,17 @@ export function Appearance() {
           </SettingsCard>
         </SettingsSection>
 
-        <SettingsSection title="Interface">
+        <SettingsSection title={t("Interface")}>
           <SettingsCard>
             <SettingsRow
-              label="Language"
-              description="Choose your preferred display language."
+              label={t("Language")}
+              description={t("Choose your preferred display language.")}
             >
               <LanguageSelect />
             </SettingsRow>
             <SettingsRow
-              label="Monochrome icons"
-              description="Use single-color icons across the app."
+              label={t("Monochrome icons")}
+              description={t("Use single-color icons across the app.")}
             >
               <ToggleSwitch
                 size="md"
@@ -748,8 +747,8 @@ export function Appearance() {
               />
             </SettingsRow>
             <SettingsRow
-              label="Show tooltips"
-              description="Show hover hints on buttons and controls."
+              label={t("Show tooltips")}
+              description={t("Show hover hints on buttons and controls.")}
             >
               <ToggleSwitch
                 size="md"

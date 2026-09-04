@@ -5,11 +5,13 @@
   "type": "module",
   "exports": {
     ".": "./context.tsx",
+    "./runtime": "./runtime.ts",
     "./vite-plugin": "./vite-plugin.ts",
     "./locales/*": "./locales/*"
   },
   "scripts": {
     "extract": "bun extract.ts",
+    "audit": "bun audit.ts",
     "merge": "bun merge.ts",
     "test": "bun test"
   },

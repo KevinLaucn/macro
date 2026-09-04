@@ -1,5 +1,7 @@
 use crate::api::ApiContext;
-use crate::api::context::{AuthorizationService, CalendarGrantService};
+use crate::api::context::AuthorizationService;
+#[cfg(feature = "calendar")]
+use crate::api::context::CalendarGrantService;
 use crate::utils::extract_email_with_response;
 use anyhow::Context;
 use axum::{
@@ -7,12 +9,15 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Json, Response},
 };
+#[cfg(feature = "calendar")]
 use calendar_events::domain::models::{CalendarGrantIntent, GoogleScopeSet};
 use email::domain::events::{EmailMacroEvent, LinkConnectedMetadata};
 use email::domain::models::UserProvider;
 use email::domain::ports::EmailRepo;
 use email::outbound::EmailPgRepo;
-use email_api_client::domain::models::{EmailApiError, TokenFreshness};
+use email_api_client::domain::models::EmailApiError;
+#[cfg(feature = "calendar")]
+use email_api_client::domain::models::TokenFreshness;
 use email_service::pubsub::publish_email_event;
 use macro_authorization::{MacroAuthorizationExtractor, UserOrInternal};
 use macro_db_client::in_progress_user_link::InProgressUserLink;
@@ -413,18 +418,24 @@ async fn init_user(
                 .await
                 .context("Failed to check existing link by email")?
             {
-                let applied = apply_and_consume_calendar_grant(
+                let _applied = apply_and_consume_calendar_grant(
                     &ctx,
                     existing_link.id,
                     link_id,
                     &completed_grant,
                 )
                 .await?;
+                #[cfg(feature = "calendar")]
                 tracing::info!(
                     link_id = %existing_link.id,
-                    grant_version = applied.grant_version,
-                    changed = applied.changed,
-                    calendar_jobs = applied.jobs.len(),
+                    grant_version = _applied.grant_version,
+                    changed = _applied.changed,
+                    calendar_jobs = _applied.jobs.len(),
+                    "Applied Google permission upgrade to existing inbox"
+                );
+                #[cfg(not(feature = "calendar"))]
+                tracing::info!(
+                    link_id = %existing_link.id,
                     "Applied Google permission upgrade to existing inbox"
                 );
                 return Ok((
@@ -738,6 +749,7 @@ async fn init_user(
         .into_response())
 }
 
+#[cfg(feature = "calendar")]
 /// Returns false when the link is missing or the lookup fails so token discovery remains
 /// best-effort on the authentication path.
 async fn has_unrecorded_google_grant(db: &sqlx::PgPool, link_id: Uuid) -> bool {
@@ -763,6 +775,7 @@ async fn has_unrecorded_google_grant(db: &sqlx::PgPool, link_id: Uuid) -> bool {
 /// the scopes from Google's tokeninfo endpoint using the link's own token so
 /// SSO-only users still receive calendar sync. Best-effort: a failure here
 /// must never fail authentication, and the next init retries it.
+#[cfg(feature = "calendar")]
 async fn apply_grant_discovered_from_token(ctx: &ApiContext, link: &link::Link) {
     if !has_unrecorded_google_grant(&ctx.db, link.id).await {
         return;
@@ -798,6 +811,10 @@ async fn apply_grant_discovered_from_token(ctx: &ApiContext, link: &link::Link) 
     }
 }
 
+#[cfg(not(feature = "calendar"))]
+async fn apply_grant_discovered_from_token(_ctx: &ApiContext, _link: &link::Link) {}
+
+#[cfg(feature = "calendar")]
 /// Ask Google which scopes an access token actually carries.
 async fn fetch_token_scopes(access_token: &str) -> anyhow::Result<Vec<String>> {
     #[derive(serde::Deserialize)]
@@ -833,7 +850,9 @@ async fn fetch_token_scopes(access_token: &str) -> anyhow::Result<Vec<String>> {
 /// wanted or merely re-issued.
 #[derive(Clone)]
 struct CompletedGoogleGrant {
+    #[cfg(feature = "calendar")]
     intent: CalendarGrantIntent,
+    #[cfg(feature = "calendar")]
     granted_scopes: Vec<String>,
 }
 
@@ -842,20 +861,24 @@ impl CompletedGoogleGrant {
     /// enabling it. Requests carry `include_granted_scopes=true`, so a plain
     /// Gmail reconnect hands calendar scopes back from an earlier grant, and
     /// that must not undo a deliberate opt-out.
-    fn from_in_progress(in_progress: &InProgressUserLink) -> Self {
+    fn from_in_progress(_in_progress: &InProgressUserLink) -> Self {
+        #[cfg(feature = "calendar")]
         let requested =
-            GoogleScopeSet::from_scopes(in_progress.requested_google_scopes.iter().cloned());
+            GoogleScopeSet::from_scopes(_in_progress.requested_google_scopes.iter().cloned());
         Self {
+            #[cfg(feature = "calendar")]
             intent: if requested.has_calendar_capability() {
                 CalendarGrantIntent::CalendarRequested
             } else {
                 CalendarGrantIntent::Incidental
             },
-            granted_scopes: in_progress.granted_google_scopes.clone(),
+            #[cfg(feature = "calendar")]
+            granted_scopes: _in_progress.granted_google_scopes.clone(),
         }
     }
 }
 
+#[cfg(feature = "calendar")]
 async fn apply_calendar_grant(
     calendar_service: &CalendarGrantService,
     email_link_id: Uuid,
@@ -876,6 +899,7 @@ async fn apply_calendar_grant(
         })
 }
 
+#[cfg(feature = "calendar")]
 async fn apply_and_consume_calendar_grant(
     ctx: &ApiContext,
     email_link_id: Uuid,
@@ -910,6 +934,30 @@ async fn apply_and_consume_calendar_grant(
         .ok();
 
     Ok(applied)
+}
+
+#[cfg(not(feature = "calendar"))]
+async fn apply_and_consume_calendar_grant(
+    ctx: &ApiContext,
+    email_link_id: Uuid,
+    in_progress_link_id: Uuid,
+    _grant: &CompletedGoogleGrant,
+) -> Result<(), InitError> {
+    macro_db_client::in_progress_user_link::delete_in_progress_user_link(
+        &ctx.db,
+        &in_progress_link_id,
+    )
+    .await
+    .context("Failed to consume applied Google grant")?;
+
+    email_db_client::links::update::clear_link_needs_reauth(&ctx.db, email_link_id)
+        .await
+        .inspect_err(|error| {
+            tracing::warn!(error = ?error, link_id = %email_link_id, "failed to clear the reauth flag after a completed consent");
+        })
+        .ok();
+
+    Ok(())
 }
 
 fn classify_provider_init_error(error: EmailApiError) -> InitError {

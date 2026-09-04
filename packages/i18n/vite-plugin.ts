@@ -15,7 +15,23 @@ import {
 
 const traverse = (traverseModule as any).default || traverseModule;
 
-export function i18nAstPlugin(): Plugin {
+export interface I18nAstPluginOptions {
+  /**
+   * Optional pattern or path list to restrict AST transform strictly to legacy files.
+   * If provided, any file not matching legacyAllowlist will bypass AST transform.
+   */
+  legacyAllowlist?: (string | RegExp)[];
+
+  /**
+   * Optional paths/patterns to explicitly exclude from AST transformation
+   * (e.g. newly created or refactored 2nd-gen modules using explicit t()).
+   */
+  excludePatterns?: (string | RegExp)[];
+}
+
+export function i18nAstPlugin(options: I18nAstPluginOptions = {}): Plugin {
+  let transformedCount = 0;
+
   return {
     name: "vite-plugin-i18n-ast",
     enforce: "pre",
@@ -29,6 +45,28 @@ export function i18nAstPlugin(): Plugin {
         isIgnoredPath(id)
       ) {
         return null;
+      }
+
+      const normalizedId = id.replace(/\\/g, "/");
+
+      // Check explicit exclusion list for migrated modules
+      if (options.excludePatterns && options.excludePatterns.length > 0) {
+        const isExcluded = options.excludePatterns.some((rule) =>
+          typeof rule === "string" ? normalizedId.includes(rule) : rule.test(normalizedId)
+        );
+        if (isExcluded) {
+          return null;
+        }
+      }
+
+      // If legacyAllowlist is configured, only transform files matching allowlist
+      if (options.legacyAllowlist && options.legacyAllowlist.length > 0) {
+        const matched = options.legacyAllowlist.some((rule) =>
+          typeof rule === "string" ? normalizedId.includes(rule) : rule.test(normalizedId)
+        );
+        if (!matched) {
+          return null;
+        }
       }
 
       const isTsx = /\.[tj]sx$/.test(id);
@@ -165,6 +203,7 @@ export function i18nAstPlugin(): Plugin {
       });
 
       if (transformed) {
+        transformedCount++;
         if (!code.includes("@macro/i18n")) {
           s.prepend(`import { __t } from "@macro/i18n";\n`);
         }

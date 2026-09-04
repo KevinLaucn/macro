@@ -1,4 +1,5 @@
 pub(crate) mod access;
+#[cfg(feature = "calendar")]
 pub(crate) mod calendar;
 pub(crate) mod delete;
 pub(crate) mod health_check;
@@ -10,13 +11,22 @@ use axum::Router;
 use axum::routing::{delete, get, post};
 
 pub fn router() -> Router<ApiContext> {
-    Router::new()
+    let router = Router::new()
         .route("/", get(list::list_links_handler))
         .route("/health-check", post(health_check::health_check_handler))
         .route("/{link_id}", delete(delete::delete_link_handler))
-        .route(
+        .route("/{link_id}/resync", post(resync::resync_link_handler));
+
+    #[cfg(feature = "calendar")]
+    {
+        router.route(
             "/{link_id}/calendar",
             delete(calendar::disable_link_calendar_handler),
         )
-        .route("/{link_id}/resync", post(resync::resync_link_handler))
+    }
+
+    #[cfg(not(feature = "calendar"))]
+    {
+        router
+    }
 }

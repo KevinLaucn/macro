@@ -29,12 +29,13 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 
 | 用户意图 / 任务类型 | 触发特征 / 关键词 | 优先分发路由 (Target Sub-Skill / Spec) |
 |---|---|---|
-| **✂️ 功能裁剪 / 依赖瘦身 / 解耦** | “删功能”、“裁剪”、“不要某服务”、“减镜像”、“Email不需要”、“能不能删”、“瘦身” | **`skills/macro-upstream-decoupling/SKILL.md`**（五层解耦检查、两阶段物理删除门禁、Decoupling Report） |
+| **✂️ 功能裁剪 / 依赖瘦身 / Change Planner** | “删功能”、“裁剪”、“不要某服务”、“减镜像”、“Email不需要”、“能不能删”、“瘦身”、“Change Planner”、“slim-plan” | **`skills/macro-upstream-decoupling/SKILL.md`**（Change Planner 边际削减、cargo x slim-plan、五层解耦检查、两阶段物理删除门禁、Decoupling Report） |
 | **🏗️ Rust 后端架构 / 微服务二开** | `crates/**`、`services/**`、Hexagonal 架构、Domain 改造、Ports & Adapters、S3/DB 适配器 | **`../cloud-storage-hexagonal-architecture/SKILL.md`** |
 | **🔍 运行时调试 / Crash 排查** | 容器退出、服务启动失败、500 报错、Connection Refused、端口无响应 | **`../debug-service/SKILL.md`** |
 | **📊 数据库 Schema / 迁移** | Migration、PostgreSQL 表字段、Email/Gmail 数据表、Dump | **`../dump-schema/SKILL.md`** |
 | **🛡️ 发布前质检 / 审查门禁** | PR 审查、发布前验证、QC、精简度评估、稳定性检查 | **`../qc/SKILL.md`** |
 | **📦 依赖治理 / 漏洞升级** | Dependabot、Cargo/Bun/NPM 依赖冲突、CVE 修复 | **`../dependabot/skill.md`** |
+| **🌐 i18n 国际化 / 显式化二开** | 多语言、i18n、翻译、显式 t()、excludePatterns、audit、词条提取 | **`references/i18n-workflow.md`** |
 | **🤖 AI 工具与模型扩展** | AI Tool 开发、Agent 工具注入、模型升级切换 | **`../create-ai-tool/SKILL.md`** / **`../upgrade-model/SKILL.md`** |
 | **🚀 VPS 生产运维 / 部署** | 部署、SSH、Docker Compose、生产更新、运维排障 | **`references/production-deployment.md`**（凭据见 `.local-production.md`） |
 
@@ -84,6 +85,7 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 涉及具体垂直领域的深度实现细节时，按需直接读取 `references/` 目录：
 
 - **Gmail 架构与 OAuth 同步**：读取 [`references/gmail-self-host.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/gmail-self-host.md)
+- **i18n 国际化与显式二开标准**：读取 [`references/i18n-workflow.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/i18n-workflow.md)
 - **存储与附件生命周期策略**：读取 [`references/storage-attachments.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/storage-attachments.md)
 - **WebSocket 与实时通信网关**：读取 [`references/realtime.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/realtime.md)
 - **网络白名单与隐私审计规约**：读取 [`references/privacy-network.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/privacy-network.md)

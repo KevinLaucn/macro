@@ -55,6 +55,7 @@ use models_email::service::message::ParsedMessage;
 use models_email::service::thread::ThreadPreviewCursor;
 use utoipa::OpenApi;
 
+#[cfg(feature = "calendar")]
 #[derive(OpenApi)]
 #[openapi(
     info(
@@ -213,6 +214,148 @@ use utoipa::OpenApi;
             calendar_events::domain::models::EventVisibility,
             calendar_events::domain::models::EventTransparency,
             calendar_events::domain::models::RefreshCalendarEvent
+        ),
+    ),
+    tags(
+            (name = "Email Service", description = "Macro Email Service")
+    )
+)]
+pub struct ApiDoc;
+
+#[cfg(not(feature = "calendar"))]
+#[derive(OpenApi)]
+#[openapi(
+    info(
+        terms_of_service = "https://macro.com/terms",
+    ),
+    paths(
+        health::health_handler,
+        email::attachments::get::handler,
+        email::attachments::get::download_handler,
+        email::attachments::get_document_id::handler,
+        email::backfill::cancel::handler,
+        email::backfill::get::handler,
+        email::backfill::get::active_handler,
+        email::backfill::get::list_handler,
+        email::init::handler,
+        inbound::axum::draft_router::create_draft_handler,
+        email::drafts::delete::handler,
+        email::drafts::scheduled::list::handler,
+        email::drafts::scheduled::remove::handler,
+        email::drafts::scheduled::upsert::handler,
+        email::drafts::add_attachment::handler,
+        email::drafts::remove_attachment::handler,
+        email::drafts::add_forwarded_attachment::handler,
+        email::drafts::remove_forwarded_attachment::handler,
+        email::messages::get::handler,
+        email::messages::get::batch_handler,
+        email::messages::labels::handler,
+        inbound::axum::send_router::send_message_handler,
+        email::threads::seen::seen_handler,
+        email::threads::get::get_thread_messages_handler,
+        email::threads::archived::archived_handler,
+        inbound::axum::thread_labels_router::update_thread_labels_handler,
+        inbound::axum::previews_router::cursor_handler,
+        inbound::axum::get_thread_router::get_thread_handler,
+        inbound::axum::thread_project_router::update_thread_project_handler,
+        email::links::list::list_links_handler,
+        email::links::health_check::health_check_handler,
+        email::links::delete::delete_link_handler,
+        email::links::resync::resync_link_handler,
+        email::labels::create::handler,
+        email::labels::delete::handler,
+        inbound::axum::list_labels_router::list_labels_handler,
+        inbound::axum::email_filter_router::upsert_email_filter_handler,
+        inbound::axum::email_filter_router::delete_email_filter_handler,
+        inbound::axum::email_filter_router::list_email_filters_handler,
+        email::contacts::list::list_contacts_handler,
+        email::contacts::block_sender::handler,
+        email::contacts::unblock_sender::handler,
+        email::contacts::list_blocked::handler,
+        email::sync::disable::disable_handler,
+        email::settings::patch::patch_settings_handler,
+    ),
+    components(
+        schemas(
+            EmptyResponse,
+            // Backfill types
+            CancelBackfillParams,
+            GetBackfillJobResponse,
+            GetActiveBackfillJobResponse,
+            ListBackfillJobsResponse,
+            BackfillJob,
+            // Draft types
+            HexCreateDraftRequest,
+            HexCreateDraftResponse,
+            ApiDraftInput,
+            ApiDraftOutput,
+            ApiDraftContactInfo,
+            AddDraftAttachmentRequest,
+            AddDraftAttachmentResponse,
+            AddForwardedAttachmentRequest,
+            AddForwardedAttachmentResponse,
+            // Init types
+            InitErrorCodeResponse,
+            InitResponse,
+            SharedInboxConflictResponse,
+            // Label types
+            CreateLabelRequest,
+            CreateLabelResponse,
+            HexListLabelsResponse,
+            Label,
+            // Message types
+            UpdateLabelBatchRequest,
+            UpdateLabelBatchResponse,
+            HexSendMessageRequest,
+            HexSendMessageResponse,
+            ParsedMessage,
+            // Thread types
+            ArchiveThreadRequest,
+            UpdateThreadLabelRequest,
+            UpdateThreadLabelsResponse,
+            UpdateThreadProjectRequest,
+            UpdateThreadProjectResponse,
+            ThreadPreviewCursor,
+            GetThreadResponse,
+            ApiThread,
+            // Preview types
+            GetPreviewsCursorParams,
+            ApiPaginatedThreadCursor,
+            PreviewView,
+            PreviewViewStandardLabel,
+            // Attachment types
+            GetAttachmentResponse,
+            GetAttachmentDocumentIDResponse,
+            // Link types
+            ListLinksResponse,
+            Link,
+            SyncStatus,
+            RefreshEmailEvent,
+            BackfillStatus,
+            ResyncResponse,
+            Settings,
+            // Contact types
+            ListContactsResponse,
+            ContactInfoWithInteraction,
+            BlockSenderRequest,
+            UnblockSenderRequest,
+            ListBlockedResponse,
+            // Email filter types
+            UpsertEmailFilterRequest,
+            UpsertEmailFilterResponse,
+            ListEmailFiltersResponse,
+            ApiEmailFilter,
+            // Sort/filter types
+            ApiSortMethod,
+            // Legacy service types (keeping for backward compatibility)
+            service::thread::ThreadList,
+            service::address::ContactInfo,
+            service::label::LabelInfo,
+            service::attachment::Attachment,
+            service::thread::Thread,
+            service::message::Message,
+            PatchSettingsRequest,
+            PatchSettingsResponse,
         ),
     ),
     tags(

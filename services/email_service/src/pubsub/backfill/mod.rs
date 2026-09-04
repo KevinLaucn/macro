@@ -1,6 +1,7 @@
 mod backfill_attachment;
 mod backfill_message;
 mod backfill_thread;
+#[cfg(feature = "calendar")]
 mod calendar_google_backfill;
 pub(crate) mod db_error;
 mod depopulate_crm_contact;

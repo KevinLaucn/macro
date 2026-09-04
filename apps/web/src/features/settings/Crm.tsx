@@ -16,6 +16,7 @@ import type { PatchTeamCrmSettingsResponse } from '@service-auth/generated/schem
 import { useMutation } from '@tanstack/solid-query';
 import { Button, Dialog, Panel, Tooltip } from '@ui';
 import { createSignal, type JSX, Show, Suspense } from 'solid-js';
+import { t } from '@macro/i18n';
 import {
   SettingsCard,
   SettingsPage,
@@ -60,7 +61,7 @@ function ConfirmDialog(props: {
               disabled={props.pending}
               onClick={props.onClose}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="danger"
@@ -99,11 +100,11 @@ function usePatchTeamCrmSettingsMutation() {
       ),
     onSuccess: (data: PatchTeamCrmSettingsResponse) => {
       invalidateUserTeams();
-      toast.success(data.enabled ? 'CRM enabled' : 'CRM disabled');
+      toast.success(data.enabled ? t('CRM enabled') : t('CRM disabled'));
     },
     onError: (error: Error) => {
       console.error('Failed to update CRM settings', error);
-      toast.failure('Failed to update CRM settings');
+      toast.failure(t('Failed to update CRM settings'));
     },
   }));
 }
@@ -156,17 +157,21 @@ function CrmEnablementSection() {
   };
 
   return (
-    <SettingsSection title="General">
+    <SettingsSection title={t('General')}>
       <SettingsCard>
         <SettingsRow
-          label={crmEnabled() ? 'Disable CRM' : 'Enable CRM'}
-          description={`Turn the CRM ${crmEnabled() ? 'off' : 'on'} for everyone on your team.`}
+          label={crmEnabled() ? t('Disable CRM') : t('Enable CRM')}
+          description={
+            crmEnabled()
+              ? t('Turn the CRM off for everyone on your team.')
+              : t('Turn the CRM on for everyone on your team.')
+          }
           hideDescriptionOnMobile
         >
           <Show
             when={isTeamAdmin()}
             fallback={
-              <Tooltip label="Only team admins can change CRM settings.">
+              <Tooltip label={t('Only team admins can change CRM settings.')}>
                 <span>
                   <Button
                     variant="outline"
@@ -174,7 +179,7 @@ function CrmEnablementSection() {
                     class="rounded-xs"
                     disabled
                   >
-                    Admins only
+                    {t('Admins only')}
                   </Button>
                 </span>
               </Tooltip>
@@ -191,7 +196,7 @@ function CrmEnablementSection() {
                 disabled={patchCrmMutation.isPending}
                 onClick={() => handleToggle(!crmEnabled())}
               >
-                {crmEnabled() ? 'Disable CRM' : 'Enable CRM'}
+                {crmEnabled() ? t('Disable CRM') : t('Enable CRM')}
               </Button>
             </div>
           </Show>
@@ -208,13 +213,12 @@ function CrmEnablementSection() {
               <XIcon />
             </Dialog.CloseButton>
             <Dialog.Title as="span" class="text-sm font-medium p-0 m-0">
-              Enable CRM
+              {t('Enable CRM')}
             </Dialog.Title>
           </Panel.Header>
           <Panel.Body class="p-3 flex flex-col gap-3">
             <p>
-              Start the CRM from your team's existing email, or from a clean
-              slate.
+              {t("Start the CRM from your team's existing email, or from a clean slate.")}
             </p>
             <div class="flex justify-end gap-1 pt-2">
               <Button
@@ -223,7 +227,7 @@ function CrmEnablementSection() {
                 disabled={patchCrmMutation.isPending}
                 onClick={() => setShowEnableModal(false)}
               >
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 variant="outline"
@@ -235,7 +239,7 @@ function CrmEnablementSection() {
                   when={
                     enableChoice() === 'fresh' && patchCrmMutation.isPending
                   }
-                  fallback="Start from now"
+                  fallback={t('Start from now')}
                 >
                   <SpinnerIcon class="size-4 animate-spin" />
                 </Show>
@@ -250,7 +254,7 @@ function CrmEnablementSection() {
                   when={
                     enableChoice() === 'backfill' && patchCrmMutation.isPending
                   }
-                  fallback="Backfill existing emails"
+                  fallback={t('Backfill existing emails')}
                 >
                   <SpinnerIcon class="size-4 animate-spin" />
                 </Show>
@@ -262,17 +266,15 @@ function CrmEnablementSection() {
 
       <ConfirmDialog
         open={showDisableModal()}
-        title="Disable CRM"
-        confirmLabel="Disable CRM"
+        title={t('Disable CRM')}
+        confirmLabel={t('Disable CRM')}
         pending={patchCrmMutation.isPending}
         confirmDisabled={disableConfirmation() !== DISABLE_CRM_PHRASE}
         onConfirm={handleDisable}
         onClose={() => setShowDisableModal(false)}
       >
         <p>
-          Disabling the CRM <span class="font-medium">permanently purges</span>{' '}
-          your team's CRM data — companies, contacts, and their history.
-          Re-enabling later lets you backfill again or start fresh.
+          {t("Disabling the CRM permanently purges your team's CRM data — companies, contacts, and their history. Re-enabling later lets you backfill again or start fresh.")}
         </p>
         <p class="text-sm text-ink-muted">
           Type <span class="font-medium text-ink">{DISABLE_CRM_PHRASE}</span> to
@@ -296,11 +298,11 @@ function CrmEnablementSection() {
 
 function NoTeamState() {
   return (
-    <SettingsPage title="CRM">
+    <SettingsPage title={t('CRM')}>
       <SettingsSection>
         <SettingsCard>
           <div class="px-6 py-8 text-center text-sm text-ink-muted">
-            Join or create a team to set up the CRM.
+            {t('Join or create a team to set up the CRM.')}
           </div>
         </SettingsCard>
       </SettingsSection>
@@ -314,8 +316,8 @@ function CrmContent() {
   return (
     <Show when={teamQuery.data} fallback={<NoTeamState />}>
       <SettingsPage
-        title="CRM"
-        description="Enable or disable your team's CRM."
+        title={t('CRM')}
+        description={t("Enable or disable your team's CRM.")}
       >
         <CrmEnablementSection />
       </SettingsPage>

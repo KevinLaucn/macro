@@ -1,4 +1,5 @@
 use axum::extract::FromRef;
+#[cfg(feature = "calendar")]
 use calendar_events::{
     domain::{mutations::CalendarMutationServiceImpl, service::CalendarService},
     outbound::{google::GoogleCalendarClient, pg::PgCalendarRepository},
@@ -12,7 +13,9 @@ use email::{
     },
     outbound::{EmailPgRepo, GmailTokenProviderImpl},
 };
+#[cfg(feature = "calendar")]
 use email_service::calendar_tokens::CalendarTokenProviderAdapter;
+#[cfg(feature = "calendar")]
 use email_service::pubsub::calendar_backfill_adapters::RedisCalendarRequestGate;
 
 use email_service::config::Config;
@@ -37,7 +40,9 @@ use system_properties::{PgSystemPropertiesRepository, SystemPropertiesServiceImp
 use tokio_util::task::TaskTracker;
 
 pub(crate) type AuthorizationService = MacroAuthorizationServiceImpl<MacroAuthJwtValidator>;
+#[cfg(feature = "calendar")]
 pub(crate) type CalendarGrantService = CalendarService<PgCalendarRepository>;
+#[cfg(feature = "calendar")]
 pub(crate) type CalendarMutationSvc = CalendarMutationServiceImpl<
     PgCalendarRepository,
     GoogleCalendarClient<RedisCalendarRequestGate>,
@@ -86,6 +91,8 @@ pub(crate) struct ApiContext {
         EmailThreadRouterState<EmailSvc, EmailEntityAccessService, AuthorizationService>,
     pub gmail_token_state: GmailTokenState<GmailTokenProviderImpl>,
     pub macro_event_broker: Arc<EmailEventBroker>,
+    #[cfg(feature = "calendar")]
     pub calendar_service: Arc<CalendarGrantService>,
+    #[cfg(feature = "calendar")]
     pub calendar_mutation_service: Arc<CalendarMutationSvc>,
 }

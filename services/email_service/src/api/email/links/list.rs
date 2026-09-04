@@ -67,11 +67,14 @@ pub async fn list_links_handler(
                 inbox.link.needs_reauth,
                 inbox.latest_backfill_status,
             );
+            #[cfg(feature = "calendar")]
             let needs_calendar_permission =
                 !calendar_events::domain::models::GoogleScopeSet::from_scopes(
                     inbox.google_granted_scopes,
                 )
                 .has_calendar_capability();
+            #[cfg(not(feature = "calendar"))]
+            let needs_calendar_permission = false;
             api::link::Link::new(
                 inbox.link,
                 api::settings::Settings::from(inbox.settings),

@@ -620,7 +620,6 @@
         "document-storage-service"
         "email-service"
         "image-proxy-service"
-        "mcp-server"
         "notification-service"
         "static-file-service"
         "unfurl-service"
@@ -668,6 +667,7 @@
           serviceName = "document-storage-service";
           packageName = "document_storage_service";
           binaries = [ "document_storage_service" ];
+          featureArgs = "--no-default-features";
         }
         {
           serviceName = "email-service";
@@ -676,7 +676,7 @@
             "email_service"
             "pubsub_workers"
           ];
-          featureArgs = "--no-default-features";
+          featureArgs = "--no-default-features --features self-host-email";
         }
         {
           serviceName = "image-proxy-service";
@@ -762,10 +762,24 @@
         }) selfHostEmailBinaryDefinitions
       );
 
+      # Preflight lock and metadata check for synthetic self-host-email workspace:
+      # Verifies that Cargo.lock matches the synthetic workspace manifest without compiling.
+      # Fails within seconds if members, dependencies, or lockfile disagree.
+      selfHostEmailPreflight = craneLib.cargoMetadata (
+        selfHostEmailCommonArgs
+        // {
+          pname = "cloud-storage-self-host-email-preflight";
+          cargoExtraArgs = "--locked --offline";
+        }
+      );
+
       selfHostEmailBinaries = pkgs.buildEnv {
         name = "self-host-email-binaries";
         pathsToLink = [ "/bin" ];
         paths = pkgs.lib.attrValues selfHostEmailBinaryPackages;
+        passthru = {
+          preflight = selfHostEmailPreflight;
+        };
       };
 
       # ── Lambda builds (crane + cargo-zigbuild) ─────────────────────
@@ -1175,6 +1189,7 @@
       // pkgs.lib.optionalAttrs isLinux {
         local-stack-binaries = localStackBinaries;
         self-host-email-binaries = selfHostEmailBinaries;
+        self-host-email-preflight = selfHostEmailPreflight;
       };
 
       devShells = {

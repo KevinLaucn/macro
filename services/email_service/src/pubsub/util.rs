@@ -111,6 +111,7 @@ pub async fn cg_refresh_email(
 /// Signal every viewer of a connected inbox's calendars — the link owner
 /// plus its delegated users — that the calendar projection changed. Best
 /// effort: an inactive or unreachable viewer only misses a refresh nudge.
+#[cfg(feature = "calendar")]
 #[tracing::instrument(skip(client, db), level = "debug")]
 pub async fn cg_refresh_calendar(
     client: &ConnectionGatewayClient,
@@ -148,6 +149,16 @@ pub async fn cg_refresh_calendar(
                 |e| tracing::error!(macro_id = %macro_id, "Failed to refresh calendar: {e}"),
             );
     }
+}
+
+#[cfg(not(feature = "calendar"))]
+#[allow(dead_code)]
+pub async fn cg_refresh_calendar(
+    _client: &ConnectionGatewayClient,
+    _db: &sqlx::PgPool,
+    _owner_macro_id: &str,
+    _link_id: uuid::Uuid,
+) {
 }
 
 /// Shared filter/dedup pass for the CRM populate + depopulate enqueue

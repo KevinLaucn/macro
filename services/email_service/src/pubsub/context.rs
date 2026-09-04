@@ -1,6 +1,8 @@
 use crate::outbound::email_api::GmailApi;
+#[cfg(feature = "calendar")]
 use crate::pubsub::calendar_backfill_adapters::RedisCalendarRequestGate;
 use crate::util::redis::RedisClient;
+#[cfg(feature = "calendar")]
 use calendar_events::{
     domain::models::GoogleWatchConfig,
     domain::service::{GoogleCalendarBackfillCoordinator, GoogleCalendarBackfillFailureService},
@@ -39,6 +41,7 @@ pub type PubSubEventBroker = NoopMacroEventBroker;
 pub type NotificationIngressType = SqsNotificationIngress<SqsQueue>;
 
 /// Concrete Google Calendar backfill application service.
+#[cfg(feature = "calendar")]
 pub type GoogleCalendarBackfillService = GoogleCalendarBackfillCoordinator<
     PgCalendarRepository,
     GoogleCalendarClient<RedisCalendarRequestGate>,
@@ -47,20 +50,24 @@ pub type GoogleCalendarBackfillService = GoogleCalendarBackfillCoordinator<
 >;
 
 /// Concrete pre-lease Google Calendar failure application service.
+#[cfg(feature = "calendar")]
 pub type GoogleCalendarBackfillFailureHandler =
     GoogleCalendarBackfillFailureService<PgCalendarRepository>;
 
 /// Calendar application services composed once when a worker starts.
 #[derive(Clone)]
 pub struct CalendarBackfillServices {
+    #[cfg(feature = "calendar")]
     /// Google provider backfill coordinator.
     pub google: Arc<GoogleCalendarBackfillService>,
+    #[cfg(feature = "calendar")]
     /// Applies terminal provider failures that happen before a lease is claimed.
     pub google_failure: Arc<GoogleCalendarBackfillFailureHandler>,
 }
 
 impl CalendarBackfillServices {
     /// Compose calendar application services from process-level adapters.
+    #[cfg(feature = "calendar")]
     pub fn new(
         db: PgPool,
         redis_client: RedisClient,
@@ -84,11 +91,18 @@ impl CalendarBackfillServices {
             google_failure: Arc::new(GoogleCalendarBackfillFailureService::new(repository)),
         }
     }
+
+    #[cfg(not(feature = "calendar"))]
+    pub fn new(
+        _db: PgPool,
+        _redis_client: RedisClient,
+        _macro_event_broker: PubSubEventBroker,
+    ) -> Self {
+        Self {}
+    }
 }
 
-/// Push notification channels are opened only when both optional watch
-/// variables are configured; without them the 5-minute poll is the sole
-/// freshness mechanism.
+#[cfg(feature = "calendar")]
 pub fn calendar_watch_config() -> Option<GoogleWatchConfig> {
     // A variable set to an empty string must count as unset: a blank token
     // would verify blank-header webhook requests.

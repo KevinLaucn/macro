@@ -24,9 +24,8 @@ import ArrowsIn from '@phosphor/arrows-in.svg';
 import ArrowsOut from '@phosphor/arrows-out.svg';
 import CaretLeftIcon from '@phosphor/caret-left.svg';
 import SignOutIcon from '@phosphor/sign-out.svg';
-import { useLocation } from '@solidjs/router';
 import { Button, cn, Layer, SideNav } from '@ui';
-import { __t } from '@macro/i18n';
+import { t } from '@macro/i18n';
 import {
   createRenderEffect,
   createSignal,
@@ -226,14 +225,14 @@ export function SettingsPanel(props: SettingsPanelProps) {
       class="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-ink-extra-muted cursor-default hover:bg-ink/4 hover:text-ink-muted"
     >
       <CaretLeftIcon class="size-4 shrink-0" />
-      <span class="whitespace-nowrap">Back to app</span>
+      <span class="whitespace-nowrap">{t('Back to app')}</span>
     </button>
   );
 
   const moveToSplitButton = () => (
     <Button
       class="p-1 rounded-md"
-      label="Move to split"
+      label={t('Move to split')}
       onClick={() => moveSettingsToSplit()}
     >
       <ArrowsIn class="size-4" />
@@ -272,7 +271,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
             <HeaderIsland>
               <div class="h-full flex gap-3 items-center">
                 <h1 class="font-semibold text-ink select-none text-sm shrink-0">
-                  Settings
+                  {t('Settings')}
                 </h1>
               </div>
             </HeaderIsland>
@@ -296,7 +295,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
           <SplitHeaderRight>
             <Button
               class="p-1 rounded-lg"
-              label="Open fullscreen"
+              label={t('Open fullscreen')}
               onClick={() => moveSettingsToSolo()}
             >
               <ArrowsOut class="size-4" />
@@ -324,7 +323,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
             </Show>
             <For each={groups()}>
               {(group) => (
-                <SideNav.Group label={__t(group.label)}>
+                <SideNav.Group label={t(group.label)}>
                   <For each={group.items}>
                     {(item) => (
                       <SideNav.Item
@@ -333,7 +332,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
                         onSelect={() => handleTabChange(item.tab)}
                         class="text-xs py-1.5"
                       >
-                        {__t(item.label)}
+                        {t(item.label)}
                       </SideNav.Item>
                     )}
                   </For>
@@ -347,7 +346,7 @@ export function SettingsPanel(props: SettingsPanelProps) {
                 class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-extra-muted cursor-default hover:bg-ink/3 hover:text-ink"
               >
                 <SignOutIcon class="size-4 shrink-0" />
-                <span class="whitespace-nowrap">Log out</span>
+                <span class="whitespace-nowrap">{t('Log out')}</span>
               </button>
             </div>
           </SideNav>

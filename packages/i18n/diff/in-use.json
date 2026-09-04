@@ -1,0 +1,125 @@
+{
+  "Back to app": [
+    "features/settings/Settings.tsx"
+  ],
+  "Move to split": [
+    "features/settings/Settings.tsx"
+  ],
+  "Settings": [
+    "features/settings/Settings.tsx"
+  ],
+  "Open fullscreen": [
+    "features/settings/Settings.tsx"
+  ],
+  "Log out": [
+    "features/settings/Settings.tsx"
+  ],
+  "Cancel": [
+    "features/settings/Crm.tsx"
+  ],
+  "CRM enabled": [
+    "features/settings/Crm.tsx"
+  ],
+  "CRM disabled": [
+    "features/settings/Crm.tsx"
+  ],
+  "Failed to update CRM settings": [
+    "features/settings/Crm.tsx"
+  ],
+  "General": [
+    "features/settings/Crm.tsx"
+  ],
+  "Disable CRM": [
+    "features/settings/Crm.tsx"
+  ],
+  "Enable CRM": [
+    "features/settings/Crm.tsx"
+  ],
+  "Turn the CRM off for everyone on your team.": [
+    "features/settings/Crm.tsx"
+  ],
+  "Turn the CRM on for everyone on your team.": [
+    "features/settings/Crm.tsx"
+  ],
+  "Only team admins can change CRM settings.": [
+    "features/settings/Crm.tsx"
+  ],
+  "Admins only": [
+    "features/settings/Crm.tsx"
+  ],
+  "Start the CRM from your team's existing email, or from a clean slate.": [
+    "features/settings/Crm.tsx"
+  ],
+  "Start from now": [
+    "features/settings/Crm.tsx"
+  ],
+  "Backfill existing emails": [
+    "features/settings/Crm.tsx"
+  ],
+  "Disabling the CRM permanently purges your team's CRM data — companies, contacts, and their history. Re-enabling later lets you backfill again or start fresh.": [
+    "features/settings/Crm.tsx"
+  ],
+  "CRM": [
+    "features/settings/Crm.tsx"
+  ],
+  "Join or create a team to set up the CRM.": [
+    "features/settings/Crm.tsx"
+  ],
+  "Enable or disable your team's CRM.": [
+    "features/settings/Crm.tsx"
+  ],
+  "Interface": [
+    "features/settings/Appearance.tsx"
+  ],
+  "Language": [
+    "features/settings/Appearance.tsx"
+  ],
+  "Choose your preferred display language.": [
+    "features/settings/Appearance.tsx"
+  ],
+  "Monochrome icons": [
+    "features/settings/Appearance.tsx"
+  ],
+  "Use single-color icons across the app.": [
+    "features/settings/Appearance.tsx"
+  ],
+  "Show tooltips": [
+    "features/settings/Appearance.tsx"
+  ],
+  "Show hover hints on buttons and controls.": [
+    "features/settings/Appearance.tsx"
+  ],
+  "Keyboard shortcuts": [
+    "features/settings/Shortcuts.tsx"
+  ],
+  "Screencast keys": [
+    "features/settings/Shortcuts.tsx"
+  ],
+  "Attach": [
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Format": [
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Delete draft": [
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Saving…": [
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Save Draft": [
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Send time is scheduled": [
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Send email": [
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Copied": [
+    "lib/core/component/AI/component/McpSetupCards.tsx"
+  ],
+  "Copy": [
+    "lib/core/component/AI/component/McpSetupCards.tsx"
+  ]
+}

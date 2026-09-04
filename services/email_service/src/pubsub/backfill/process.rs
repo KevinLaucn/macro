@@ -1,10 +1,13 @@
+#[cfg(feature = "calendar")]
+use crate::pubsub::backfill::calendar_google_backfill;
 use crate::pubsub::backfill::{
-    backfill_attachment, backfill_message, backfill_thread, calendar_google_backfill,
-    depopulate_crm_contact, depopulate_crm_for_user, error_handlers, increment_counters, init,
-    list_threads, populate_crm_contact, populate_crm_for_user, seed_sent_contact, update_metadata,
+    backfill_attachment, backfill_message, backfill_thread, depopulate_crm_contact,
+    depopulate_crm_for_user, error_handlers, increment_counters, init, list_threads,
+    populate_crm_contact, populate_crm_for_user, seed_sent_contact, update_metadata,
 };
 use crate::pubsub::context::PubSubContext;
 use anyhow::Context;
+#[cfg(feature = "calendar")]
 use email_api_client::domain::models::{EmailApiError, TokenFreshness};
 use models_email::email::service::backfill::{
     BackfillJob, BackfillJobStatus, BackfillOperation, BackfillPubsubMessage, JobScopedPayload,
@@ -18,6 +21,7 @@ use uuid::Uuid;
 /// unpublished state and ack the message; the outbox drain republishes it
 /// once the switch flips back on. `None` means calendar sync is enabled and
 /// the delivery should proceed.
+#[cfg(feature = "calendar")]
 async fn park_calendar_delivery(
     ctx: &PubSubContext,
     calendar_job_id: Uuid,
@@ -144,6 +148,7 @@ async fn inner_process_message(
             };
             backfill_attachment::backfill_attachment(ctx, &link, &scope.payload).await
         }
+        #[cfg(feature = "calendar")]
         BackfillOperation::CalendarGoogleBackfill(scope) => {
             if let Some(parked) = park_calendar_delivery(ctx, scope.payload.calendar_job_id).await {
                 return parked;
@@ -177,6 +182,8 @@ async fn inner_process_message(
             )
             .await
         }
+        #[cfg(not(feature = "calendar"))]
+        BackfillOperation::CalendarGoogleBackfill(_) => Ok(()),
         BackfillOperation::FinalizeBackfill(scope) => {
             increment_counters::finalize_backfill(ctx, scope.link_id, scope.job_id).await
         }

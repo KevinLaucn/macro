@@ -1,6 +1,7 @@
 #![recursion_limit = "256"]
 use crate::api::context::{ApiContext, AuthorizationService};
 use anyhow::Context;
+#[cfg(feature = "calendar")]
 use calendar_events::{
     domain::{mutations::CalendarMutationServiceImpl, service::CalendarService},
     outbound::{google::GoogleCalendarClient, pg::PgCalendarRepository},
@@ -15,10 +16,12 @@ use email::{
     outbound::{EmailPgRepo, GmailTokenProviderImpl},
 };
 use email_api_client::GmailApiClientRepository;
+#[cfg(feature = "calendar")]
 use email_service::calendar_tokens::CalendarTokenProviderAdapter;
 use email_service::outbound::email_api::{
     EmailServiceTokenSource, GmailApi, RateBudget, RedisProviderRateLimiter,
 };
+#[cfg(feature = "calendar")]
 use email_service::pubsub::calendar_backfill_adapters::RedisCalendarRequestGate;
 use entity_access::{domain::service::EntityAccessServiceImpl, outbound::PgAccessRepository};
 use frecency::{domain::services::FrecencyQueryServiceImpl, outbound::postgres::FrecencyPgStorage};
@@ -215,7 +218,9 @@ async fn main() -> anyhow::Result<()> {
         redis_conn.clone(),
         auth_service_client.clone(),
     ));
+    #[cfg(feature = "calendar")]
     let calendar_service = Arc::new(CalendarService::new(PgCalendarRepository::new(db.clone())));
+    #[cfg(feature = "calendar")]
     let calendar_mutation_service = Arc::new(CalendarMutationServiceImpl::new(
         PgCalendarRepository::new(db.clone()),
         GoogleCalendarClient::with_gate(
@@ -248,7 +253,9 @@ async fn main() -> anyhow::Result<()> {
         email_thread_state,
         gmail_token_state,
         macro_event_broker: Arc::new(macro_event_broker),
+        #[cfg(feature = "calendar")]
         calendar_service,
+        #[cfg(feature = "calendar")]
         calendar_mutation_service,
     })
     .await;

@@ -105,7 +105,17 @@ export const createAppViteConfig = (): UserConfigFn => {
       },
       plugins: [
         // solidDevtools({ autoname: true }),
-        i18nAstPlugin(),
+        // i18nAstPlugin transforms legacy JSX into __t(). Newly refactored or二开 modules
+        // are explicitly excluded from AST transformation to ensure zero build interference.
+        i18nAstPlugin({
+          excludePatterns: [
+            '/features/settings/Settings.tsx',
+            '/features/settings/Appearance.tsx',
+            '/features/settings/Shortcuts.tsx',
+            '/features/settings/Crm.tsx',
+            '/features/block-email/component/compose/ComposeToolbar.tsx',
+          ],
+        }),
         solid(),
         wasm(),
         tailwind(),

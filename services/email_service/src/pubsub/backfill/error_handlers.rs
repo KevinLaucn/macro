@@ -3,6 +3,7 @@ use crate::pubsub::backfill::increment_counters::{
 };
 use crate::pubsub::context::PubSubContext;
 use crate::pubsub::util::cg_refresh_email;
+#[cfg(feature = "calendar")]
 use calendar_events::domain::{
     models::{CalendarBackfillFailureDisposition, CalendarBackfillJobKey},
     service::GoogleCalendarBackfillRunError,
@@ -11,7 +12,9 @@ use models_email::api::refresh::{BackfillStatus, RefreshEmailEvent};
 use models_email::email::service::backfill::{
     BackfillMessagePayload, BackfillOperation, BackfillPubsubMessage, JobScopedPayload,
 };
-use models_email::email::service::pubsub::{DetailedError, FailureReason, LinkManagerMessage};
+use models_email::email::service::pubsub::DetailedError;
+#[cfg(feature = "calendar")]
+use models_email::email::service::pubsub::{FailureReason, LinkManagerMessage};
 use sqs_worker::cleanup_message;
 use uuid::Uuid;
 
@@ -62,6 +65,7 @@ pub async fn handle_non_retryable_error(
             })
             .ok();
         }
+        #[cfg(feature = "calendar")]
         BackfillOperation::CalendarGoogleBackfill(scope) => {
             let coordinator_reauth_transitioned = coordinator_reauth_edge(&e.source);
             let prelease_reauth_transitioned = if coordinator_reauth_transitioned.is_none() {
@@ -102,6 +106,8 @@ pub async fn handle_non_retryable_error(
                     .ok();
             }
         }
+        #[cfg(not(feature = "calendar"))]
+        BackfillOperation::CalendarGoogleBackfill(_) => {}
         // Best-effort side seed — a failure must not fail the backfill job.
         BackfillOperation::SeedSentContact(_) => {}
         BackfillOperation::PopulateCrmContact(_) => {}
@@ -114,6 +120,7 @@ pub async fn handle_non_retryable_error(
     Ok(())
 }
 
+#[cfg(feature = "calendar")]
 fn coordinator_reauth_edge(error: &anyhow::Error) -> Option<bool> {
     error.chain().find_map(|cause| {
         cause
