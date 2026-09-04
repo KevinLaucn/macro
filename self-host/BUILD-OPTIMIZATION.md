@@ -51,7 +51,7 @@ nix build --print-build-logs ".#local-stack-binaries" --out-link result-bins
 | `scheduled_action` | 周期调度 | **DROP** | Agent 周期轮询，纯邮件业务不依赖 |
 | `agent_harness_service` | AI 智能体执行 | **DROP** | AI Coding 与 Docker 沙箱执行引擎，邮件核心无需此服务 |
 | `agent_trigger_service` | 智能体触发器 | **DROP** | AI 智能体监听与调度，邮件核心无需 |
-| `mcp_service` | MCP 协议服务 | **DROP** | Claude/Cursor MCP 协议适配，邮件生产无需 |
+| `mcp_service` | MCP 协议服务 | **REMOVED** | 代码库已物理移除，无需编译 |
 | `document_cognition_service` | AI 文档感知/总结 | **DROP** | 大模型文档总结与 OCR，邮件基础功能无需 |
 | `seed_cli` | 本地测试工具 | **DROP** | 开发调试工具，生产环境严禁携带 |
 
@@ -94,5 +94,5 @@ nix build --print-build-logs ".#local-stack-binaries" --out-link result-bins
 
 ### 4.5 单 Compose 的生产运行 Profile
 - `self-host/docker-compose.yml` 默认使用 `macro-services-email` / `macro-init-email`。
-- `document_cognition_service`、`scheduled_action_service`、`mcp_service`、`ai_editing_worker` 位于 Compose `full` profile，默认邮件生产不会启动缺失的二进制。
+- `document_cognition_service`、`scheduled_action_service`、`ai_editing_worker` 位于 Compose `full` profile，默认邮件生产不会启动缺失的二进制。
 - Full 运行仍使用同一 Compose 文件：配置 Full 镜像名后执行 `./macroctl up --profile full`。

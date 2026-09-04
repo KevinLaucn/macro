@@ -552,33 +552,7 @@ services:
           - image-proxy-service
     healthcheck:
       <<: *healthcheck
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
 
-  mcp_service:
-    profiles: ["full"]
-    <<: *service
-    command: ["/app/out/mcp_service"]
-    environment:
-      # rmcp only answers requests whose Host is on this URL's allowed-host
-      # list, and its clients dial it in-network as `mcp-service`.
-      MCP_PUBLIC_URL: http://mcp-service:8080
-      APP_BASE_URL: https://${MACRO_DOMAIN}/app
-      REDIS_URL: ${REDIS_URI:-redis://redis:6379}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      fusionauth:
-        condition: service_healthy
-    networks:
-      auth:
-      databases:
-      services:
-        aliases:
-          - mcp-service
-
-  # Agent sandboxes run as siblings on the host Docker daemon, so this service
   # gets the daemon socket — root-equivalent on the host. Opt in deliberately:
   #   macroctl up --profile agents
   agent_harness_service:

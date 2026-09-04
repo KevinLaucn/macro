@@ -474,11 +474,6 @@
           binaries = [ "image_proxy_service" ];
         }
         {
-          serviceName = "mcp-server";
-          packageName = "mcp_service";
-          binaries = [ "mcp_service" ];
-        }
-        {
           serviceName = "notification-service";
           packageName = "notification_service";
           binaries = [ "notification_service" ];

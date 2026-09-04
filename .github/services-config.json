@@ -261,16 +261,7 @@
         "image_proxy_service"
       ]
     },
-    "mcp-server": {
-      "source_paths": [
-        "services/mcp_service/**",
-        "crates/ai_tools/**"
-      ],
-      "stack_path": "infra/stacks/mcp-server/**",
-      "deploy_binaries": [
-        "mcp_service"
-      ]
-    },
+
     "kafka-cluster": {
       "source_paths": [
         "crates/macro_event_topics/**"

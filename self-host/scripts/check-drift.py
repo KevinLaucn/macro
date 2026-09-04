@@ -121,21 +121,15 @@ if rust_queue_names != manifest_queue_names:
          + (f"; stale {extra}" if extra else "")
          + " — regenerate it")
 
-# --- the auth binary must not be the local-stack build ---------------------
-# `.#local-stack-binaries` compiles authentication_service with
-# `return_passwordless_code` and without `rate_limit`, which returns the
-# one-time login code in the API response. Shipping that is a full
-# authentication bypass, so the publish workflow replaces it with the
-# production build. Guard the step: deleting it would silently reintroduce
-# the bypass and nothing else would notice.
+# --- the services image must use the Email production aggregate ------------
+# `.#local-stack-binaries` is a development aggregate and compiles
+# authentication_service with `return_passwordless_code`. The publish workflow
+# must use the production Email aggregate instead.
 workflow = (ROOT / ".github/workflows/self-host-images.yml").read_text()
-if "local-stack-binaries" in workflow:
-    if "deploy-service-binaries-authentication-service" not in workflow:
-        fail("self-host-images.yml builds from local-stack-binaries but never replaces"
-             " authentication_service with the production build — that ships a login-code"
-             " leak and no rate limiting")
-    if "Verify the auth binary is the production build" not in workflow:
-        fail("self-host-images.yml no longer verifies the auth binary was replaced")
+if ".#local-stack-binaries" in workflow:
+    fail("self-host-images.yml must not build the self-host services image from local-stack-binaries")
+if ".#self-host-email-binaries" not in workflow:
+    fail("self-host-images.yml must build the self-host services image from self-host-email-binaries")
 
 if "nix develop --command cargo build --release" in workflow:
     fail("self-host-images.yml bypasses crane/Nix artifacts with a checkout-local release build")
@@ -151,7 +145,6 @@ if "ghcr.io/kevinlaucn/macro-init-email" not in compose:
 for service in (
     "document_cognition_service",
     "scheduled_action_service",
-    "mcp_service",
     "ai_editing_worker",
 ):
     match = re.search(rf"^  {service}:\n(.*?)(?=^  \w|^volumes:)", compose, re.M | re.S)
@@ -159,11 +152,8 @@ for service in (
         fail(f"{service} must stay behind the full Compose profile")
 
 for image in ("macro-ai-editing-worker", "macro-analytics-proxy"):
-    block = re.search(
-        rf"- image: {image}\n(.*?)(?=          - image:|    steps:)", workflow, re.S
-    )
-    if not block or "email_profile: false" not in block.group(1):
-        fail(f"{image} must not build in the Email production profile")
+    if image in workflow:
+        fail(f"{image} must not be built by the Email production image workflow")
 
 # --- kafka -----------------------------------------------------------------
 topics_src = json.loads((ROOT / ".github/kafka-cluster-topics.json").read_text())
