@@ -119,7 +119,6 @@ import {
   Suspense,
 } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-import { CalendarSidebarPreview } from './calendar-sidebar-preview';
 
 // TODO(sidebar-next): move to app-sidebar/navigation.tsx once SidebarRail ships.
 export interface SidebarItem {
@@ -140,7 +139,6 @@ type SidebarSectionLinkId =
   | 'mail'
   | 'channels'
   | 'documents'
-  | 'calendar'
   | 'agents'
   | 'companies';
 
@@ -154,7 +152,6 @@ const WORKSPACE_LINK_IDS = [
   'mail',
   'channels',
   'documents',
-  'calendar',
   'agents',
   'companies',
 ] as const;
@@ -163,7 +160,6 @@ const DEFAULT_SECTION_VISIBILITY: SidebarSectionVisibility = {
   mail: true,
   channels: true,
   documents: true,
-  calendar: true,
   agents: true,
   companies: true,
 };
@@ -233,14 +229,6 @@ const SIDEBAR_LINKS = [
     hotkey: 'd',
     hotkeyToken: TOKENS.sidebar.goTo.markdownDocuments,
     hiddenFromSidebar: true,
-  },
-  {
-    id: 'calendar',
-    label: 'Calendar',
-    href: '/calendar',
-    icon: WideCalendarIcon,
-    hotkey: 'r',
-    hotkeyToken: TOKENS.sidebar.goTo.calendar,
   },
   {
     id: 'channels',
@@ -1821,7 +1809,7 @@ const SidebarLinkRow = (props: SidebarLinkProps) => {
           ? props.hotkeyToken
           : [TOKENS.sidebar.goToLeader, props.hotkeyToken]
       }
-      tooltipDisabled={props.sidebarState !== 'slim' || props.id === 'calendar'}
+      tooltipDisabled={props.sidebarState !== 'slim'}
       onMouseLeave={() => setIsHovering(false)}
       onMouseDown={(e) => {
         if (e.button !== 0) return;
@@ -1990,14 +1978,7 @@ const SidebarLink = (props: SidebarLinkProps) => {
           requestSearchFocus(split.id);
       }}
     >
-      <Show
-        when={props.id === 'calendar'}
-        fallback={<SidebarLinkRow {...props} />}
-      >
-        <CalendarSidebarPreview disabled={contextMenuOpen()}>
-          <SidebarLinkRow {...props} />
-        </CalendarSidebarPreview>
-      </Show>
+      <SidebarLinkRow {...props} />
     </SidebarOpenInSplitMenu>
   );
 };
