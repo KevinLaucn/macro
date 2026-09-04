@@ -540,6 +540,55 @@
           ) localStackDeployServiceNames;
       };
 
+      # ── Self-hosted Email production binary aggregate ───────────────
+      # Focused core for self-hosted email deployments: includes email, auth
+      # (production build without passwordless codes in API responses), DSS,
+      # gateway, contacts, static file, search processing, upload finalizer,
+      # image proxy, notifications and unfurl. Drops heavy AI agent harnesses,
+      # MCP, document cognition AI, scheduled actions, and dev seed CLIs.
+      selfHostEmailLocalBinaryDefinitions = [
+        {
+          serviceName = "email-search-processing";
+          packageName = "search_processing_service";
+          binaries = [ "search_processing_service" ];
+          featureArgs = "--no-default-features --features processing,service";
+        }
+        {
+          serviceName = "email-upload-finalizer";
+          packageName = "document_upload_finalizer_handler";
+          binaries = [ "document_upload_finalizer_local_worker" ];
+        }
+      ];
+
+      selfHostEmailLocalBinaryPackages = pkgs.lib.listToAttrs (
+        map (def: {
+          name = "self-host-email-binaries-${def.serviceName}";
+          value = deployServiceBinaryPackage def;
+        }) selfHostEmailLocalBinaryDefinitions
+      );
+
+      selfHostEmailDeployServiceNames = [
+        "authentication-service"
+        "connection-gateway"
+        "contacts-service"
+        "document-storage-service"
+        "email-service"
+        "image-proxy-service"
+        "notification-service"
+        "static-file-service"
+        "unfurl-service"
+      ];
+
+      selfHostEmailBinaries = pkgs.buildEnv {
+        name = "self-host-email-binaries";
+        pathsToLink = [ "/bin" ];
+        paths =
+          pkgs.lib.attrValues selfHostEmailLocalBinaryPackages
+          ++ map (
+            serviceName: deployServiceBinaryPackages."deploy-service-binaries-${serviceName}"
+          ) selfHostEmailDeployServiceNames;
+      };
+
       # ── Lambda builds (crane + cargo-zigbuild) ─────────────────────
       # SPIKE: build a Rust Lambda handler reproducibly under nix/crane so
       # lambdas ride the same content-addressed cache as the service binaries
@@ -987,6 +1036,7 @@
       // deployLambdaPackages
       // pkgs.lib.optionalAttrs isLinux {
         local-stack-binaries = localStackBinaries;
+        self-host-email-binaries = selfHostEmailBinaries;
       };
 
       devShells = {
