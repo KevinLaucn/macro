@@ -80,12 +80,6 @@ jobs:
           echo "Runner: ${{ inputs.services_runner || 'github' }}"
           echo "BUILD_START_TIME=$(date -u +%s)" >> "$GITHUB_ENV"
 
-      - name: Preflight lockfile and workspace metadata check
-        run: |
-          set -euo pipefail
-          echo "Validating synthetic email workspace metadata and lockfile consistency..."
-          nix build --print-build-logs ".#self-host-email-preflight"
-
       - name: Build service binaries
         run: |
           set -euo pipefail

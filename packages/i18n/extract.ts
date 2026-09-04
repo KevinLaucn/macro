@@ -112,14 +112,29 @@ async function run() {
 
   const missing: Record<string, string> = {};
   const inUse: Record<string, string[]> = {};
+  const ambiguous: Record<string, string[]> = {};
+  const obsolete: Record<string, string> = {};
 
   for (const [key, meta] of currentCalls.entries()) {
-    inUse[key] = Array.from(new Set(meta.occurrences));
+    const uniqueOccurrences = Array.from(new Set(meta.occurrences));
+    inUse[key] = uniqueOccurrences;
     if (!existingZh[key]) {
       // Check if base key exists when context key is searched
       const baseKey = key.includes("@@") ? key.split("@@")[0] : key;
       if (!existingZh[baseKey]) {
         missing[key] = "";
+      }
+    }
+    if (uniqueOccurrences.length > 2) {
+      ambiguous[key] = uniqueOccurrences;
+    }
+  }
+
+  for (const key of Object.keys(existingZh)) {
+    if (!currentCalls.has(key)) {
+      const baseKey = key.includes("@@") ? key.split("@@")[0] : key;
+      if (!currentCalls.has(baseKey)) {
+        obsolete[key] = existingZh[key];
       }
     }
   }
@@ -130,13 +145,16 @@ async function run() {
 
   fs.writeFileSync(path.join(diffDir, "missing.json"), JSON.stringify(missing, null, 2), "utf-8");
   fs.writeFileSync(path.join(diffDir, "in-use.json"), JSON.stringify(inUse, null, 2), "utf-8");
+  fs.writeFileSync(path.join(diffDir, "parse-failures.json"), JSON.stringify(parseFailures, null, 2), "utf-8");
+  fs.writeFileSync(path.join(diffDir, "obsolete.json"), JSON.stringify(obsolete, null, 2), "utf-8");
+  fs.writeFileSync(path.join(diffDir, "ambiguous.json"), JSON.stringify(ambiguous, null, 2), "utf-8");
 
   console.log("==========================================");
   console.log(`✅ Explicit t() Extractor Completed:`);
   console.log(`  - Explicit t() Keys Found: ${currentCalls.size}`);
   console.log(`  - Missing in zh-CN:       ${Object.keys(missing).length}`);
   console.log(`  - Parse Failures:          ${parseFailures.length}`);
-  console.log(`Reports saved in packages/i18n/diff/missing.json & in-use.json`);
+  console.log(`Reports saved in packages/i18n/diff/`);
   console.log("==========================================");
 }
 

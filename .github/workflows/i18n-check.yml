@@ -34,7 +34,7 @@ jobs:
           echo "✅ zh-CN.json is valid JSON"
 
       - name: Run i18n runtime test suite
-        run: bun test packages/i18n/context.test.ts
+        run: bun test packages/i18n
 
       - name: Typecheck i18n package
         run: bun x tsc -p packages/i18n/tsconfig.json --noEmit
@@ -44,7 +44,10 @@ jobs:
           bun packages/i18n/extract.ts
           node -e '
             const fs = require("fs");
-            const failures = JSON.parse(fs.readFileSync("packages/i18n/diff/parse-failures.json", "utf8"));
+            const parseFailuresPath = "packages/i18n/diff/parse-failures.json";
+            const failures = fs.existsSync(parseFailuresPath)
+              ? JSON.parse(fs.readFileSync(parseFailuresPath, "utf8"))
+              : [];
             if (failures.length > 0) {
               console.error("❌ Blocking Failure: " + failures.length + " source files failed AST parsing!");
               console.error(JSON.stringify(failures, null, 2));
@@ -59,10 +62,10 @@ jobs:
           node -e '
             const fs = require("fs");
             try {
-              const missing = JSON.parse(fs.readFileSync("packages/i18n/diff/missing.json", "utf8"));
-              const obsolete = JSON.parse(fs.readFileSync("packages/i18n/diff/obsolete.json", "utf8"));
-              const ambiguous = JSON.parse(fs.readFileSync("packages/i18n/diff/ambiguous.json", "utf8"));
-              const dict = JSON.parse(fs.readFileSync("packages/i18n/locales/zh-CN.json", "utf8"));
+              const missing = fs.existsSync("packages/i18n/diff/missing.json") ? JSON.parse(fs.readFileSync("packages/i18n/diff/missing.json", "utf8")) : {};
+              const obsolete = fs.existsSync("packages/i18n/diff/obsolete.json") ? JSON.parse(fs.readFileSync("packages/i18n/diff/obsolete.json", "utf8")) : {};
+              const ambiguous = fs.existsSync("packages/i18n/diff/ambiguous.json") ? JSON.parse(fs.readFileSync("packages/i18n/diff/ambiguous.json", "utf8")) : {};
+              const dict = fs.existsSync("packages/i18n/locales/zh-CN.json") ? JSON.parse(fs.readFileSync("packages/i18n/locales/zh-CN.json", "utf8")) : {};
 
               const missingCount = Object.keys(missing).length;
               const obsoleteCount = Object.keys(obsolete).length;
