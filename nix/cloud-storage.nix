@@ -706,7 +706,7 @@
       ];
 
       selfHostEmailBinaryCargoExtraArgs =
-        "--locked "
+        "--offline "
         + pkgs.lib.concatMapStringsSep " " (
           def:
           "--package ${def.packageName} "
