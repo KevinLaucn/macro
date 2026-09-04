@@ -12,8 +12,6 @@ export const MOBILE_NAV_VIEW_IDS = [
   'channels',
   'documents',
   'agents',
-  'tasks',
-  'calls',
   'settings',
 ] as const;
 

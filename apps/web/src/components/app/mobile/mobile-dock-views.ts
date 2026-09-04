@@ -1,12 +1,10 @@
 import { useCalendarUiFlag } from '@app/features/calendar/hooks/use-calendar-ui-flag';
 import WideCalendarIcon from '@icon/wide-calendar.svg';
-import { AnimatedCallIcon } from '@icon/wide-call';
 import { AnimatedChannelIcon } from '@icon/wide-channel';
 import { AnimatedEmailIcon } from '@icon/wide-email';
 import { AnimatedFileMdIcon } from '@icon/wide-fileMd';
 import { AnimatedInboxIcon } from '@icon/wide-inbox';
 import { AnimatedStarIcon } from '@icon/wide-star';
-import { AnimatedTaskIcon } from '@icon/wide-task';
 import BellIcon from '@phosphor/bell-simple.svg';
 import { type Accessor, createMemo } from 'solid-js';
 import type { MobileTouchIconComponent } from './MobileTouchMenu';
@@ -43,8 +41,6 @@ const MOBILE_DOCK_VIEWS: MobileDockView[] = [
   { id: 'channels', label: 'Channels', icon: AnimatedChannelIcon },
   { id: 'documents', label: 'Files', icon: AnimatedFileMdIcon },
   { id: 'agents', label: 'Agents', icon: AnimatedStarIcon },
-  { id: 'tasks', label: 'Tasks', icon: AnimatedTaskIcon },
-  { id: 'calls', label: 'Calls', icon: AnimatedCallIcon },
 ];
 
 /** The dock views with feature gating applied (the calendar UI flag). */

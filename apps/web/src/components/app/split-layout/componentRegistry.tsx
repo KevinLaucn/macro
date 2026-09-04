@@ -13,9 +13,7 @@ import { getViewPreset } from '@app/features/next-soup/sidebar/soup-filter-prese
 import { NonMemberChannelPreview } from '@app/features/next-soup/soup-view/non-member-channel-preview';
 import { SoupView } from '@app/features/next-soup/soup-view/soup-view';
 import { useRecentViewFlag } from '@app/features/next-soup/use-recent-view-flag';
-import { ReminderEditorSplit } from '@app/features/reminders/ReminderEditorSplit';
 import { SettingsPanelComponentWrapper } from '@app/features/settings/Settings';
-import { TasksView } from '@app/features/tasks-view/tasks-view';
 import { useAnalytics } from '@app/lib/analytics/analytics-context';
 import { useFeatureFlag, usePosthog } from '@app/lib/analytics/posthog';
 import { globalSplitManager } from '@app/signal/splitLayout';
@@ -23,7 +21,6 @@ import { EventComposerSplit } from '@block-calendar/components/EventComposerSpli
 import { ChannelCompose } from '@block-channel/component/Compose';
 import { EmailCompose } from '@block-email/component/compose/Compose';
 import { ComposeSkill } from '@block-md/component/ComposeSkill';
-import { ComposeTask } from '@block-md/component/ComposeTask';
 import {
   CRM_VIEW_URL_PARAM,
   type CrmViewConfig,
@@ -427,37 +424,7 @@ registerComponent(
   })
 );
 
-function LegacyTasksView() {
-  const user = useUserContext();
-  const preset = getViewPreset('tasks', undefined, {
-    userId: user.userId(),
-    isTeamAdmin: false,
-  });
 
-  return (
-    <SoupView
-      viewName="Tasks"
-      initialFilters={preset?.filters}
-      initialClientFilters={preset?.clientFilters}
-      initialGroupBy={preset?.groupBy}
-    />
-  );
-}
-
-function RegisteredTasksView() {
-  usePageViewTracking('tasks');
-  const newAppViews = useNewAppViews();
-
-  return (
-    <Show when={newAppViews.ready()} fallback={<LoadingBlock />}>
-      <Show when={newAppViews.enabled()} fallback={<LegacyTasksView />}>
-        <TasksView />
-      </Show>
-    </Show>
-  );
-}
-
-registerComponent('tasks', withAuth(RegisteredTasksView));
 
 function LegacyChannelsView() {
   const preset = getViewPreset('channels');
@@ -660,10 +627,7 @@ registerComponent('email-compose', (params) => {
     typeof params.draftID === 'string' ? params.draftID : undefined;
   return <EmailCompose draftID={draftID} initialTo={initialTo} />;
 });
-registerComponent('task-compose', (params) => {
-  usePageViewTracking('task-compose');
-  return <ComposeTask {...params} />;
-});
+
 registerComponent('calendar-event-compose', (params) => {
   usePageViewTracking('calendar-event-compose');
   return (

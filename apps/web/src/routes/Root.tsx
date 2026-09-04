@@ -108,9 +108,7 @@ import {
   type ParentProps,
   Show,
   Suspense,
-} from 'solid-js';
 import { BasePathComponent } from './BasePath';
-import { TaskRoute } from './TaskRoute';
 
 /** Syncs login cookie with auth state. Only updates on successful query (not errors/loading). */
 function useSyncLoginCookie() {
@@ -220,10 +218,6 @@ function OnboardingRoute() {
 }
 
 const ROUTES: RouteDefinition[] = [
-  {
-    path: '/task-slug/:taskSlug',
-    component: TaskRoute,
-  },
   LAYOUT_ROUTE,
   /** BEGIN - APP ROUTES */
   {
@@ -252,10 +246,6 @@ const ROUTES: RouteDefinition[] = [
   },
   {
     path: '/documents',
-    component: LAYOUT_ROUTE.component,
-  },
-  {
-    path: '/tasks',
     component: LAYOUT_ROUTE.component,
   },
   {

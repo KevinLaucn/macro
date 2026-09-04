@@ -81,7 +81,6 @@ import { AnimatedHomeIcon } from '@icon/wide-home';
 import { AnimatedInboxIcon } from '@icon/wide-inbox';
 import { AnimatedSearchIcon } from '@icon/wide-search';
 import { AnimatedStarIcon } from '@icon/wide-star';
-import { AnimatedTaskIcon } from '@icon/wide-task';
 import { ContextMenu } from '@kobalte/core/context-menu';
 import CaretRightIcon from '@phosphor/caret-right.svg';
 import CaretUpIcon from '@phosphor/caret-up.svg';
@@ -141,7 +140,6 @@ type SidebarSectionLinkId =
   | 'mail'
   | 'channels'
   | 'documents'
-  | 'tasks'
   | 'calendar'
   | 'agents'
   | 'companies';
@@ -156,7 +154,6 @@ const WORKSPACE_LINK_IDS = [
   'mail',
   'channels',
   'documents',
-  'tasks',
   'calendar',
   'agents',
   'companies',
@@ -166,7 +163,6 @@ const DEFAULT_SECTION_VISIBILITY: SidebarSectionVisibility = {
   mail: true,
   channels: true,
   documents: true,
-  tasks: true,
   calendar: true,
   agents: true,
   companies: true,
@@ -237,14 +233,6 @@ const SIDEBAR_LINKS = [
     hotkey: 'd',
     hotkeyToken: TOKENS.sidebar.goTo.markdownDocuments,
     hiddenFromSidebar: true,
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    href: LIST_VIEW_PATHS.tasks,
-    icon: AnimatedTaskIcon,
-    hotkey: 't',
-    hotkeyToken: TOKENS.sidebar.goTo.tasks,
   },
   {
     id: 'calendar',
