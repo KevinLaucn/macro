@@ -476,6 +476,7 @@
           packageName,
           binaries,
           featureArgs ? "",
+          cargoArtifacts ? deployCargoArtifacts,
         }:
         craneLib.buildPackage (
           commonArgs
@@ -483,7 +484,7 @@
             # Pruned source: this derivation only rebuilds when a crate in
             # the service's own workspace closure changes.
             src = prunedDeploySrc "service-${serviceName}" packageName;
-            cargoArtifacts = deployCargoArtifacts;
+            inherit cargoArtifacts;
             pname = "cloud-storage-${serviceName}-binaries";
             doCheck = false;
             cargoExtraArgs =
@@ -546,47 +547,102 @@
       # gateway, contacts, static file, search processing, upload finalizer,
       # image proxy, notifications and unfurl. Drops heavy AI agent harnesses,
       # MCP, document cognition AI, scheduled actions, and dev seed CLIs.
-      selfHostEmailLocalBinaryDefinitions = [
+      #
+      # Isolated dependency closure: selfHostEmailCargoArtifacts compiles
+      # dependencies strictly needed by these 11 services (12 binaries),
+      # without compiling unneeded crates (Daytona, ACP, turso, AI libs).
+      selfHostEmailBinaryDefinitions = [
         {
-          serviceName = "email-search-processing";
+          serviceName = "authentication-service";
+          packageName = "authentication_service";
+          binaries = [ "authentication_service" ];
+        }
+        {
+          serviceName = "connection-gateway";
+          packageName = "connection_gateway";
+          binaries = [ "connection_gateway_service" ];
+        }
+        {
+          serviceName = "contacts-service";
+          packageName = "contacts_service";
+          binaries = [ "contacts_service" ];
+        }
+        {
+          serviceName = "document-storage-service";
+          packageName = "document_storage_service";
+          binaries = [ "document_storage_service" ];
+        }
+        {
+          serviceName = "email-service";
+          packageName = "email_service";
+          binaries = [
+            "email_service"
+            "pubsub_workers"
+          ];
+        }
+        {
+          serviceName = "image-proxy-service";
+          packageName = "image_proxy_service";
+          binaries = [ "image_proxy_service" ];
+        }
+        {
+          serviceName = "notification-service";
+          packageName = "notification_service";
+          binaries = [ "notification_service" ];
+        }
+        {
+          serviceName = "static-file-service";
+          packageName = "static_file_service";
+          binaries = [ "static_file_service" ];
+        }
+        {
+          serviceName = "unfurl-service";
+          packageName = "unfurl_service";
+          binaries = [ "unfurl_service" ];
+        }
+        {
+          serviceName = "search-processing-service";
           packageName = "search_processing_service";
           binaries = [ "search_processing_service" ];
           featureArgs = "--no-default-features --features processing,service";
         }
         {
-          serviceName = "email-upload-finalizer";
+          serviceName = "upload-finalizer";
           packageName = "document_upload_finalizer_handler";
           binaries = [ "document_upload_finalizer_local_worker" ];
         }
       ];
 
-      selfHostEmailLocalBinaryPackages = pkgs.lib.listToAttrs (
-        map (def: {
-          name = "self-host-email-binaries-${def.serviceName}";
-          value = deployServiceBinaryPackage def;
-        }) selfHostEmailLocalBinaryDefinitions
+      selfHostEmailBinaryCargoExtraArgs =
+        "--locked "
+        + pkgs.lib.concatMapStringsSep " " (
+          def:
+          "--package ${def.packageName} "
+          + pkgs.lib.concatMapStringsSep " " (binary: "--bin ${binary}") def.binaries
+        ) selfHostEmailBinaryDefinitions;
+
+      selfHostEmailCargoArtifacts = craneLib.buildDepsOnly (
+        commonArgs
+        // {
+          pname = "cloud-storage-self-host-email-deps";
+          doCheck = false;
+          cargoCheckCommand = "true";
+          cargoExtraArgs = selfHostEmailBinaryCargoExtraArgs;
+          CARGO_PROFILE = "release";
+        }
       );
 
-      selfHostEmailDeployServiceNames = [
-        "authentication-service"
-        "connection-gateway"
-        "contacts-service"
-        "document-storage-service"
-        "email-service"
-        "image-proxy-service"
-        "notification-service"
-        "static-file-service"
-        "unfurl-service"
-      ];
+      selfHostEmailBinaryPackages = pkgs.lib.listToAttrs (
+        map (def: {
+          name = "self-host-email-binaries-${def.serviceName}";
+          value = deployServiceBinaryPackage (def // { cargoArtifacts = selfHostEmailCargoArtifacts; });
+        }) selfHostEmailBinaryDefinitions
+      );
 
       selfHostEmailBinaries = pkgs.buildEnv {
         name = "self-host-email-binaries";
         pathsToLink = [ "/bin" ];
-        paths =
-          pkgs.lib.attrValues selfHostEmailLocalBinaryPackages
-          ++ map (
-            serviceName: deployServiceBinaryPackages."deploy-service-binaries-${serviceName}"
-          ) selfHostEmailDeployServiceNames;
+        paths = pkgs.lib.attrValues selfHostEmailBinaryPackages;
       };
 
       # ── Lambda builds (crane + cargo-zigbuild) ─────────────────────
