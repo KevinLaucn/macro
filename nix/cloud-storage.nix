@@ -708,13 +708,24 @@
         }
       ];
 
+      # Strip --no-default-features from per-package featureArgs when building
+      # the aggregate deps-only command: cargo rejects the flag when it appears
+      # more than once, and multiple packages in selfHostEmailBinaryDefinitions
+      # specify it.  The individual per-service builds (deployServiceBinaryPackage)
+      # invoke cargo once per package and correctly apply the full featureArgs.
+      # Compiling deps with default features is a harmless superset.
       selfHostEmailBinaryCargoExtraArgs =
         "--offline "
         + pkgs.lib.concatMapStringsSep " " (
           def:
+          let
+            rawFeatureArgs = def.featureArgs or "";
+            featuresOnly = builtins.replaceStrings [ "--no-default-features" ] [ "" ] rawFeatureArgs;
+            trimmed = pkgs.lib.strings.trim featuresOnly;
+          in
           "--package ${def.packageName} "
           + pkgs.lib.concatMapStringsSep " " (binary: "--bin ${binary}") def.binaries
-          + pkgs.lib.optionalString ((def.featureArgs or "") != "") " ${def.featureArgs or ""}"
+          + pkgs.lib.optionalString (trimmed != "") " ${trimmed}"
         ) selfHostEmailBinaryDefinitions;
 
       selfHostEmailCargoArtifacts = craneLib.buildDepsOnly (
