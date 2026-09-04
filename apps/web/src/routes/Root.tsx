@@ -108,6 +108,7 @@ import {
   type ParentProps,
   Show,
   Suspense,
+} from 'solid-js';
 import { BasePathComponent } from './BasePath';
 
 /** Syncs login cookie with auth state. Only updates on successful query (not errors/loading). */

@@ -727,16 +727,6 @@ if (LOCAL_ONLY) {
   );
 
   registerComponent(
-    'agent-ui',
-    lazy(() => import('@app/features/block-agent/debug/Gallery'))
-  );
-
-  registerComponent(
-    'agent-replay',
-    lazy(() => import('@app/features/block-agent/debug/replay/Replay'))
-  );
-
-  registerComponent(
     'linked-conversation',
     withAuth(lazy(() => import('@core/linked-conversation/debug/Demo')))
   );

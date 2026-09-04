@@ -66,7 +66,6 @@ export const BlockRegistry = [
   'company',
   'automation',
   'pr',
-  'agent',
 ] as const;
 
 /** Block names that resolve through another concrete block implementation. */
@@ -101,7 +100,6 @@ export type BlockAlias = (typeof BlockAliasRegistry)[BlockAliasKeys];
  * Represents the block types that do not correspond to a document type.
  */
 export const NonDocumentBlockTypes = [
-  'call',
   'calendar',
   'chat',
   'channel',
@@ -111,7 +109,6 @@ export const NonDocumentBlockTypes = [
   'company',
   'automation',
   'pr',
-  'agent',
 ] as const as (BlockName | BlockAlias)[];
 
 /**
@@ -196,7 +193,6 @@ export const ValidNestingCombinations: BlockCombinationRules = {
   automation: new Set([]),
   csv: new Set([]),
   pr: new Set([]),
-  agent: new Set([]),
 };
 
 export const LoadErrors = {
