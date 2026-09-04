@@ -372,6 +372,10 @@ pub fn run_stack(mode: Mode, args: &cli::RunArgs) -> Result<()> {
             mode,
             args.traces.enabled() && summary::port_open(4318),
             args.enable_onboarding,
+            env.merged
+                .get("ADMIN_EMAIL")
+                .or_else(|| env.merged.get("MACRO_ADMIN_EMAIL"))
+                .map(String::as_str),
         )?
     };
 
@@ -422,6 +426,33 @@ pub fn run_stack(mode: Mode, args: &cli::RunArgs) -> Result<()> {
         None => {}
     }
     Ok(())
+}
+
+/// Run only the frontend dev server, inheriting the instance's environment and exec-ing Vite.
+pub fn frontend_exec(instance: &Instance, mode: Mode, args: &cli::FrontendArgs) -> Result<()> {
+    let admin_email = args.admin_email.clone().or_else(|| {
+        let env_path = instance.artifact_dir().join("local.generated.env");
+        if env_path.exists() {
+            std::fs::read_to_string(&env_path).ok().and_then(|content| {
+                content.lines().find_map(|line| {
+                    line.strip_prefix("ADMIN_EMAIL=")
+                        .or_else(|| line.strip_prefix("MACRO_ADMIN_EMAIL="))
+                        .map(|s| s.trim_matches('"').to_string())
+                })
+            })
+        } else {
+            None
+        }
+    });
+
+    let traces_enabled = summary::port_open(4318);
+    frontend::exec(
+        instance,
+        mode,
+        traces_enabled,
+        args.enable_onboarding,
+        admin_email.as_deref(),
+    )
 }
 
 /// Print the hotkey legend shown while attached to a running stack.
@@ -663,7 +694,8 @@ fn prepare(
     if mode.spec().runs_local_infra {
         let google = kickstart::GoogleIdp::from_env(&env.merged);
         let github = kickstart::GithubIdp::from_env(&env.merged);
-        fusionauth::write_kickstart(instance, google.as_ref(), github.as_ref())?;
+        let admin = kickstart::AdminUser::from_env(&env.merged);
+        fusionauth::write_kickstart(instance, google.as_ref(), github.as_ref(), admin.as_ref())?;
     }
     if args.build.build_aux_services {
         build_aux_service_images(stage, instance, &env)?;

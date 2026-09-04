@@ -13,23 +13,13 @@ const REDIRECT_URI = `${protocol}://${window.location.host}/app`;
 async function isPasswordLogin(email?: string | null) {
   if (!email) return false;
   const clean = email.toLowerCase().trim();
-
-  // 1. Check runtime configured super admin email from VPS .env
-  const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
-  if (runtimeAdmin && clean === runtimeAdmin) {
-    return true;
-  }
-
-  // 2. Check official SHA-256 fallback
-  const encodedEmail = new TextEncoder().encode(clean);
-  const hashedBuffer = await crypto.subtle.digest('SHA-256', encodedEmail);
-  const hashedEmail = Array.from(new Uint8Array(hashedBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-  return (
-    hashedEmail ===
-    '0d10222b5594dbb0eb5d2bccbc9b5d8e9ff83e99421b573fb32c8a7b74491c81'
-  );
+  const runtimeAdmin = (
+    (window as any).__MACRO_ENV__?.ADMIN_EMAIL ??
+    import.meta.env.VITE_ADMIN_EMAIL
+  )
+    ?.toLowerCase()
+    ?.trim();
+  return !!runtimeAdmin && clean === runtimeAdmin;
 }
 
 // Initiates the passwordless login flow.

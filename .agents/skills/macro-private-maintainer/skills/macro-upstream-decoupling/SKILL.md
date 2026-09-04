@@ -13,11 +13,39 @@ description: Preserve upstream compatibility while slimming KevinLaucn/macro Ema
 > 
 > **删除依赖关系，而不是删除上游源码；缩小生产闭包，而不是追求源码仓库最小化。**
 
+### 技术定义：Profile-driven Reachability Isolation
+
+Macro 二开解耦采用 **Profile-driven Reachability Isolation**：
+
+> 在指定 Product Profile 下，通过切断 feature、module/import、composition root、router/worker registry、build inventory 与 runtime composition 的 activation edges，使目标 Domain 不进入实际编译闭包、生产 artifact、Docker image 与运行时图，同时尽量保留 upstream Domain implementation 原样，以最小化 Fork maintenance surface。
+
+中文简单版：
+
+> **源码可以留在仓库，但我们的产品不编译它、不打包它、不放进镜像、不启动它。**
+
+更形式化地说，Macro 可以视为一张有向图：
+
+```text
+G = (V, E)
+
+V = module / crate / service / route / worker / frontend feature / artifact
+E = import / dependency / feature activation / DI / route registration / worker registration / build inventory / runtime call
+```
+
+解耦不是删除目标 Domain 的全部节点，而是找到尽量小的 **Cut Set**，切断 Product Profile 到目标 Domain 的可达路径：
+
+```text
+Reachable(<product_profile>, <target_domain>) = false
+```
+
+目标功能源码可以继续存在于仓库中，但在指定 Product Profile 下，不进入编译闭包、不进入生产二进制、不进入 Docker 镜像、不注册运行时服务/路由，也不产生相关运行时依赖。
+
 在 `KevinLaucn/macro` 长期跟随官方 `macro-inc/macro` upstream 的架构路线中：
 1. **源码树完整性**：尽可能保持 Macro 官方源码树和目录结构完整；
 2. **最小化分叉差异**：最大程度降低我们与 upstream 的 fork divergence，保障后续 `git fetch upstream` 与 `git merge upstream/main` / cherry-pick 的低成本平滑合并；
 3. **生产闭包隔离**：不需要的功能可以继续存在于 Git 源码仓库，但必须从我们的 **Email Profile** 生产环境中彻底退出；
 4. **源码存在 ≠ 生产依赖**：`Repository source existence is NOT production dependency.` 只要一个模块没有进入生产打包和运行时，它的源码存在对生产零影响。
+5. **Product Profile 是根节点**：任何解耦判断都必须从 `full`、`self-host-email` 等 Product Profile 出发，验证目标 Domain 对该 Profile 的可达性，而不是只看源码是否存在。
 
 ---
 
@@ -92,6 +120,61 @@ Image            ────────► 生产 Docker 镜像中严禁打包
 Runtime          ────────► 运行时容器、后台进程、网络请求、轮询必须为 0
 ```
 
+验收链必须按 Product Profile 向下穿透：
+
+```text
+Product Profile
+      ↓
+Feature / Activation
+      ↓
+Compile Graph
+      ↓
+Binary / Web Artifact
+      ↓
+Docker Image
+      ↓
+Runtime
+```
+
+目标 Domain 必须在后四层都不可达：
+
+```text
+Source Repository
+Calendar                EXISTS
+
+Self-host Email:
+Compile Reachability     FALSE
+Binary Reachability      FALSE
+Image Reachability       FALSE
+Runtime Reachability     FALSE
+```
+
+### 五层可达性标准
+
+```text
+1. Activation Reachability
+   Product Profile 是否激活目标功能。
+
+2. Compile Reachability
+   Cargo / Web build graph 是否包含目标功能。
+
+3. Artifact Reachability
+   Binary / frontend bundle / Nix closure 是否包含目标功能。
+
+4. Image Reachability
+   Docker image 是否包含目标 binary / assets / dependencies。
+
+5. Runtime Reachability
+   Compose / Route / Worker / Queue 是否启动或调用目标功能。
+```
+
+另有维护性指标：
+
+```text
+6. Fork Maintenance Surface
+   为实现解耦修改了多少 upstream 原文件。
+```
+
 ### 理想状态指标
 - 源码存在：`YES`（保持 upstream 干净可合并）
 - Email UI 引用：`EXCLUDED`
@@ -100,6 +183,36 @@ Runtime          ────────► 运行时容器、后台进程、�
 - Email Build 闭包：`EXCLUDED`
 - Email Docker 镜像：`EXCLUDED`
 - Email Runtime 容器与进程：`EXCLUDED`
+
+### Image 层必须单独验收
+
+Cargo 不再编译目标 Domain 不代表生产制品已经干净。必须单独检查 Dockerfile、Nix closure、镜像构建 inventory 与静态资源拷贝规则，避免出现：
+
+```text
+Cargo 已经不编译 Calendar
+Dockerfile / Nix closure 仍然 COPY calendar config
+Dockerfile / Nix closure 仍然 COPY 不需要的 binary
+Dockerfile / Nix closure 仍然 COPY 整个 workspace
+Dockerfile / Nix closure 仍然安装 Calendar 专属资源
+Frontend image 仍然包含不需要的 JS bundle
+```
+
+如果 `calendar_service` binary 没有在 Compose 中启动，但仍然被打进 `macro-services-email:latest`，也不能标记为彻底 Production Decoupling。
+
+只有同时满足：
+
+```text
+Cargo tree         无目标依赖
+Production binary  无目标 binary / code path
+Docker image       无目标 binary / assets / dependencies
+Runtime service    无目标 service / route / worker / queue
+```
+
+才允许标记：
+
+```text
+FULLY DECOUPLED
+```
 
 ---
 
@@ -347,6 +460,8 @@ Feature: <裁剪功能名称，例如 Calendar>
 
 Decision: KEEP SOURCE / DECOUPLE / DELETE
 
+Status: PARTIALLY DECOUPLED / FULLY DECOUPLED
+
 Method: <解耦手段简述，例如 Route gate + Cargo feature + Email build closure exclusion>
 
 Boundary:
@@ -358,6 +473,12 @@ Boundary:
   Image: EXCLUDED / INCLUDED
   Runtime: EXCLUDED / INCLUDED
 
+Reachability:
+  Compile: FALSE / TRUE
+  Binary/Web Artifact: FALSE / TRUE
+  Docker Image: FALSE / TRUE
+  Runtime: FALSE / TRUE
+
 Upstream Merge Risk: LOW / MEDIUM / HIGH
 
 Physical deletion: NONE / <列出物理删除的文件清单>
@@ -366,3 +487,5 @@ Validation:
   <命令 1>: PASS / FAIL
   <命令 2>: PASS / FAIL
 ```
+
+`Status: FULLY DECOUPLED` 只能在 `Reachability` 四项全部为 `FALSE`，且对应验证命令通过时使用。否则必须标记为 `PARTIALLY DECOUPLED`，并说明剩余可达层。

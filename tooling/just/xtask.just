@@ -17,6 +17,15 @@ run_local *ARGS:
 run_dev *ARGS:
   {{ xtask }} run-dev "$@"
 
+# Run only the frontend dev server for an instance (Vite foreground exec).
+#   just frontend
+#   just frontend --instance email-test --port-base 31000
+frontend *ARGS:
+  {{ xtask }} frontend "$@"
+
+frontend_local *ARGS:
+  {{ xtask }} frontend "$@"
+
 # Check tools/toolchain/ports/env for the local stack.
 doctor-local *ARGS:
   {{ xtask }} doctor-local "$@"

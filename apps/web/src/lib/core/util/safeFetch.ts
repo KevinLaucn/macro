@@ -239,7 +239,7 @@ function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
   if (typeof window === 'undefined') return undefined;
   const isCustomHost = window.location.hostname !== 'app.macro.com';
   const macroEnv = (window as any).__MACRO_ENV__;
-  if (!isCustomHost && !macroEnv?.ADMIN_EMAIL) {
+  if (!isCustomHost || !macroEnv?.ADMIN_EMAIL) {
     return undefined;
   }
 
@@ -277,7 +277,7 @@ function getSuperAdminFallback(input: RequestInfo): unknown | undefined {
       members: [
         {
           id: '00000000-0000-0000-0000-000000000001',
-          email: macroEnv?.ADMIN_EMAIL ?? 'admin@macro.local',
+          email: macroEnv.ADMIN_EMAIL,
           role: 'owner',
         },
       ],

@@ -213,7 +213,7 @@ cmd_generate_secrets() {
   password: ${admin_pw}
 
   That password is in ${ENV_FILE} as ADMIN_PASSWORD and is not shown again.
-  It administers identity only — Macro sign-in is by emailed login code.
+  Macro admin sign-in uses this email and password.
 
   Review ${ENV_FILE} for the optional integrations (AI providers, Google,
   GitHub, LiveKit), then run: ./macroctl up

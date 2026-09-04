@@ -47,6 +47,7 @@ fn kickstart_without_google_has_no_idp_requests() {
         "function reconcile() {}",
         None,
         None,
+        None,
     );
     let urls: Vec<&str> = doc["requests"]
         .as_array()
@@ -57,6 +58,64 @@ fn kickstart_without_google_has_no_idp_requests() {
     assert!(
         !urls.iter().any(|u| u.contains("/api/identity-provider")),
         "no Google client -> no IdP requests: {urls:?}"
+    );
+}
+
+#[test]
+fn admin_user_is_optional_and_env_backed() {
+    assert!(AdminUser::from_env(&env(&[])).is_none());
+    assert!(
+        AdminUser::from_env(&env(&[("ADMIN_EMAIL", "owner@example.com")])).is_none(),
+        "password must be explicitly configured"
+    );
+
+    let admin = AdminUser::from_env(&env(&[
+        ("ADMIN_EMAIL", "Owner@Example.com"),
+        ("ADMIN_PASSWORD", "configured-secret"),
+    ]))
+    .expect("configured admin must parse");
+    assert_eq!(admin.email, "owner@example.com");
+    assert_eq!(admin.password, "configured-secret");
+
+    let without_admin = build(
+        3000,
+        8080,
+        8085,
+        "function populate() {}",
+        "function reconcile() {}",
+        None,
+        None,
+        None,
+    );
+    assert!(
+        !without_admin["requests"]
+            .as_array()
+            .expect("requests")
+            .iter()
+            .any(|request| request["url"].as_str() == Some("/api/user/registration")),
+        "no admin registration should be emitted without env credentials"
+    );
+
+    let with_admin = build(
+        3000,
+        8080,
+        8085,
+        "function populate() {}",
+        "function reconcile() {}",
+        None,
+        None,
+        Some(&admin),
+    );
+    let registration = with_admin["requests"]
+        .as_array()
+        .expect("requests")
+        .iter()
+        .find(|request| request["url"].as_str() == Some("/api/user/registration"))
+        .expect("admin registration");
+    assert_eq!(registration["body"]["user"]["email"], "owner@example.com");
+    assert_eq!(
+        registration["body"]["user"]["password"],
+        "configured-secret"
     );
 }
 
@@ -73,6 +132,7 @@ fn kickstart_with_google_adds_lambda_and_both_idps_after_the_application() {
         "function populate() {}",
         "function reconcile() {}",
         Some(&google),
+        None,
         None,
     );
     let requests = doc["requests"].as_array().unwrap();
@@ -124,6 +184,7 @@ fn kickstart_adopts_the_default_tenant() {
         8085,
         "function populate() {}",
         "function reconcile() {}",
+        None,
         None,
         None,
     );
@@ -206,6 +267,7 @@ fn the_github_idp_id_follows_the_env_the_service_reads() {
         "function reconcile() {}",
         None,
         Some(&github),
+        None,
     );
     assert!(
         doc["requests"]
@@ -235,6 +297,7 @@ fn the_github_idp_is_created_under_both_the_name_and_the_id_the_service_uses() {
         "function reconcile() {}",
         None,
         Some(&github),
+        None,
     );
 
     let requests = doc["requests"].as_array().expect("requests");
@@ -273,6 +336,7 @@ fn kickstart_without_github_creates_no_github_idp() {
         "function reconcile() {}",
         None,
         None,
+        None,
     );
 
     assert!(
@@ -297,6 +361,7 @@ fn authorized_redirects(
         doc_cognition_port,
         "function populate() {}",
         "function reconcile() {}",
+        None,
         None,
         None,
     );

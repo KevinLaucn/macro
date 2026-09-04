@@ -21,19 +21,29 @@ export const [PosthogProvider, usePosthog] = createAssertedContextProvider(
     // leave featureFlags empty, but destructive flag-off fallbacks (e.g.
     // RedirectSplit) must not fire before the answer arrives. Set even on
     // errorsLoading so a PostHog outage degrades to flags-off, not a hang.
-    const [flagsLoaded, setFlagsLoaded] = createSignal(false);
+    const isPosthogConfigured = !!import.meta.env.VITE_POSTHOG_API_KEY;
+    const [flagsLoaded, setFlagsLoaded] = createSignal(!isPosthogConfigured);
 
-    const unsub = analytics.posthog.onFeatureFlags((flags, _, ctx) => {
-      // Order matters: signals propagate synchronously, so flagsLoaded must
-      // only flip after the flag values are in place — the other way around,
-      // flag-off fallbacks fire against the still-empty flag list.
-      if (!ctx?.errorsLoading) {
-        setFeatureFlags(flags);
-      }
-      setFlagsLoaded(true);
-    });
+    if (isPosthogConfigured) {
+      const unsub = analytics.posthog.onFeatureFlags((flags, _, ctx) => {
+        // Order matters: signals propagate synchronously, so flagsLoaded must
+        // only flip after the flag values are in place — the other way around,
+        // flag-off fallbacks fire against the still-empty flag list.
+        if (!ctx?.errorsLoading) {
+          setFeatureFlags(flags);
+        }
+        setFlagsLoaded(true);
+      });
 
-    onCleanup(unsub);
+      const timeout = setTimeout(() => {
+        setFlagsLoaded(true);
+      }, 3000);
+
+      onCleanup(() => {
+        unsub();
+        clearTimeout(timeout);
+      });
+    }
 
     return { instance: analytics.posthog, featureFlags, flagsLoaded };
   }

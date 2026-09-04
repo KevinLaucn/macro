@@ -23,6 +23,8 @@ enum Cmd {
     RunLocal(RunArgs),
     /// Run local binaries against shared dev resources.
     RunDev(RunArgs),
+    /// Run only the frontend dev server for an instance, inheriting its configuration.
+    Frontend(FrontendArgs),
     /// Cross-compile the local service binaries with cargo zigbuild.
     Zigbuild,
     /// Build the minimal runtime image.
@@ -139,6 +141,21 @@ pub struct RunArgs {
     pub with_cf_tunnel: bool,
 }
 
+#[derive(Args, Clone, Default)]
+pub struct FrontendArgs {
+    #[command(flatten)]
+    pub instance: InstanceArgs,
+    /// Turn on onboarding v4 for the attached vite server
+    #[arg(long)]
+    pub enable_onboarding: bool,
+    /// Run against shared dev resources instead of local infra proxy.
+    #[arg(long)]
+    pub dev: bool,
+    /// Admin email override.
+    #[arg(long)]
+    pub admin_email: Option<String>,
+}
+
 /// Which OTLP trace collector `--traces` should bring up.
 #[derive(clap::ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TracesBackend {
@@ -243,6 +260,14 @@ fn run(cli: Cli) -> Result<()> {
     match cli.command {
         Cmd::RunLocal(args) => super::run_stack(Mode::Local, &args),
         Cmd::RunDev(args) => super::run_stack(Mode::Dev, &args),
+        Cmd::Frontend(a) => {
+            let instance = super::instance::Instance::derive(
+                a.instance.instance.as_deref(),
+                a.instance.port_base,
+            )?;
+            let mode = if a.dev { Mode::Dev } else { Mode::Local };
+            super::frontend_exec(&instance, mode, &a)
+        }
         Cmd::Zigbuild => super::zigbuild_only(),
         Cmd::RuntimeImage(a) => super::runtime_image_only(a.force),
         Cmd::GenCompose(a) => super::gen_compose_only(&a),

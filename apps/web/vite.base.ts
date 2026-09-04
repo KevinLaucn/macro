@@ -280,6 +280,9 @@ function defineEnv(mode: string, command: string) {
     'import.meta.env.__GIT_BRANCH__': JSON.stringify(
       command === 'serve' ? readGitBranch() : ''
     ),
+    'import.meta.env.VITE_ADMIN_EMAIL': JSON.stringify(
+      process.env.VITE_ADMIN_EMAIL || ''
+    ),
     ...(keepDev
       ? {
           'import.meta.env.DEV': true,

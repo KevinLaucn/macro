@@ -25,8 +25,8 @@ Run `just setup` to setup the local fusionauth instance and get everything ready
 Important Keys:
 
 ```
-username: admin@macro.com
-password: macroIsGreat!
+username: set ADMIN_EMAIL in your local/private .env
+password: set ADMIN_PASSWORD in your local/private .env
 api-key: bf69486b-4733-4954-a44e-2e1b5f2c8a91
 ```
 

@@ -253,9 +253,18 @@ function EmailFormNew(props: {
       noValidate={false}
       class="flex flex-col gap-3"
     >
-      <p class="text-xs text-ink-muted leading-snug">
-        We’ll send a one-time code to verify.
-      </p>
+      <Show
+        when={!isPasswordLogin()}
+        fallback={
+          <p class="text-xs text-ink-muted leading-snug">
+            请输入密码进行登录。
+          </p>
+        }
+      >
+        <p class="text-xs text-ink-muted leading-snug">
+          We’ll send a one-time code to verify.
+        </p>
+      </Show>
       <FormInput
         id="email"
         type="email"
@@ -578,7 +587,7 @@ export function Login(props: { signupMode?: boolean }) {
       .with(Stage.None, () => 0)
       .with(Stage.Email, () => 1)
       .with(Stage.Verify, () => 2)
-      .with(Stage.Done, () => 2)
+      .with(Stage.Done, () => 3)
       .exhaustive();
 
   const emailSubmission = useSubmission(sendEmailCode);
@@ -648,6 +657,11 @@ export function Login(props: { signupMode?: boolean }) {
                 </Stepper.Step>
                 <Stepper.Step noTransition>
                   <VerifyFormNew setStage={onStageChange} onBack={onBack} />
+                </Stepper.Step>
+                <Stepper.Step noTransition>
+                  <div class="flex items-center justify-center py-12">
+                    <LoadingBlock />
+                  </div>
                 </Stepper.Step>
               </Stepper>
             </div>

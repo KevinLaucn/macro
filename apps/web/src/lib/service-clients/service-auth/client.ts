@@ -106,15 +106,6 @@ async function getAccessToken(): Promise<string | null> {
   }
 
   const { accessToken, refreshToken, expiresAt } = data;
-  const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
-  if (runtimeAdmin) {
-    try {
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      if (payload.email === runtimeAdmin) {
-        return accessToken;
-      }
-    } catch {}
-  }
 
   if (expiresAt < Date.now()) {
     // If there's already an ongoing refresh, wait for it to complete
@@ -230,29 +221,6 @@ export const authServiceClient = {
     ).map((result) => result);
   },
   async getUserInfo() {
-    const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
-    const tokenData = accessTokenData();
-    if (tokenData && runtimeAdmin) {
-      try {
-        const payload = JSON.parse(atob(tokenData.accessToken.split('.')[1]));
-        if (payload.email === runtimeAdmin) {
-          return ok({
-            authenticated: true,
-            permissions: ['*'],
-            roles: ['admin', 'owner'],
-            userId: payload.user_id,
-            user_id: payload.user_id,
-            email: runtimeAdmin,
-            name: '超级管理员',
-            tutorialComplete: true,
-            tutorial_complete: true,
-            organizationId: 'org-macro-main',
-            organization_id: 'org-macro-main',
-          } as any);
-        }
-      } catch {}
-    }
-
     return (
       await fetchWithAuth<Partial<GetUserInfo>>(`${authHost}/user/me`, {
         method: 'GET',
@@ -301,52 +269,18 @@ export const authServiceClient = {
     });
   },
   async passwordLogin(args: PasswordRequest) {
-    const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
-    const adminHash = (window as any).__MACRO_ENV__?.ADMIN_PASSWORD_HASH;
-
-    if (runtimeAdmin && args.email.toLowerCase().trim() === runtimeAdmin && adminHash) {
-      // Verify SHA-256 hash of entered password
-      const passEncoded = new TextEncoder().encode(args.password);
-      const passHashBuf = await crypto.subtle.digest('SHA-256', passEncoded);
-      const passHash = Array.from(new Uint8Array(passHashBuf))
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
-
-      if (passHash === adminHash) {
-        const dummyPayload = {
-          user_id: 'macro-super-admin',
-          email: runtimeAdmin,
-          roles: ['admin', 'owner'],
-          permissions: ['*'],
-          exp: Math.floor(Date.now() / 1000) + 86400 * 365, // 1 year
-        };
-        const dummyToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${btoa(JSON.stringify(dummyPayload))}.signature`;
-        setAccessTokenData({
-          accessToken: dummyToken,
-          refreshToken: dummyToken,
-          expiresAt: dummyPayload.exp * 1000,
-        });
-        return ok({
-          access_token: dummyToken,
-          refresh_token: dummyToken,
-          user: {
-            id: 'macro-super-admin',
-            email: runtimeAdmin,
-            name: '超级管理员',
-          },
-        } as any);
-      } else {
-        return err({
-          code: 'UNAUTHORIZED' as const,
-          message: '管理员密码错误，请重新输入',
-        });
-      }
-    }
-
-    return authApiFetch<UserTokensResponse>(`/login/password`, {
+    const result = await authApiFetch<UserTokensResponse>(`/login/password`, {
       method: 'POST',
       body: JSON.stringify(args),
     });
+    if (result.isOk()) {
+      setAccessTokenData({
+        accessToken: result.value.access_token,
+        refreshToken: result.value.refresh_token,
+        expiresAt: getExpiresAt(result.value.access_token),
+      });
+    }
+    return result;
   },
   async passwordlessCallback({ code, email }: { code: string; email: string }) {
     const result = await safeFetch<UserTokensResponse>(
@@ -367,19 +301,6 @@ export const authServiceClient = {
     return result;
   },
   async refreshToken(args: { accessToken: string; refreshToken: string }) {
-    const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
-    if (runtimeAdmin) {
-      try {
-        const payload = JSON.parse(atob(args.accessToken.split('.')[1]));
-        if (payload.email === runtimeAdmin) {
-          return ok({
-            access_token: args.accessToken,
-            refresh_token: args.refreshToken,
-          } as any);
-        }
-      } catch {}
-    }
-
     return authApiFetch<UserTokensResponse>('/jwt/refresh', {
       method: 'POST',
       headers: {
@@ -527,25 +448,52 @@ export const authServiceClient = {
 
   // HTTP methods (migrated from RPC)
   async getLegacyUserPermissions() {
-    const runtimeAdmin = (window as any).__MACRO_ENV__?.ADMIN_EMAIL?.toLowerCase()?.trim();
+    const result = await fetchWithAuth<GetLegacyUserPermissionsResponse>(
+      `${authHost}/user/legacy_user_permissions`,
+      { method: 'GET' }
+    );
+
+    if (result.isOk()) {
+      return result.map((data) => ({
+        id: data.userId,
+        permissions: data.permissions,
+        email: data.email,
+        name: data.name,
+        licenseStatus: data.licenseStatus,
+        tutorialComplete: data.tutorialComplete,
+        group: data.group,
+        hasChromeExt: data.hasChromeExt,
+        authenticated: !!data.userId,
+        userId: data.userId,
+        hasTrialed: data.hasTrialed,
+        aiDataConsent: data.aiDataConsent,
+        referralCode: data.referralCode,
+        createdAt: data.createdAt,
+      }));
+    }
+
+    // Fallback when /user/legacy_user_permissions is disabled (non-full-saas / self-hosted)
     const tokenData = accessTokenData();
-    if (tokenData && runtimeAdmin) {
+    if (tokenData?.accessToken) {
       try {
-        const payload = JSON.parse(atob(tokenData.accessToken.split('.')[1]));
-        if (payload.email === runtimeAdmin) {
+        const payload = JSON.parse(
+          atob(tokenData.accessToken.split('.')[1])
+        );
+        const userId =
+          payload.macro_user_id || payload.sub || payload.user_id;
+        if (userId) {
           return ok({
-            id: payload.user_id,
-            userId: payload.user_id,
-            email: runtimeAdmin,
-            name: '超级管理员',
-            permissions: ['*'],
-            roles: ['admin', 'owner'],
+            id: userId,
+            permissions: payload.permissions || ['*'],
+            email: payload.email || '',
+            name: payload.name || payload.email?.split('@')[0] || 'User',
             licenseStatus: 'active',
             tutorialComplete: true,
-            authenticated: true,
-            hasChromeExt: false,
-            hasTrialed: true,
             group: 'admin',
+            hasChromeExt: false,
+            authenticated: true,
+            userId: userId,
+            hasTrialed: true,
             aiDataConsent: true,
             referralCode: null,
             createdAt: new Date().toISOString(),
@@ -553,11 +501,6 @@ export const authServiceClient = {
         }
       } catch {}
     }
-
-    const result = await fetchWithAuth<GetLegacyUserPermissionsResponse>(
-      `${authHost}/user/legacy_user_permissions`,
-      { method: 'GET' }
-    );
 
     return result.map((data) => ({
       id: data.userId,

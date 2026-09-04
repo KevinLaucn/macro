@@ -26,6 +26,7 @@ import CaretLeftIcon from '@phosphor/caret-left.svg';
 import SignOutIcon from '@phosphor/sign-out.svg';
 import { Button, cn, Layer, SideNav } from '@ui';
 import { t } from '@macro/i18n';
+import { useLocation } from '@solidjs/router';
 import {
   createRenderEffect,
   createSignal,

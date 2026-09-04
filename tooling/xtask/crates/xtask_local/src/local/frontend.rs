@@ -18,6 +18,16 @@ fn app_dir() -> std::path::PathBuf {
     repo_root().join("apps/web")
 }
 
+fn rustup_preferred_path() -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let cargo_bin = std::path::Path::new(&home).join(".cargo/bin");
+    if !cargo_bin.is_dir() {
+        return None;
+    }
+    let path = std::env::var("PATH").unwrap_or_default();
+    Some(format!("{}:{path}", cargo_bin.display()))
+}
+
 /// Host-facing frontend URL.
 pub fn url(instance: &Instance) -> String {
     format!("http://localhost:{}/app", instance.port(Port::Frontend))
@@ -106,6 +116,7 @@ fn dev_env(
     mode: Mode,
     traces_enabled: bool,
     enable_onboarding: bool,
+    admin_email: Option<&str>,
 ) -> Vec<(String, String)> {
     let mut env = vec![
         (
@@ -147,6 +158,9 @@ fn dev_env(
         "VITE_ENABLE_ONBOARDING_V4".to_string(),
         enable_onboarding.to_string(),
     ));
+    if let Some(admin_email) = admin_email.filter(|email| !email.trim().is_empty()) {
+        env.push(("VITE_ADMIN_EMAIL".to_string(), admin_email.to_string()));
+    }
     env
 }
 
@@ -223,6 +237,7 @@ pub fn start(
     mode: Mode,
     traces_enabled: bool,
     enable_onboarding: bool,
+    admin_email: Option<&str>,
 ) -> Result<Option<Frontend>> {
     if mode.spec().wait_backend_before_frontend {
         wait_backend_ready(stage, instance)?;
@@ -253,9 +268,12 @@ pub fn start(
     }
     let mut prepare = Command::new("bash");
     prepare.current_dir(app_dir()).args([
-        "-lc",
+        "-c",
         "just ensure-cache-wasm && just ensure-agent-fold-wasm",
     ]);
+    if let Some(path) = rustup_preferred_path() {
+        prepare.env("PATH", path);
+    }
     stage.run("Preparing frontend dependencies", &mut prepare)?;
 
     let mut cmd = Command::new("bun");
@@ -272,7 +290,16 @@ pub fn start(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    for (k, v) in dev_env(instance, mode, traces_enabled, enable_onboarding) {
+    if let Some(path) = rustup_preferred_path() {
+        cmd.env("PATH", path);
+    }
+    for (k, v) in dev_env(
+        instance,
+        mode,
+        traces_enabled,
+        enable_onboarding,
+        admin_email,
+    ) {
         cmd.env(k, v);
     }
     let mut child = cmd.spawn().context("launching `bun run dev`")?;
@@ -339,6 +366,59 @@ pub fn start(
         captured,
         drains,
     }))
+}
+
+/// Prepare WASM and exec `bun ... vite`, replacing the current process so Vite
+/// directly owns the TTY, stdin/stdout, signals, and hotkeys.
+pub fn exec(
+    instance: &Instance,
+    mode: Mode,
+    traces_enabled: bool,
+    enable_onboarding: bool,
+    admin_email: Option<&str>,
+) -> Result<()> {
+    let port = instance.port(Port::Frontend);
+    let stage = Stage::from_env();
+    stage.section(&format!(
+        "macro frontend — instance {} (port {port})",
+        instance.name()
+    ));
+
+    if mode.spec().wait_backend_before_frontend {
+        wait_backend_ready(&stage, instance)?;
+    }
+
+    let mut prepare = Command::new("bash");
+    prepare.current_dir(app_dir()).args([
+        "-c",
+        "just ensure-cache-wasm && just ensure-agent-fold-wasm",
+    ]);
+    if let Some(path) = rustup_preferred_path() {
+        prepare.env("PATH", path);
+    }
+    stage.run("Preparing frontend dependencies", &mut prepare)?;
+
+    stage.note(&format!("frontend dev server: {}", url(instance)));
+
+    let mut cmd = Command::new("bun");
+    cmd.current_dir(app_dir())
+        .arg(repo_root().join("node_modules/vite/bin/vite.js"))
+        .args(["-c", "vite.config.ts"]);
+    if let Some(path) = rustup_preferred_path() {
+        cmd.env("PATH", path);
+    }
+    for (k, v) in dev_env(
+        instance,
+        mode,
+        traces_enabled,
+        enable_onboarding,
+        admin_email,
+    ) {
+        cmd.env(k, v);
+    }
+
+    let err = cmd.exec();
+    anyhow::bail!("failed to exec vite: {err}");
 }
 
 /// Copy a child pipe into the shared capture buffer until EOF.

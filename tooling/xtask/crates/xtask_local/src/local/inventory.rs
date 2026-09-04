@@ -61,14 +61,14 @@ impl RustService {
     }
 
     /// Cargo features to re-enable alongside `--no-default-features` for this
-    /// service's local build (empty = none). Only `search_processing_service`
-    /// needs this: `authentication_service` opts into local passwordless code
-    /// responses, and dropping `search_processing_service` default features
-    /// removes the amd64-only `pdf` feature, but its bin still requires
+    /// service's local build (empty = none). `authentication_service` keeps the
+    /// full-saas login routes while opting into local passwordless code
+    /// responses; dropping `search_processing_service` default features removes
+    /// the amd64-only `pdf` feature, but its bin still requires
     /// `processing`/`service`.
     pub fn build_features(&self) -> &'static [&'static str] {
         match self.cargo_bin {
-            "authentication_service" => &["return_passwordless_code"],
+            "authentication_service" => &["full-saas", "return_passwordless_code"],
             "search_processing_service" => &["processing", "service"],
             _ => &[],
         }
@@ -130,7 +130,7 @@ pub const RUST_SERVICES: &[RustService] = &[
         is_websocket: false,
         modes: &[Mode::Local, Mode::Dev],
         opt_in: false,
-        no_default_features: false,
+        no_default_features: true,
     },
     RustService {
         compose_name: "document_upload_finalizer",

@@ -1,7 +1,7 @@
 {
   "name": "cache-wasm",
   "type": "module",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "files": [
     "cache_wasm_bg.wasm",
     "cache_wasm.js",

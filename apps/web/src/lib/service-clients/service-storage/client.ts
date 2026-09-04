@@ -230,6 +230,9 @@ export async function dssFetch<T extends Record<string, any> = never>(
     if (url.includes('/items/soup')) {
       return ok({ items: [], next_cursor: null } as unknown as T);
     }
+    if (url.includes('/channels/activity') || url.includes('/activity')) {
+      return ok([] as unknown as T);
+    }
     if (url.includes('/channels')) {
       return ok({ items: [], channels: [], next_cursor: null } as unknown as T);
     }

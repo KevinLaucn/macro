@@ -104,24 +104,22 @@ done
 
 echo "Migrations completed: ${applied_count} applied, ${skipped_count} skipped."
 
-# 5. Bootstrap Super Administrator in macro_user
-ADMIN_EMAIL="${MACRO_ADMIN_EMAIL:-chnprint@foxmail.com}"
-echo "Ensuring Super Administrator exists (${ADMIN_EMAIL})..."
+# 5. Bootstrap Super Administrator in macro_user when explicitly configured.
+ADMIN_EMAIL="${ADMIN_EMAIL:-${MACRO_ADMIN_EMAIL:-}}"
+if [ -z "${ADMIN_EMAIL}" ]; then
+  echo "Skipping Super Administrator bootstrap (ADMIN_EMAIL is not configured)."
+else
+  echo "Ensuring Super Administrator exists (${ADMIN_EMAIL})..."
 
-psql -v ON_ERROR_STOP=1 <<ADMIN_EOF >/dev/null
-DO \$\$
-DECLARE
-  v_user_id UUID := '00000000-0000-0000-0000-000000000001';
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM "macro_user" WHERE email = '${ADMIN_EMAIL}') THEN
-    INSERT INTO "macro_user" ("id", "username", "email", "stripe_customer_id")
-    VALUES (v_user_id, 'admin', '${ADMIN_EMAIL}', 'cus_local_admin');
-    RAISE NOTICE 'Super Administrator created: %', '${ADMIN_EMAIL}';
-  ELSE
-    RAISE NOTICE 'Super Administrator already exists: %', '${ADMIN_EMAIL}';
-  END IF;
-END \$\$;
+  psql -v ON_ERROR_STOP=1 -v admin_email="${ADMIN_EMAIL}" <<ADMIN_EOF >/dev/null
+INSERT INTO "macro_user" ("id", "username", "email", "stripe_customer_id")
+VALUES ('00000000-0000-0000-0000-000000000001'::uuid, 'admin', :'admin_email', 'cus_local_admin')
+ON CONFLICT ("id") DO UPDATE
+SET "username" = 'admin',
+    "email" = EXCLUDED."email",
+    "stripe_customer_id" = EXCLUDED."stripe_customer_id";
 ADMIN_EOF
+fi
 
 echo "============================================================"
 echo " Database initialization finished successfully!"

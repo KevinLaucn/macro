@@ -30,11 +30,13 @@ fn read_lambda(file: xtask_paths::RepoFile<'static>) -> Result<String> {
 /// `google`/`google_gmail` OIDC IdPs so the email connect flows work locally,
 /// and `github` the `github` IdP that `POST /link/github` resolves; the
 /// generated file is gitignored, and the init-snapshot key hashes it, so
-/// adding/removing either client re-inits the stack automatically.
+/// adding/removing either client or the optional admin registration re-inits
+/// the stack automatically.
 pub fn write_kickstart(
     instance: &Instance,
     google: Option<&kickstart::GoogleIdp>,
     github: Option<&kickstart::GithubIdp>,
+    admin: Option<&kickstart::AdminUser>,
 ) -> Result<()> {
     let dir = gen_compose::kickstart_dir(instance);
     std::fs::create_dir_all(&dir)
@@ -48,6 +50,7 @@ pub fn write_kickstart(
         &read_lambda(RECONCILE_LAMBDA)?,
         google,
         github,
+        admin,
     );
     let json = serde_json::to_string_pretty(&doc)? + "\n";
     std::fs::write(dir.join("kickstart.json"), json)

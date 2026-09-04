@@ -19,7 +19,8 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 1. **保持 upstream 兼容**：最低化 Fork Divergence，支持平滑 `git merge upstream/main`；
 2. **私有化零官方云依赖**：`Zero Macro Cloud Dependency`，切断一切无感知 `macro.com` fallback；
 3. **保护四大核心支柱**：**Email**（Gmail 同步/写信）、**Contacts**（联系人）、**CRM**（客户时间线）、**Search**（检索）；
-4. **保留上游源码，解除生产依赖**：`Preserve upstream source; remove production dependency.`。
+4. **保留上游源码，解除生产依赖**：`Preserve upstream source; remove production dependency.`；
+5. **Profile 驱动可达性隔离**：目标 Domain 源码可以继续保留，但在指定 Product Profile 下必须不可进入编译闭包、生产制品、Docker 镜像与运行时图。
 
 ---
 
@@ -29,8 +30,9 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 
 | 用户意图 / 任务类型 | 触发特征 / 关键词 | 优先分发路由 (Target Sub-Skill / Spec) |
 |---|---|---|
-| **✂️ 功能裁剪 / 依赖瘦身 / Change Planner** | “删功能”、“裁剪”、“不要某服务”、“减镜像”、“Email不需要”、“能不能删”、“瘦身”、“Change Planner”、“slim-plan” | **`skills/macro-upstream-decoupling/SKILL.md`**（Change Planner 边际削减、cargo x slim-plan、五层解耦检查、两阶段物理删除门禁、Decoupling Report） |
+| **✂️ 功能裁剪 / 依赖瘦身 / Change Planner** | “删功能”、“裁剪”、“不要某服务”、“减镜像”、“Email不需要”、“能不能删”、“瘦身”、“Change Planner”、“slim-plan” | **`skills/macro-upstream-decoupling/SKILL.md`**（Profile-driven Reachability Isolation、Change Planner 边际削减、cargo x slim-plan、五层可达性验收、两阶段物理删除门禁、Decoupling Report） |
 | **🏗️ Rust 后端架构 / 微服务二开** | `crates/**`、`services/**`、Hexagonal 架构、Domain 改造、Ports & Adapters、S3/DB 适配器 | **`../cloud-storage-hexagonal-architecture/SKILL.md`** |
+| **🧰 本地开发 / macOS / Docker / Local Stack** | macOS、Docker Desktop、OrbStack、Colima、`run_local`、`run_dev`、`doctor-local`、`status_local`、`stack up`、本地构建、端口冲突、Production Parity、本地复现 CI | **`skills/macro-local-environment/SKILL.md`** |
 | **🔍 运行时调试 / Crash 排查** | 容器退出、服务启动失败、500 报错、Connection Refused、端口无响应 | **`../debug-service/SKILL.md`** |
 | **📊 数据库 Schema / 迁移** | Migration、PostgreSQL 表字段、Email/Gmail 数据表、Dump | **`../dump-schema/SKILL.md`** |
 | **🛡️ 发布前质检 / 审查门禁** | PR 审查、发布前验证、QC、精简度评估、稳定性检查 | **`../qc/SKILL.md`** |
@@ -44,6 +46,7 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 1. **修改代码前必读**：首先读取目标子技能 `SKILL.md` 或引用文档；
 2. **遵循领域约束**：严格遵守对应子技能的领域特定规则；
 3. **回归主控验收**：执行完毕后，返回本主控技能的全局安全性与验收门禁核验。
+4. **本地环境强制路由**：任何本地开发、本地栈、macOS Docker、`run_local`、`stack`、本地生产验证或 CI parity 任务，必须先进入 `skills/macro-local-environment/SKILL.md` 再执行环境相关命令。
 
 ---
 

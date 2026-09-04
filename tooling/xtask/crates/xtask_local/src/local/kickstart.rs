@@ -5,9 +5,9 @@
 //! API key, HS256 signing key, the (unlicensed) populate-JWT lambda, and the
 //! tenant and Macro application with fixed ids + a fixed client secret. Every
 //! id/secret is fixed (see `identity`) so services and FusionAuth always agree
-//! without any API read-back or patch step. The admin user is provisioned last
-//! (after the app it registers against exists); passwordless login auto-creates
-//! all other users on demand.
+//! without any API read-back or patch step. An admin user is provisioned only
+//! when the resolved run environment explicitly supplies administrator
+//! credentials; passwordless login auto-creates all other users on demand.
 
 use std::collections::BTreeMap;
 
@@ -105,6 +105,29 @@ impl GithubIdp {
     }
 }
 
+/// Optional local administrator provisioned into FusionAuth from the resolved
+/// run environment. Both values must be provided by `.env`, Doppler, or the
+/// process environment; local tooling must not invent administrator credentials.
+pub struct AdminUser {
+    pub email: String,
+    pub password: String,
+}
+
+impl AdminUser {
+    pub fn from_env(env: &BTreeMap<String, String>) -> Option<Self> {
+        let email = env
+            .get("ADMIN_EMAIL")
+            .or_else(|| env.get("MACRO_ADMIN_EMAIL"))?
+            .trim()
+            .to_lowercase();
+        let password = env.get("ADMIN_PASSWORD")?.trim().to_string();
+        if email.is_empty() || password.is_empty() {
+            return None;
+        }
+        Some(AdminUser { email, password })
+    }
+}
+
 /// Build the kickstart document. `lambda_body` is the JS source of
 /// `populate_jwt_local.js`; `reconcile_lambda_body` is the reconcile lambda
 /// attached to `google_gmail` (only used when `google` is configured); redirect
@@ -117,6 +140,7 @@ pub fn build(
     reconcile_lambda_body: &str,
     google: Option<&GoogleIdp>,
     github: Option<&GithubIdp>,
+    admin: Option<&AdminUser>,
 ) -> Value {
     let app_id = identity::APPLICATION_ID;
     let tenant_id = identity::TENANT_ID;
@@ -272,21 +296,26 @@ pub fn build(
                 "passwordlessConfiguration": { "enabled": true },
             }}
         }),
-        // 6. Admin user.
-        json!({
+    ];
+
+    if let Some(admin) = admin {
+        requests.push(json!({
             "method": "POST",
             "url": "/api/user/registration",
             "body": {
                 "user": {
-                    "email": "admin@macro.com",
-                    "password": "macroIsGreat!",
+                    "email": admin.email,
+                    "password": admin.password,
                 },
                 "registration": {
                     "applicationId": "3c219e58-ed0e-4b18-ad48-f4f92793ae32", // FusionAuth's reserved client application id
                     "roles": ["admin"],
                 }
             }
-        }),
+        }));
+    }
+
+    requests.extend([
         // 7. Webhooks: on user.create FusionAuth calls auth-service, which
         // registers the new user for the Macro app (so passwordless completes
         // with 200). `x-internal-auth-key` must equal the services'
@@ -321,7 +350,7 @@ pub fn build(
                 "headers": { "x-internal-auth-key": identity::INTERNAL_AUTH_KEY },
             }}
         }),
-    ];
+    ]);
 
     // Google OIDC identity providers — only when a real Google client is
     // configured (see `GoogleIdp::from_env`). Mirrors the dev instance's IdP

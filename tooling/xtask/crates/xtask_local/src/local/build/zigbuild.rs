@@ -119,14 +119,29 @@ fn base_command(ws: &Path, zig_cache: &Path, jobs: &str, target: Target) -> Comm
 /// search priority so it cannot shadow zig's own libc headers.
 // Reading the ambient Nix shell env is the point here; there is no config
 // layer this could come from.
-#[allow(clippy::disallowed_methods)]
 fn curl_include_flag() -> Option<String> {
-    let flags = std::env::var("NIX_CFLAGS_COMPILE").ok()?;
-    flags
-        .split_whitespace()
-        .filter(|tok| tok.starts_with('/'))
-        .find(|dir| Path::new(dir).join("curl/curl.h").is_file())
-        .map(|dir| format!("-idirafter {dir}"))
+    if let Ok(flags) = std::env::var("NIX_CFLAGS_COMPILE") {
+        if let Some(dir) = flags
+            .split_whitespace()
+            .filter(|tok| tok.starts_with('/'))
+            .find(|dir| Path::new(dir).join("curl/curl.h").is_file())
+        {
+            return Some(format!("-idirafter {dir}"));
+        }
+    }
+    // Fallback when building outside nix develop shell (e.g. macOS host dev)
+    let candidates = [
+        "/opt/homebrew/include",
+        "/opt/homebrew/opt/curl/include",
+        "/usr/local/include",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include",
+    ];
+    for dir in candidates {
+        if Path::new(dir).join("curl/curl.h").is_file() {
+            return Some(format!("-idirafter {dir}"));
+        }
+    }
+    None
 }
 
 /// Fail with an actionable hint if the rust-std for `target` is not installed.

@@ -47,9 +47,9 @@ export class CacheEngine {
      * to claim the strict queue head before resolving. Claim failures are
      * returned as a nested diagnostic outcome because enqueue succeeded.
      */
-    enqueueOptimisticMutation(origin_op_id: string | null | undefined, query: string, operation_name: string | null | undefined, variables: any, data: any, link_patches: any, revalidations: any, created_at_ms: number, lease_owner: string, now_ms: number, lease_expires_at_ms: number): Promise<any>;
+    enqueueOptimisticMutation(origin_op_id: string | null | undefined, uuid: string, query: string, operation_name: string | null | undefined, variables: any, data: any, link_patches: any, revalidations: any, created_at_ms: number, lease_owner: string, now_ms: number, lease_expires_at_ms: number): Promise<any>;
     /**
-     * Evaluates one exact `soup-flat-v2` GraphQL filter request.
+     * Evaluates one exact current-profile GraphQL Soup filter request.
      */
     entityFilter(request: any): Promise<any>;
     /**
@@ -176,7 +176,7 @@ export interface InitOutput {
     readonly cacheengine_currentRevision: (a: number) => any;
     readonly cacheengine_deferOptimisticWrite: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => any;
     readonly cacheengine_deleteKeys: (a: number, b: number, c: number) => any;
-    readonly cacheengine_enqueueOptimisticMutation: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: any, i: any, j: any, k: any, l: number, m: number, n: number, o: number, p: number) => any;
+    readonly cacheengine_enqueueOptimisticMutation: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: any, k: any, l: any, m: any, n: number, o: number, p: number, q: number, r: number) => any;
     readonly cacheengine_entityFilter: (a: number, b: any) => any;
     readonly cacheengine_externalReset: (a: number) => any;
     readonly cacheengine_hydrateQuery: (a: number, b: number, c: number, d: number, e: number, f: any, g: any, h: number, i: number) => any;
@@ -214,10 +214,10 @@ export interface InitOutput {
     readonly register_uuid_blob: (a: number) => number;
     readonly register_uuid_str: (a: number) => number;
     readonly register_regexp: (a: number) => number;
-    readonly wasm_bindgen__convert__closures_____invoke__hc5a5770e2ccfdcf9: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h7fdfdd5d2ebddee7: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h9eaf60394a4b985e: (a: number, b: number, c: any) => any;
-    readonly wasm_bindgen__convert__closures_____invoke__h9eaf60394a4b985e_1: (a: number, b: number, c: any) => any;
+    readonly wasm_bindgen__convert__closures_____invoke__h0c89660d9d366ea6: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen__convert__closures_____invoke__h155dc44fcae40c6b: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__hc1f1d3afc5e8cd31: (a: number, b: number, c: any) => any;
+    readonly wasm_bindgen__convert__closures_____invoke__hc1f1d3afc5e8cd31_1: (a: number, b: number, c: any) => any;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;

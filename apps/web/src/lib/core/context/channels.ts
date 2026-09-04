@@ -24,12 +24,17 @@ export const [ChannelsContextProvider, useChannelsContext] =
     const activityQuery = useChannelsActivityQuery();
 
     const channels = () =>
-      queryReadyGate(channelsQuery) ? channelsQuery.data : [];
+      queryReadyGate(channelsQuery) && Array.isArray(channelsQuery.data)
+        ? channelsQuery.data
+        : [];
     const activity = () =>
-      queryReadyGate(activityQuery) ? activityQuery.data : [];
+      queryReadyGate(activityQuery) && Array.isArray(activityQuery.data)
+        ? activityQuery.data
+        : [];
 
     const channelsById = createMemo(() => {
-      if (!queryReadyGate(channelsQuery)) return {};
+      if (!queryReadyGate(channelsQuery) || !Array.isArray(channelsQuery.data))
+        return {};
       return channelsQuery.data.reduce<Record<string, ApiChannelWithLatest>>(
         (acc, ch) => {
           acc[ch.id] = ch;
@@ -40,7 +45,8 @@ export const [ChannelsContextProvider, useChannelsContext] =
     });
 
     const activityByChannelId = createMemo(() => {
-      if (!queryReadyGate(activityQuery)) return {};
+      if (!queryReadyGate(activityQuery) || !Array.isArray(activityQuery.data))
+        return {};
       return activityQuery.data.reduce<Record<string, ChannelsActivity>>(
         (acc, a) => {
           acc[a.channel_id] = a;
