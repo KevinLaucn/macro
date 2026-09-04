@@ -46,10 +46,10 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 nix --version
 ```
 
-保证当前用户或后续的 GitHub Runner 用户对 Nix daemon 拥有访问权限（加入 `trusted-users`）：
-在 `/etc/nix/nix.conf` 中追加：
+保证当前用户或后续运行 GitHub Runner 的系统用户对 Nix daemon 拥有访问权限（加入 `trusted-users`）：
+在 `/etc/nix/nix.conf` 中追加（将 `$USER` 替换为实际运行 runner 的用户名，如果是独立专用用户如 `builder` 或 `runner` 请相应填入）：
 ```text
-trusted-users = root runner
+trusted-users = root @wheel @sudo runner $USER
 ```
 然后重启 Nix daemon：
 ```bash
@@ -63,16 +63,16 @@ sudo systemctl restart nix-daemon
 在 GitHub 仓库中：
 前往 **Settings** -> **Actions** -> **Runners** -> **New self-hosted runner** -> 选择 **Linux** / **x64**。
 
-在 Builder 上执行注册命令，并特别注意**设置自定义标签**：
+在 Builder 上执行注册命令（请直接使用 GitHub Runner 页面上给出的最新版下载命令与 Token），并特别注意**设置自定义标签 `macro-builder`**：
 
 ```bash
 mkdir -p ~/actions-runner && cd ~/actions-runner
 
-# 下载 Runner 安装包（根据 GitHub 页面提示的版本）
-curl -o actions-runner-linux-x64.tar.gz -L https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-linux-x64-2.322.0.tar.gz
-tar xzf ./actions-runner-linux-x64.tar.gz
+# 下载并解压 GitHub 页面提示的最新版本 Runner（示例，请使用页面给出的实际 URL）
+# curl -o actions-runner-linux-x64.tar.gz -L <GITHUB_RUNNER_DOWNLOAD_URL>
+# tar xzf ./actions-runner-linux-x64.tar.gz
 
-# 注册 Runner（指定 labels：macro-builder）
+# 注册 Runner（必须指定 labels 包含 macro-builder）
 ./config.sh --url https://github.com/KevinLaucn/macro \
   --token <YOUR_REGISTRATION_TOKEN> \
   --labels self-hosted,linux,x64,macro-builder \

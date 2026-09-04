@@ -59,20 +59,32 @@ nix build --print-build-logs ".#local-stack-binaries" --out-link result-bins
 
 ## 4. 优化架构方案设计
 
-### 4.1 引入 `self-host-email-binaries` 专用 Nix 聚合包
+### 4.1 引入 `self-host-email-binaries` 专用 Nix 聚合包与独立依赖闭包
 在 `nix/cloud-storage.nix` 中：
 - 保留 `local-stack-binaries` 不受任何破坏。
-- 新增 `selfHostEmailDeployServiceNames` 与 `selfHostEmailLocalBinaryDefinitions`：
-  - 剔除 `agent_harness_service`, `scheduled_action`, `agent_trigger_service`, `mcp_service`, `document_cognition_service`, `seed_cli`。
-  - 直接在定义中引入生产模式的 `authentication_service`，不再构建 dev 模式的密码泄露版本。
+- 新增 `selfHostEmailBinaryDefinitions`（定义 11 个核心包，共产生 12 个二进制文件）：
+  - 包含：`authentication_service` (生产模式), `connection_gateway_service`, `contacts_service`, `document_storage_service`, `email_service` (产出 `email_service` + `pubsub_workers`), `image_proxy_service`, `notification_service`, `static_file_service`, `unfurl_service`, `search_processing_service` (带 processing,service 特性), `document_upload_finalizer_local_worker`。
+  - **核心依赖隔离**：不再复用包含 Full Stack 全部依赖的 `deployCargoArtifacts`，而是专门为 Email 构建 `selfHostEmailCargoArtifacts = craneLib.buildDepsOnly`，通过 `selfHostEmailBinaryCargoExtraArgs` 严格限制只预编译这 11 个包的 Cargo 依赖树，彻底从构建中剔除 Daytona 沙箱、ACP 协议、turso_core、AI 引擎等冗余依赖。
+  - 将 `deployServiceBinaryPackage` 参数化，使 Email 包全部消费独立的 `selfHostEmailCargoArtifacts`。
 - 导出 `self-host-email-binaries`。
 
-### 4.2 支持持久化 Linux Builder (Self-Hosted Runner)
+### 4.2 镜像名称与 Tag 隔离（Profile 分离）
+- **Full Profile**：
+  - 服务镜像：`ghcr.io/kevinlaucn/macro-services:$VERSION`
+  - 初始化镜像：`ghcr.io/kevinlaucn/macro-init:$VERSION`
+- **Email Profile**：
+  - 服务镜像：`ghcr.io/kevinlaucn/macro-services-email:$VERSION`
+  - 初始化镜像：`ghcr.io/kevinlaucn/macro-init-email:$VERSION`
+- 消除 tag 覆盖冲突，生产环境可按需拉取指定 profile 镜像。
+
+### 4.3 支持持久化 Linux Builder (Self-Hosted Runner)
 - 支持注册带标签 `[self-hosted, linux, x64, macro-builder]` 的专用独立 Linux 编译机。
 - 专用 Builder 拥有持久的 `/nix/store` 和 Docker 缓存层，第二次构建即可享受极高的 Nix closure 缓存命中率。
 - 生产 VPS（`/app/macro`）坚决不承担任何编译任务，仅负责 pull 镜像与启动容器。
 
-### 4.3 工作流（Workflow）支持双 Runner 与双 Profile
+### 4.4 工作流（Workflow）支持双 Runner 与双 Profile
 - 在 `.github/workflows/self-host-images.yml` 中新增 `services_runner` (`github` / `self-hosted`，默认 `github`)。
 - 新增 `profile` (`full` / `email`，默认 `full` 用于全量兼容，按需选择 `email`)。
 - 增加 `concurrency` 控制，避免多次触发导致的无谓算力排队。
+- 自动化 `init` 步骤：根据 `profile` 自动选用匹配的 `macro-services[-email]` 提取 migration runner 并发布对应的 `macro-init[-email]` 镜像。
+- 注：当前 `macro_db_migrate` 暂未整合进 Nix 缓存聚合体系，仍通过 `nix develop --command cargo build` 编译（状态：`MIGRATION_RUNNER_OPTIMIZED=NO`）。
