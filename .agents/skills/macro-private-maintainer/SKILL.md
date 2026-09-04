@@ -77,7 +77,20 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 
 ---
 
-## 三、引用 Macro 官方 repo-local Skills
+## 三、优先利用 CodeGraph 极速掌握依赖与调用链
+
+仓库已完整建立本地代码智能关系图（基于 tree-sitter AST 解析的 SQLite 知识图谱，位于 `/Volumes/开发/macro/.codegraph`，包含 11,000+ 文件、150,000+ 节点与 500,000+ 边）：
+
+- **定位符号与调用链**：查找函数/组件的调用方时，优先执行 `codegraph callers <symbol>`；查找它调用的下游时，执行 `codegraph callees <symbol>`。
+- **改动影响面评估**：重构或清理函数/接口前，使用 `codegraph impact <symbol>` 审查受影响范围。
+- **按文件审查引用关系**：使用 `codegraph node <filepath>` 查看文件包含的符号及上游依赖文件。
+- **快速符号检索**：使用 `codegraph query <symbol>` 精准定位符号定义与声明。
+- **更新索引状态**：在做完大批量文件变更后，可通过 `codegraph sync /Volumes/开发/macro` 快速增量同步索引。
+- **原则**：严禁无目的地使用 grep 盲搜上万个文件，优先通过 CodeGraph 获取结构化、确定性的语法级关联。
+
+---
+
+## 四、引用 Macro 官方 repo-local Skills
 
 不要复制官方技能的全部规则到本 Skill。在执行任务前，根据任务类型读取并遵循仓库 `.agents/skills/` 中的相关 Skill：
 
@@ -340,3 +353,40 @@ Local PostgreSQL / Search / Storage
 - 任何功能开发需保持 upstream 兼容，单独放置 adapter 或独立配置。
 - 保持 `git fetch upstream` 与 `git merge upstream/main` 的低成本合并能力。
 - 若 upstream 官方已实现相同能力，优先采用官方标准方案，主动废除自身过时的临时 patch。
+
+---
+
+## 十九、开发规范与辅助目录归类
+
+本仓库包含若干面向 AI / IDE / 构建系统的辅助目录。执行产品瘦身、私有化清理或删除目录前，必须先区分它们是否属于产品运行时。
+
+### `.claude/`：保留
+
+`.claude/` 是 Claude Code 使用的开发规范、命令和 repo-local skills，不是 Macro 产品运行时功能，也不是 VPS 部署必需项，但对长期二开维护有价值。
+
+默认策略：
+- 保留 `.claude/`，作为开发规范与 AI 辅助维护资料。
+- 不把 `.claude/` 视为可随 Phase 1 产品精简一起删除的业务模块。
+- 若未来不再使用 Claude Code，可先把仍有价值的规范迁移到 `.agents/skills/` 或 `AGENTS.md`，再考虑删除。
+- 修改 `.claude/skills/*` 时，保持与 `.agents/skills/*` 的职责一致，避免两套规范互相冲突。
+
+### `.cursor/`：可清理候选
+
+`.cursor/` 主要是 Cursor / Cursor Cloud 专用开发环境配置和 MCP 调试配置，不属于 Macro 产品功能。
+
+默认策略：
+- 本地二开与 VPS 私有化部署不依赖 `.cursor/`。
+- 如果不再使用 Cursor Cloud Agent，可以纳入清理范围。
+- 删除前检查是否仍有人依赖 `.cursor/environment.json`、`.cursor/stack.sh`、`.cursor/infra.sh`、`.cursor/rebuild.sh` 或 `.cursor/mcp.json` 做远程开发。
+
+### `.sqlx/`：必须保留
+
+`.sqlx/` 是 SQLx 离线查询元数据缓存，Rust build、clippy、CI 中的 `SQLX_OFFLINE=true` 会依赖它。
+
+默认策略：
+- 禁止删除 `.sqlx/`。
+- 禁止手动编辑 `.sqlx/query-*.json`。
+- 修改 Rust SQL 查询或 migration 后，从仓库根目录运行：
+  ```bash
+  nix develop --command just prepare_db
+  ```

@@ -3,9 +3,7 @@
 use xtask_paths::RepoGlob;
 
 /// Shared by web checks and preview builds so a cache-WASM or shared-package
-/// change cannot be tested without being built (or built without being
-/// tested). The push-to-main dev deploy is not path-gated at all — see
-/// [`crate::workflows::deploy_on_push`] for why.
+/// change cannot be tested without being built, or built without being tested.
 pub const WEB_ARTIFACT_PATHS: &[RepoGlob<'static>] = &[
     RepoGlob::new("package.json"),
     RepoGlob::new("bun.lock"),

@@ -177,9 +177,8 @@ across instances) debugging containers:
   `--traces jaeger|datadog`, or disable with `--traces off`.
 - **Agent browser** (opt-in via `--with-chrome`): Chromium with the DevTools
   protocol on http://localhost:9222, for agents driving the app (the
-  `chrome-devtools` MCP server in `.mcp.json` / `opencode.json` /
-  `.cursor/mcp.json` points at it). Watch what an agent is doing live at
-  http://localhost:6080/vnc.html.
+  `chrome-devtools` MCP server in `opencode.json` points at it). Watch what an
+  agent is doing live at http://localhost:6080/vnc.html.
 
 See `.claude/skills/live-debug/SKILL.md` for query recipes (Tempo/Loki HTTP
 APIs) and the browser-debugging workflow.
