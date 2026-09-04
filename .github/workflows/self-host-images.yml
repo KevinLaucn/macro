@@ -67,12 +67,15 @@ jobs:
     runs-on: ${{ (inputs.services_runner == 'self-hosted') && fromJSON('["self-hosted", "linux", "x64", "macro-builder"]') || 'ubuntu-latest' }}
     outputs:
       version: ${{ steps.version.outputs.value }}
+      profile: ${{ steps.profile.outputs.value }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: 'false'
       - id: version
         run: echo "value=${{ inputs.version || github.ref_name }}" >> "$GITHUB_OUTPUT"
+      - id: profile
+        run: echo "value=${{ inputs.profile || 'full' }}" >> "$GITHUB_OUTPUT"
       - name: Setup Nix
         uses: './.github/actions/setup-nix'
 
@@ -172,7 +175,12 @@ jobs:
           ns="$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]')"
           v="${{ steps.version.outputs.value }}"
           profile="${{ inputs.profile || 'full' }}"
-          img="$REGISTRY/$ns/macro-services:$v"
+          if [ "$profile" = "email" ]; then
+            service_img_name="macro-services-email"
+          else
+            service_img_name="macro-services"
+          fi
+          img="$REGISTRY/$ns/${service_img_name}:$v"
           docker build -f self-host/images/Dockerfile.services \
             --build-arg BIN_DIR=build/bin \
             --build-arg MACRO_VERSION="$v" \
@@ -272,11 +280,20 @@ jobs:
         run: |
           set -euo pipefail
           v="${{ needs.services.outputs.version }}"
+          profile="${{ needs.services.outputs.profile }}"
           ns="$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]')"
-          img="$REGISTRY/$ns/macro-init:$v"
+          if [ "$profile" = "email" ]; then
+            service_img_name="macro-services-email"
+            init_img_name="macro-init-email"
+          else
+            service_img_name="macro-services"
+            init_img_name="macro-init"
+          fi
+          img="$REGISTRY/$ns/${init_img_name}:$v"
           docker build -f self-host/init/Dockerfile \
-            --build-arg MACRO_IMAGE_SERVICES="$REGISTRY/$ns/macro-services" \
+            --build-arg MACRO_IMAGE_SERVICES="$REGISTRY/$ns/${service_img_name}" \
             --build-arg MACRO_VERSION="$v" \
+            --label "com.kevinlaucn.macro.profile=$profile" \
             -t "$img" .
           docker push "$img"
 
