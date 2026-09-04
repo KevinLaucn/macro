@@ -1,6 +1,7 @@
 use macro_db_client::user::organization::{
     get_organization_roles_for_user, match_user_to_organization,
 };
+#[cfg(feature = "full-saas")]
 use macro_env_var::optional_read_env_var;
 
 #[cfg(test)]
@@ -10,8 +11,10 @@ mod test;
 /// `tooling/xtask/crates/xtask_local/src/local/local_env.rs`). With this key a
 /// real Stripe call would fail, so local signups skip it and store a
 /// deterministic placeholder id instead.
+#[cfg(feature = "full-saas")]
 const LOCAL_STRIPE_SECRET_STUB: &str = "local-stripe-secret";
 
+#[cfg(feature = "full-saas")]
 fn is_local_stripe_stub() -> bool {
     optional_read_env_var("STRIPE_SECRET_KEY")
         .ok()
@@ -30,7 +33,8 @@ fn local_stripe_customer_id(email: &str) -> String {
 /// multiple easy-to-follow functions
 ///
 /// Returns the (user_id, Option<organization_id>)
-#[tracing::instrument(skip(db, stripe_client))]
+#[cfg(feature = "full-saas")]
+#[tracing::instrument(skip(db, stripe_client), err)]
 pub async fn create_user(
     fusionauth_user_id: &str,
     username: &str,
@@ -51,6 +55,49 @@ pub async fn create_user(
         stripe_customer.id.to_string()
     };
 
+    create_user_with_stripe_customer_id(
+        fusionauth_user_id,
+        username,
+        email,
+        is_verified,
+        db,
+        stripe_customer_id,
+    )
+    .await
+}
+
+/// Creates a new user without requiring Stripe. Used by profiles that keep the
+/// upstream schema but do not provision SaaS billing integrations.
+#[cfg(not(feature = "full-saas"))]
+#[tracing::instrument(skip(db), err)]
+pub async fn create_user(
+    fusionauth_user_id: &str,
+    username: &str,
+    email: &str,
+    is_verified: bool,
+    db: &sqlx::Pool<sqlx::Postgres>,
+) -> anyhow::Result<(String, Option<i32>)> {
+    let stripe_customer_id = local_stripe_customer_id(email);
+
+    create_user_with_stripe_customer_id(
+        fusionauth_user_id,
+        username,
+        email,
+        is_verified,
+        db,
+        stripe_customer_id,
+    )
+    .await
+}
+
+async fn create_user_with_stripe_customer_id(
+    fusionauth_user_id: &str,
+    username: &str,
+    email: &str,
+    is_verified: bool,
+    db: &sqlx::Pool<sqlx::Postgres>,
+    stripe_customer_id: String,
+) -> anyhow::Result<(String, Option<i32>)> {
     let organization_id = match_user_to_organization(db, email).await?;
     tracing::trace!(organization_id=?organization_id, "matched user to organization");
 
@@ -89,7 +136,8 @@ pub async fn create_user(
 /// Note: This does not check if a user with the same email already exists.
 /// We can safely assume that this is not the case when we create a new user as the webhook is only
 /// run for new users.
-#[tracing::instrument(skip(stripe_client))]
+#[cfg(feature = "full-saas")]
+#[tracing::instrument(skip(stripe_client), err)]
 pub async fn create_stripe_user(
     email: &str,
     stripe_client: &stripe::Client,

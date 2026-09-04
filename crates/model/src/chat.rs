@@ -1,8 +1,10 @@
+#[cfg(feature = "chat_messages")]
 mod message;
 pub mod preview;
 pub mod utils;
 
 use macro_user_id::user_id::MacroUserIdStr;
+#[cfg(feature = "chat_messages")]
 pub use message::{ChatMessage, ChatMessageWithAttachments, NewChatMessage};
 use serde::{Deserialize, Serialize};
 use strum::Display;

@@ -65,10 +65,12 @@ default = [
   "attachment_upload",
   "connection_gateway",
   "contacts_sync",
+  "event_broker",
   "gmail_webhook_auth",
   "sfs_map",
   "sfs_delete",
 ]
+event_broker = ["macro_event_broker/outbound"]
 gmail_webhook_auth = []
 local_auth = ["macro_authorization/local_auth"]
 local_queue = []
@@ -76,7 +78,7 @@ sfs_map = []
 sfs_delete = []
 
 [dependencies]
-calendar_events = { path = "../../crates/calendar_events", features = ["google", "inbound", "postgres"] }
+calendar_events = { path = "../../crates/calendar_events", default-features = false, features = ["google", "inbound", "postgres"] }
 ammonia = { workspace = true }
 anyhow = { workspace = true }
 authentication_service_client = { path = "../../crates/authentication_service_client" }
@@ -91,13 +93,13 @@ bytes = { workspace = true }
 chrono = { workspace = true }
 cloudfront_sign = { workspace = true }
 connection_gateway_client = { path = "../../crates/connection_gateway_client" }
-crm = { path = "../../crates/crm" }
+crm = { path = "../../crates/crm", default-features = false, features = ["outbound", "ports"] }
 unfurl = { path = "../../crates/unfurl", features = ["outbound"] }
 document_storage_service_client = { path = "../../crates/document_storage_service_client" }
 doppleganger = { workspace = true }
 doppler-config = { workspace = true }
 ego-tree = { workspace = true }
-email = { path = "../../crates/email", features = ["axum", "gmail_token", "inbound", "outbound"] }
+email = { path = "../../crates/email", default-features = false, features = ["axum", "gmail_token", "inbound", "outbound"] }
 entity_access = { path = "../../crates/entity_access", default-features = false, features = ["outbound"] }
 entity_access_management = { path = "../../crates/entity_access_management" }
 email_api_client = { path = "../../crates/email_api_client", features = ["ports", "outbound-gmail"] }
@@ -118,20 +120,20 @@ macro_authorization = { path = "../../crates/macro_authorization", features = [
 ] }
 macro_cors = { path = "../../crates/macro_cors" }
 macro_config = { path = "../../crates/macro_config" }
-macro_db_client = { path = "../../crates/macro_db_client" }
+macro_db_client = { path = "../../crates/macro_db_client", default-features = false }
 macro_entrypoint = { path = "../../crates/macro_entrypoint" }
 macro_env = { path = "../../crates/macro_env" }
-macro_event_broker = { path = "../../crates/macro_event_broker" }
+macro_event_broker = { path = "../../crates/macro_event_broker", default-features = false }
 macro_env_var = { path = "../../crates/macro_env_var" }
 macro_queues = { path = "../../crates/macro_queues" }
 macro_middleware = { path = "../../crates/macro_middleware", default-features = false }
 last_online_tracker = { path = "../../crates/last_online_tracker" }
-notification = { path = "../../crates/notification" }
+notification = { path = "../../crates/notification", default-features = false }
 macro_user_id = { path = "../../crates/macro_user_id" }
 macro_uuid = { path = "../../crates/macro_uuid" }
 mime_guess = "2.0.5"
 contacts = { path = "../../crates/contacts" }
-model = { path = "../../crates/model" }
+model = { path = "../../crates/model", default-features = false }
 model-entity = { path = "../../crates/model-entity" }
 model_file_type = { path = "../../crates/model_file_type" }
 model_notifications = { path = "../../crates/model_notifications" }

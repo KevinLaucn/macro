@@ -5,23 +5,22 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+#[cfg(feature = "full-saas")]
 use calendar_events::domain::models::google_calendar_scope_parameter;
 use macro_authorization::{MacroAuthorizationExtractor, UserOrInternal};
 use macro_middleware::tracking::ClientIp;
 use macro_user_id::user_id::MacroUserIdStr;
 use model::response::ErrorResponse;
-use roles_and_permissions::domain::model::PermissionId;
 use serde_utils::urlencode::UrlEncoded;
 use url::Url;
 
 use crate::api::{
     context::{ApiContext, AuthorizationService},
-    link::github::REAUTHENTICATION_REQUIRED_MESSAGE,
     oauth2::OAuthState,
     permissions_extractor::DbPermissionsExtractor,
 };
 
-#[cfg(test)]
+#[cfg(all(test, feature = "full-saas"))]
 mod test;
 
 const GOOGLE_AUTHORIZATION_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -30,8 +29,11 @@ const GMAIL_SCOPES: &str = "openid profile email https://www.googleapis.com/auth
 /// The identity scopes every consent needs: the callback resolves the account
 /// that consented from the `sub` and `email` claims on Google's id_token, and
 /// Google only mints one when `openid` is requested.
+#[cfg(feature = "full-saas")]
 const IDENTITY_SCOPES: &str = "openid email";
 const FREE_INBOX_LIMIT: i64 = 2;
+const READ_PROFESSIONAL_FEATURES_PERMISSION: &str = "read_professional_features";
+const REAUTHENTICATION_REQUIRED_MESSAGE: &str = "reauthentication required";
 
 /// Which capabilities a consent request covers. Calendar surfaces ask for
 /// [`ConsentScopes::Calendar`] when the mailbox is already connected, so the
@@ -138,7 +140,7 @@ pub async fn init_gmail_link_handler(
     enforce_inbox_paywall(
         db_permissions
             .permissions
-            .contains(&PermissionId::ReadProfessionalFeatures.to_string()),
+            .contains(READ_PROFESSIONAL_FEATURES_PERMISSION),
         || count_accessible_email_inboxes(&ctx.db, &authorization.authorization.user.macro_user_id),
     )
     .await?;
@@ -201,7 +203,15 @@ pub async fn init_gmail_link_handler(
 /// calendar request is vetoed by the kill switch falls back to the mailbox
 /// consent, which is what it would have gotten before calendar existed.
 fn gmail_authorization_scopes(calendar_scope_enabled: bool, scopes: ConsentScopes) -> String {
+    #[cfg(not(feature = "full-saas"))]
+    {
+        let _ = (calendar_scope_enabled, scopes);
+        return GMAIL_SCOPES.to_string();
+    }
+
+    #[cfg(feature = "full-saas")]
     let calendar = google_calendar_scope_parameter();
+    #[cfg(feature = "full-saas")]
     match scopes {
         ConsentScopes::Calendar if calendar_scope_enabled => {
             format!("{IDENTITY_SCOPES} {calendar}")

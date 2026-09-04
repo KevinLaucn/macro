@@ -16,6 +16,7 @@ use axum::{
 use macro_auth::middleware::decode_jwt::decode_macro_access_token_allow_expired;
 use maud::{DOCTYPE, Markup, html};
 use model::response::ErrorResponse;
+#[cfg(feature = "full-saas")]
 use referral::domain::{models::ReferralCode, ports::ReferralService};
 use reqwest::{Url, header::CONTENT_TYPE};
 use serde::Deserialize;
@@ -144,6 +145,7 @@ pub async fn handler(
 
     let decoded_user_id = decode_macro_access_token_allow_expired(&access_token, &ctx.jwt_args);
 
+    #[cfg(feature = "full-saas")]
     if let Some(state) = state.as_ref()
         && let Some(referral_code) = state.referral_code.as_ref()
     {

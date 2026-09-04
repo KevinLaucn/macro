@@ -1,10 +1,16 @@
+#[cfg(feature = "full-processing")]
 pub(crate) mod calendar_event;
+#[cfg(feature = "full-processing")]
 pub(crate) mod call;
+#[cfg(feature = "full-processing")]
 pub(crate) mod channel;
+#[cfg(feature = "full-processing")]
 pub(crate) mod chat;
 pub mod context;
+#[cfg(feature = "full-processing")]
 pub(crate) mod document;
 pub(crate) mod email;
+#[cfg(feature = "full-processing")]
 pub(crate) mod project;
 pub(crate) mod properties;
 mod user;
@@ -40,6 +46,7 @@ pub async fn process_message(
             tracing::trace!(user_profile_id = user_profile_id, "removing user profile");
             user::remove_user_profile(&ctx.opensearch_client, &user_profile_id).await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::ChannelMessageUpdate(message) => {
             let channel_id = message
                 .channel_id
@@ -77,6 +84,7 @@ pub async fn process_message(
             )
             .await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::ExtractDocumentText(message) => {
             document::process_extract_text_message(
                 &ctx.opensearch_client,
@@ -87,6 +95,7 @@ pub async fn process_message(
             )
             .await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::ExtractSync(message) => {
             document::process_extract_sync_message(
                 &ctx.opensearch_client,
@@ -98,9 +107,11 @@ pub async fn process_message(
             )
             .await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::ChatMessage(message) => {
             chat::insert_chat_message(&ctx.opensearch_client, &ctx.db, &message).await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::CallRecord(message) => {
             let call_id = message
                 .call_id
@@ -114,6 +125,7 @@ pub async fn process_message(
             )
             .await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::RemoveCallRecord(message) => {
             let channel_id = message
                 .channel_id
@@ -133,9 +145,11 @@ pub async fn process_message(
             )
             .await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::UpsertProject(message) => {
             project::upsert_project(&ctx.opensearch_client, &ctx.db, &message).await?;
         }
+        #[cfg(feature = "full-processing")]
         SearchQueueMessage::UpsertCalendarEvent(message) => {
             // Logged rather than silent: running the calendar backfill against
             // an environment where the flag is off should say why nothing
@@ -149,6 +163,13 @@ pub async fn process_message(
                     "calendar search is disabled; not indexing calendar event"
                 );
             }
+        }
+        #[cfg(not(feature = "full-processing"))]
+        _ => {
+            tracing::warn!(
+                message = ?search_extractor_message,
+                "search processing Email profile ignored non-email queue message"
+            );
         }
     }
 

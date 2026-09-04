@@ -29,12 +29,18 @@ use macro_authorization::{
 };
 use macro_entrypoint::MacroEntrypoint;
 use macro_env::Environment;
+#[cfg(not(feature = "event_broker"))]
+use macro_event_broker::NoopMacroEventBroker;
+#[cfg(feature = "event_broker")]
 use macro_event_broker::{KafkaEventPublisher, MacroEventBrokerService};
 use macro_service_urls::{AuthServiceUrl, DocumentStorageServiceUrl, StaticFileServiceUrl};
 use sqlx::postgres::PgPoolOptions;
 use static_file_service_client::StaticFileServiceClient;
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
+#[cfg(feature = "event_broker")]
+use std::time::Duration;
 use system_properties::{PgSystemPropertiesRepository, SystemPropertiesServiceImpl};
+#[cfg(feature = "event_broker")]
 use tokio_util::task::TaskTracker;
 
 mod api;
@@ -157,12 +163,16 @@ async fn main() -> anyhow::Result<()> {
         crm::outbound::companies_repo::CompaniesRepositoryImpl::new(db.clone()),
         crm::outbound::no_op_resolver::NoOpCompanyMetadataResolver,
     );
+    #[cfg(feature = "event_broker")]
     let event_broker_tracker = TaskTracker::new();
+    #[cfg(feature = "event_broker")]
     let macro_event_broker = MacroEventBrokerService::new(
         KafkaEventPublisher::new(config.kafka_brokers.as_ref())
             .context("failed to create kafka event publisher")?,
         event_broker_tracker.clone(),
     );
+    #[cfg(not(feature = "event_broker"))]
+    let macro_event_broker = NoopMacroEventBroker;
     let email_service = EmailRouterState::new(
         EmailServiceImpl::new(
             EmailPgRepo::new(db.clone()),
@@ -243,20 +253,24 @@ async fn main() -> anyhow::Result<()> {
     })
     .await;
 
-    tracing::info!("waiting for event broker publishes to drain");
-    event_broker_tracker.close();
-    match tokio::time::timeout(EVENT_BROKER_DRAIN_TIMEOUT, event_broker_tracker.wait()).await {
-        Ok(()) => tracing::info!("event broker publishes drained"),
-        Err(error) => {
-            tracing::warn!(
-                error=?error,
-                timeout_seconds = EVENT_BROKER_DRAIN_TIMEOUT.as_secs(),
-                "timed out waiting for event broker publishes to drain"
-            );
+    #[cfg(feature = "event_broker")]
+    {
+        tracing::info!("waiting for event broker publishes to drain");
+        event_broker_tracker.close();
+        match tokio::time::timeout(EVENT_BROKER_DRAIN_TIMEOUT, event_broker_tracker.wait()).await {
+            Ok(()) => tracing::info!("event broker publishes drained"),
+            Err(error) => {
+                tracing::warn!(
+                    error=?error,
+                    timeout_seconds = EVENT_BROKER_DRAIN_TIMEOUT.as_secs(),
+                    "timed out waiting for event broker publishes to drain"
+                );
+            }
         }
     }
 
     api_result
 }
 
+#[cfg(feature = "event_broker")]
 const EVENT_BROKER_DRAIN_TIMEOUT: Duration = Duration::from_secs(10);

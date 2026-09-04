@@ -5,9 +5,9 @@
 # bind-mounted build directory — so a self-hosted deployment and a developer's
 # stack run the same artifacts the same way.
 #
-# The binaries are built ahead of this by `nix build .#local-stack-binaries`
+# The binaries are built ahead of this by `nix build .#self-host-email-binaries`
 # and staged into the build context; see
-# .github/workflows/push_self_host_images.yml.
+# .github/workflows/self-host-images.yml.
 FROM debian:trixie-slim
 
 ARG BIN_DIR=bin

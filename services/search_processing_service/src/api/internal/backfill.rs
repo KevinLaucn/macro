@@ -27,24 +27,30 @@ use serde::Serialize;
 use crate::BackfillServiceImpl;
 use crate::api::context::{ApiContext, AuthorizationService};
 use crate::domain::jobs::{BackfillJobs, JobId};
+use crate::domain::models::EmailBackfillRequest;
+#[cfg(feature = "full-processing")]
 use crate::domain::models::{
     CalendarEventBackfillRequest, CallBackfillRequest, ChannelBackfillRequest, ChatBackfillRequest,
-    DocumentBackfillRequest, EmailBackfillRequest, ProjectBackfillRequest,
-    PropertiesBackfillRequest,
+    DocumentBackfillRequest, ProjectBackfillRequest, PropertiesBackfillRequest,
 };
 use crate::domain::service::BackfillService;
 
 pub fn router() -> Router<ApiContext> {
-    Router::new()
+    let router = Router::new()
+        .route("/emails", post(emails))
+        .route("/{job_id}", get(status));
+
+    #[cfg(feature = "full-processing")]
+    let router = router
         .route("/calls", post(calls))
         .route("/chats", post(chats))
         .route("/channels", post(channels))
         .route("/documents", post(documents))
-        .route("/emails", post(emails))
         .route("/properties", post(properties))
         .route("/projects", post(projects))
-        .route("/calendar-events", post(calendar_events))
-        .route("/{job_id}", get(status))
+        .route("/calendar-events", post(calendar_events));
+
+    router
 }
 
 #[derive(Debug, Serialize)]
@@ -52,6 +58,7 @@ struct AcceptedReceipt {
     job_id: JobId,
 }
 
+#[cfg(feature = "full-processing")]
 #[tracing::instrument(skip(service, jobs, _internal_authorization, req))]
 async fn calls(
     State(service): State<Arc<BackfillServiceImpl>>,
@@ -68,6 +75,7 @@ async fn calls(
     .await
 }
 
+#[cfg(feature = "full-processing")]
 #[tracing::instrument(skip(service, jobs, _internal_authorization, req))]
 async fn chats(
     State(service): State<Arc<BackfillServiceImpl>>,
@@ -84,6 +92,7 @@ async fn chats(
     .await
 }
 
+#[cfg(feature = "full-processing")]
 #[tracing::instrument(skip(service, jobs, _internal_authorization, req))]
 async fn channels(
     State(service): State<Arc<BackfillServiceImpl>>,
@@ -102,6 +111,7 @@ async fn channels(
     .await
 }
 
+#[cfg(feature = "full-processing")]
 #[tracing::instrument(skip(service, jobs, _internal_authorization, req))]
 async fn documents(
     State(service): State<Arc<BackfillServiceImpl>>,
@@ -138,6 +148,7 @@ async fn emails(
     .await
 }
 
+#[cfg(feature = "full-processing")]
 #[tracing::instrument(skip(service, jobs, _internal_authorization, req))]
 async fn properties(
     State(service): State<Arc<BackfillServiceImpl>>,
@@ -156,6 +167,7 @@ async fn properties(
     .await
 }
 
+#[cfg(feature = "full-processing")]
 #[tracing::instrument(skip(service, jobs, _internal_authorization, req))]
 async fn projects(
     State(service): State<Arc<BackfillServiceImpl>>,
@@ -174,6 +186,7 @@ async fn projects(
     .await
 }
 
+#[cfg(feature = "full-processing")]
 #[tracing::instrument(skip(service, jobs, _internal_authorization, req))]
 async fn calendar_events(
     State(service): State<Arc<BackfillServiceImpl>>,
