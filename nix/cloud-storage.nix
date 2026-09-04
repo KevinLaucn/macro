@@ -1137,7 +1137,6 @@
       packages = {
         inherit
           cargoArtifacts
-          callRecordingPreviewFfmpegLayer
           workspaceArtifacts
           deployCargoArtifacts
           lambdaDeployCargoArtifacts
