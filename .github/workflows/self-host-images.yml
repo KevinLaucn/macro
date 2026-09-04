@@ -141,14 +141,6 @@ jobs:
           test ! -e self-host/build/bin/seed_cli
           echo "auth binary is the production build; seed CLI is not shipped"
 
-      - name: Build the migration runner
-        # Build the migration runner into /app/out/macro_db_migrate.
-        run: |
-          set -euo pipefail
-          nix develop --command cargo build --release \
-            -p macro_db_migrator --features cli --bin macro_db_migrate
-          cp target/release/macro_db_migrate self-host/build/bin/
-
       - name: Build diagnostics after build
         run: |
           echo "=== Disk after build ==="
@@ -307,24 +299,32 @@ jobs:
         include:
           - image: macro-sync-service
             dockerfile: docker/sync-service.Dockerfile
+            email_profile: true
           - image: macro-lexical-service
             dockerfile: docker/lexical-service.Dockerfile
+            email_profile: true
           - image: macro-ai-editing-worker
             dockerfile: docker/ai-editing-worker.Dockerfile
+            email_profile: false
           - image: macro-analytics-proxy
             dockerfile: docker/analytics-proxy.Dockerfile
+            email_profile: false
           - image: macro-websocket-service
             dockerfile: docker/websocket-service.Dockerfile
+            email_profile: true
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        if: ${{ (inputs.profile || 'full') == 'full' || matrix.email_profile }}
         with:
           persist-credentials: 'false'
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        if: ${{ (inputs.profile || 'full') == 'full' || matrix.email_profile }}
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
+        if: ${{ (inputs.profile || 'full') == 'full' || matrix.email_profile }}
         run: |
           set -euo pipefail
           v="${{ inputs.version || github.ref_name }}"

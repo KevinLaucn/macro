@@ -64,7 +64,9 @@ nix build --print-build-logs ".#local-stack-binaries" --out-link result-bins
 - 保留 `local-stack-binaries` 不受任何破坏。
 - 新增 `selfHostEmailBinaryDefinitions`（定义 11 个核心包，共产生 12 个二进制文件）：
   - 包含：`authentication_service` (生产模式), `connection_gateway_service`, `contacts_service`, `document_storage_service`, `email_service` (产出 `email_service` + `pubsub_workers`), `image_proxy_service`, `notification_service`, `static_file_service`, `unfurl_service`, `search_processing_service` (带 processing,service 特性), `document_upload_finalizer_local_worker`。
-  - **核心依赖隔离**：不再复用包含 Full Stack 全部依赖的 `deployCargoArtifacts`，而是专门为 Email 构建 `selfHostEmailCargoArtifacts = craneLib.buildDepsOnly`，通过 `selfHostEmailBinaryCargoExtraArgs` 严格限制只预编译这 11 个包的 Cargo 依赖树，彻底从构建中剔除 Daytona 沙箱、ACP 协议、turso_core、AI 引擎等冗余依赖。
+  - **核心依赖隔离**：不再复用包含 Full Stack 全部依赖的 `deployCargoArtifacts`，而是专门为 Email 构建 `selfHostEmailCargoArtifacts = craneLib.buildDepsOnly`，通过 `selfHostEmailBinaryCargoExtraArgs` 严格限制只预编译 Email roots 的 Cargo 依赖树。
+  - **Workspace/source 隔离**：根据 `.github/workspace-dep-closures.json` 计算 Email roots 的 workspace union，生成只包含该 union 的根 `Cargo.toml`，并让 `vendorCargoDeps`、`mkDummySrc`、dependency artifacts 和每个 leaf source 全部从该裁剪源开始。无关 workspace manifest 不再进入 Email profile 的固定 Nix 输入图。
+  - 当前保守服务集的 workspace union 仍然较大，主要由 `document_storage_service`、`search_processing_service` 和 upload finalizer 的真实依赖造成。继续缩小必须通过上游兼容的 Cargo feature/adapter 边界完成，不能删除真实依赖或伪造 API 响应。
   - 将 `deployServiceBinaryPackage` 参数化，使 Email 包全部消费独立的 `selfHostEmailCargoArtifacts`。
 - 导出 `self-host-email-binaries`。
 
@@ -87,4 +89,10 @@ nix build --print-build-logs ".#local-stack-binaries" --out-link result-bins
 - 新增 `profile` (`full` / `email`，默认 `full` 用于全量兼容，按需选择 `email`)。
 - 增加 `concurrency` 控制，避免多次触发导致的无谓算力排队。
 - 自动化 `init` 步骤：根据 `profile` 自动选用匹配的 `macro-services[-email]` 提取 migration runner 并发布对应的 `macro-init[-email]` 镜像。
-- 注：当前 `macro_db_migrate` 暂未整合进 Nix 缓存聚合体系，仍通过 `nix develop --command cargo build` 编译（状态：`MIGRATION_RUNNER_OPTIMIZED=NO`）。
+- `macro_db_migrate` 已进入 Full 与 Email 的 Nix/crane 聚合体系，workflow 不再执行 checkout-local `cargo build --release`。
+- Email profile 只发布 `sync`、`lexical`、`websocket` worker；AI Editing 与 Analytics 仅由 Full profile 发布。
+
+### 4.5 单 Compose 的生产运行 Profile
+- `self-host/docker-compose.yml` 默认使用 `macro-services-email` / `macro-init-email`。
+- `document_cognition_service`、`scheduled_action_service`、`mcp_service`、`ai_editing_worker` 位于 Compose `full` profile，默认邮件生产不会启动缺失的二进制。
+- Full 运行仍使用同一 Compose 文件：配置 Full 镜像名后执行 `./macroctl up --profile full`。

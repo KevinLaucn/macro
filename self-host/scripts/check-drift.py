@@ -137,6 +137,34 @@ if "local-stack-binaries" in workflow:
     if "Verify the auth binary is the production build" not in workflow:
         fail("self-host-images.yml no longer verifies the auth binary was replaced")
 
+if "nix develop --command cargo build --release" in workflow:
+    fail("self-host-images.yml bypasses crane/Nix artifacts with a checkout-local release build")
+if 'packageName = "macro_db_migrator";' not in (ROOT / "nix/cloud-storage.nix").read_text():
+    fail("macro_db_migrator is not part of the Nix-managed self-host binary graph")
+
+# The default runtime is the conservative Email production profile. Services
+# whose binaries are intentionally absent from that image must remain opt-in.
+if "ghcr.io/kevinlaucn/macro-services-email" not in compose:
+    fail("docker-compose.yml does not default to the Email production services image")
+if "ghcr.io/kevinlaucn/macro-init-email" not in compose:
+    fail("docker-compose.yml does not default to the Email production init image")
+for service in (
+    "document_cognition_service",
+    "scheduled_action_service",
+    "mcp_service",
+    "ai_editing_worker",
+):
+    match = re.search(rf"^  {service}:\n(.*?)(?=^  \w|^volumes:)", compose, re.M | re.S)
+    if not match or 'profiles: ["full"]' not in match.group(1):
+        fail(f"{service} must stay behind the full Compose profile")
+
+for image in ("macro-ai-editing-worker", "macro-analytics-proxy"):
+    block = re.search(
+        rf"- image: {image}\n(.*?)(?=          - image:|    steps:)", workflow, re.S
+    )
+    if not block or "email_profile: false" not in block.group(1):
+        fail(f"{image} must not build in the Email production profile")
+
 # --- kafka -----------------------------------------------------------------
 topics_src = json.loads((ROOT / ".github/kafka-cluster-topics.json").read_text())
 topics_copy = json.loads((SELF_HOST / "init/kafka-topics.json").read_text())

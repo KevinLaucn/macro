@@ -89,6 +89,30 @@
       workspaceDepClosures =
         (builtins.fromJSON (builtins.readFile ../.github/workspace-dep-closures.json)).closures;
 
+      selfHostEmailRootPackages = [
+        "authentication_service"
+        "connection_gateway"
+        "contacts_service"
+        "document_storage_service"
+        "email_service"
+        "image_proxy_service"
+        "notification_service"
+        "static_file_service"
+        "unfurl_service"
+        "search_processing_service"
+        "document_upload_finalizer_handler"
+        "macro_db_migrator"
+      ];
+      selfHostEmailWorkspaceDirs = pkgs.lib.unique (
+        pkgs.lib.concatMap (
+          packageName:
+          workspaceDepClosures.${packageName} or (throw (
+            "No '${packageName}' entry in .github/workspace-dep-closures.json; "
+            + "run `just hakari` from the repository root and commit the result."
+          ))
+        ) selfHostEmailRootPackages
+      );
+
       # Manifests + Cargo.lock + stub targets for every member, shared by all
       # pruned sources; only changes when a manifest or the lock changes.
       deployDummySrc = craneLib.mkDummySrc { inherit src; };
@@ -119,6 +143,8 @@
           in
           (rel == ".sqlx")
           || (pkgs.lib.hasPrefix ".sqlx/" rel)
+          || (rel == ".cargo")
+          || (pkgs.lib.hasPrefix ".cargo/" rel)
           || (rel == "static_assets")
           || (pkgs.lib.hasPrefix "static_assets/" rel)
           || (
@@ -127,6 +153,52 @@
             && ((assetFilter path type) || (binFilter path type))
           );
       };
+
+      # Keep the canonical workspace dependency/profile declarations, but make
+      # Cargo and crane see only the Email profile's real workspace closure.
+      selfHostEmailCargoToml = (pkgs.formats.toml { }).generate "Cargo.toml" (
+        cloudStorageCargoToml
+        // {
+          workspace = cloudStorageCargoToml.workspace // {
+            members = selfHostEmailWorkspaceDirs;
+          };
+        }
+      );
+
+      selfHostEmailSrc = pkgs.runCommand "cloud-storage-self-host-email-src" { } ''
+        mkdir -p $out
+        cp ${selfHostEmailCargoToml} $out/Cargo.toml
+        cp ${../Cargo.lock} $out/Cargo.lock
+        cp -rfT ${rootDepsSrc} $out
+        chmod -R +w $out
+        ${pkgs.lib.concatMapStrings (dir: ''
+          mkdir -p "$out/$(dirname '${dir}')"
+          cp -rT ${crateDirSrc dir} "$out/${dir}"
+          chmod -R +w "$out/${dir}"
+        '') selfHostEmailWorkspaceDirs}
+      '';
+
+      selfHostEmailDummySrc = craneLib.mkDummySrc { src = selfHostEmailSrc; };
+      selfHostEmailPrunedDeploySrc =
+        pname: rootPackage:
+        let
+          dirs = workspaceDepClosures.${rootPackage} or (throw (
+            "No '${rootPackage}' entry in .github/workspace-dep-closures.json; "
+            + "run `just hakari` from the repository root and commit the result."
+          ));
+        in
+        pkgs.runCommand "cloud-storage-self-host-email-src-${pname}" { } ''
+          cp -rT ${selfHostEmailDummySrc} $out
+          chmod -R +w $out
+          cp -rfT ${rootDepsSrc} $out
+          chmod -R +w $out
+          ${pkgs.lib.concatMapStrings (dir: ''
+            rm -rf "$out/${dir}"
+            mkdir -p "$out/$(dirname '${dir}')"
+            cp -rT ${crateDirSrc dir} "$out/${dir}"
+            chmod -R +w "$out/${dir}"
+          '') dirs}
+        '';
 
       prunedDeploySrc =
         pname: rootPackage:
@@ -188,6 +260,15 @@
       // pkgs.lib.optionalAttrs isLinux {
         LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath libraries}";
         BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.glibc.dev}/include -I${pkgs.gcc.cc}/lib/gcc/${pkgs.stdenv.hostPlatform.config}/${pkgs.gcc.version}/include";
+      };
+
+      selfHostEmailCommonArgs = commonArgs // {
+        src = selfHostEmailSrc;
+        cargoVendorDir = craneLib.vendorCargoDeps {
+          src = selfHostEmailSrc;
+          cargoLock = ../Cargo.lock;
+          outputHashes = import ../nix-support/root-cargo-output-hashes.nix;
+        };
       };
 
       # Pre-built third-party deps cached by Namespace; hash is driven by Cargo.lock
@@ -417,6 +498,12 @@
           packageName = "unfurl_service";
           binaries = [ "unfurl_service" ];
         }
+        {
+          serviceName = "macro-db-migrator";
+          packageName = "macro_db_migrator";
+          binaries = [ "macro_db_migrate" ];
+          featureArgs = "--features cli";
+        }
       ];
 
       localStackBinaryDefinitions = [
@@ -455,6 +542,7 @@
           def:
           "--package ${def.packageName} "
           + pkgs.lib.concatMapStringsSep " " (binary: "--bin ${binary}") def.binaries
+          + pkgs.lib.optionalString ((def.featureArgs or "") != "") " ${def.featureArgs or ""}"
         ) deployServiceBinaryDefinitions;
 
       deployCargoArtifacts = craneLib.buildDepsOnly (
@@ -477,13 +565,15 @@
           binaries,
           featureArgs ? "",
           cargoArtifacts ? deployCargoArtifacts,
+          buildArgs ? commonArgs,
+          sourceForPackage ? prunedDeploySrc,
         }:
         craneLib.buildPackage (
-          commonArgs
+          buildArgs
           // {
             # Pruned source: this derivation only rebuilds when a crate in
             # the service's own workspace closure changes.
-            src = prunedDeploySrc "service-${serviceName}" packageName;
+            src = sourceForPackage "service-${serviceName}" packageName;
             inherit cargoArtifacts;
             pname = "cloud-storage-${serviceName}-binaries";
             doCheck = false;
@@ -529,6 +619,7 @@
         "notification-service"
         "static-file-service"
         "unfurl-service"
+        "macro-db-migrator"
       ];
 
       localStackBinaries = pkgs.buildEnv {
@@ -611,6 +702,12 @@
           packageName = "document_upload_finalizer_handler";
           binaries = [ "document_upload_finalizer_local_worker" ];
         }
+        {
+          serviceName = "macro-db-migrator";
+          packageName = "macro_db_migrator";
+          binaries = [ "macro_db_migrate" ];
+          featureArgs = "--features cli";
+        }
       ];
 
       selfHostEmailBinaryCargoExtraArgs =
@@ -619,10 +716,11 @@
           def:
           "--package ${def.packageName} "
           + pkgs.lib.concatMapStringsSep " " (binary: "--bin ${binary}") def.binaries
+          + pkgs.lib.optionalString ((def.featureArgs or "") != "") " ${def.featureArgs or ""}"
         ) selfHostEmailBinaryDefinitions;
 
       selfHostEmailCargoArtifacts = craneLib.buildDepsOnly (
-        commonArgs
+        selfHostEmailCommonArgs
         // {
           pname = "cloud-storage-self-host-email-deps";
           doCheck = false;
@@ -635,7 +733,14 @@
       selfHostEmailBinaryPackages = pkgs.lib.listToAttrs (
         map (def: {
           name = "self-host-email-binaries-${def.serviceName}";
-          value = deployServiceBinaryPackage (def // { cargoArtifacts = selfHostEmailCargoArtifacts; });
+          value = deployServiceBinaryPackage (
+            def
+            // {
+              cargoArtifacts = selfHostEmailCargoArtifacts;
+              buildArgs = selfHostEmailCommonArgs;
+              sourceForPackage = selfHostEmailPrunedDeploySrc;
+            }
+          );
         }) selfHostEmailBinaryDefinitions
       );
 

@@ -28,7 +28,7 @@ by path to the services behind it. Nothing else publishes a port.
                      └───────────────┬──────────────────────────┘
                                      │  (private compose networks)
    ┌─────────────────────────────────┼─────────────────────────────────┐
-   │ 15 Rust services   sync + lexical + ai-editing (workerd)          │
+   │ Email Rust services          sync + lexical + websocket workers   │
    ├───────────────────────────┬─────────────────────┬─────────────────┤
    │ postgres  redis  kafka    │ opensearch          │ fusionauth      │
    │ localstack (S3/SQS/DDB/KMS)                     │ + its postgres  │
@@ -56,7 +56,7 @@ Three hostnames, all pointing at the same machine:
 ## Install
 
 ```bash
-git clone https://github.com/macro-inc/macro.git
+git clone https://github.com/KevinLaucn/macro.git
 cd macro/self-host
 
 ./macroctl generate-secrets --domain macro.example.com --acme-email you@example.com \
@@ -74,6 +74,13 @@ credentials, and a deployment that inherits them has no security at all.
 `up` pulls images, renders the FusionAuth bootstrap, provisions storage and the
 database, then starts everything. First run takes a few minutes; certificate
 issuance adds a minute or so after that.
+
+The default is the Email production profile and pulls
+`ghcr.io/kevinlaucn/macro-services-email` plus
+`ghcr.io/kevinlaucn/macro-init-email`. The VPS never builds Rust, Nix, Bun, or
+Node artifacts. To run the Full profile, point `MACRO_IMAGE_SERVICES` and
+`MACRO_IMAGE_INIT` at the non-Email image names and run
+`./macroctl up --profile full`.
 
 Sign in at `https://your-domain`. Any email address works — an account is
 created on first login and the code arrives by email. There is no separate
@@ -109,6 +116,7 @@ credentials in `.env`, then `./macroctl up` again.
 | **Gmail** — inbox sync, SSO | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET_KEY` | Your own Google OAuth app. Real Gmail at any scale also needs Google's restricted-scope security assessment |
 | **GitHub** — SSO, PR linking | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | |
 | **Calls** | `LIVEKIT_*` | Self-host LiveKit or use LiveKit Cloud |
+| **Full workspace services** | Full image names plus `./macroctl up --profile full` | Adds cognition, scheduled actions, MCP and AI editing |
 | **Agents** | `./macroctl up --profile agents` | Read the warning below first |
 | **Analytics** | `./macroctl up --profile analytics` | Only useful pointed at your own PostHog |
 
@@ -170,12 +178,13 @@ It reads the same Rust catalogs the dev stack is built from —
 `macro_queues` for buckets, queues and tables — and fails if this directory has
 drifted. CI runs it before publishing any image.
 
-Service images are built from the same nix derivations the rest of the project
-uses, with one deliberate exception: `authentication_service` comes from the
-**deploy** build, not the local-stack one. The local-stack build carries
-`return_passwordless_code` and drops the rate limit so a developer can complete
-a login without opening a mailbox. Served publicly that is an authentication
-bypass, so the publish workflow replaces the binary and then asserts it did.
+Service images are built from Nix/crane derivations. The Email aggregate starts
+from its own generated workspace manifest, source closure, vendor input and
+dependency artifacts. Its `authentication_service` is built directly with
+production defaults; it never compiles or copies the local development
+`return_passwordless_code` variant, and `seed_cli` is absent. The Full local
+development aggregate remains available independently as
+`.#local-stack-binaries`.
 
 ## Layout
 
