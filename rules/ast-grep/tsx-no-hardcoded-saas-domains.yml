@@ -1,0 +1,17 @@
+id: tsx-no-hardcoded-saas-domains
+language: tsx
+severity: error
+message: Do not hardcode external SaaS / telemetry endpoints (e.g. workers.dev, pipedream.com, macro.com proxies). Use environment variables or local proxies.
+note: |-
+  KevinLaucn/macro enforces Zero Macro Cloud Dependency. Hardcoding external SaaS
+  or proxy endpoints leaks privacy, bypasses offline self-hosting guarantees,
+  and breaks self-hosted setups.
+files:
+  - apps/web/src/**
+ignores:
+  - '**/*.test.tsx'
+  - '**/test/**'
+  - '**/tests/**'
+rule:
+  kind: string_fragment
+  regex: (api\.pipedream\.com|workers\.dev|macro-prox\.macroverse)

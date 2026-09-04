@@ -21,6 +21,7 @@ import EmptyStateInboxZeroGraphic from '@design/empty-state-inbox-zero.svg';
 import EmptyStateNoFilterMatchGraphic from '@design/empty-state-no-filter-match.svg';
 import EmptyStateNoSearchMatchGraphic from '@design/empty-state-no-search-match.svg';
 import EmptyStateTasksGraphic from '@design/empty-state-tasks.svg';
+import { t } from '@macro/i18n';
 import PlusIcon from '@phosphor/plus.svg';
 import { useCurrentTeamQuery, useIsTeamAdmin } from '@queries/team/teams';
 import { EmptyStatePanel, FilteredHiddenBanner } from '@ui';
@@ -131,8 +132,8 @@ export function EmptyState(props: {
           graphic={EmptyStateNoSearchMatchGraphic}
           title={
             soup.searchText().trim().length > 0
-              ? `No results for "${soup.searchText()}"`
-              : 'No results'
+              ? t('No results for "{query}"', { query: soup.searchText() })
+              : t('No results')
           }
           description="Search across messages, documents, tasks, and more. Try a different query or broaden your filters."
           documentationUrl={`${DOCS_BASE}/product/search`}
@@ -433,7 +434,7 @@ export function EmptyState(props: {
           return (
             <EmptyStatePanel
               graphic={fallback.graphic ?? EmptyStateInboxZeroGraphic}
-              title={`No ${fallback.plural} to show`}
+              title={t('No {item} to show', { item: t(fallback.plural) })}
               description={fallback.description}
               primaryAction={createAction()}
               documentationUrl={fallback.documentationUrl}

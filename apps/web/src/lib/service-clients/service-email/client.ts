@@ -3,9 +3,9 @@ import {
   type FetchWithTokenErrorCode,
   fetchWithToken,
 } from '@core/util/fetchWithToken';
-import { getMacroApiToken } from '@service-auth/fetch';
 import type { ObjectLike, ResultError } from '@core/util/result';
 import type { SafeFetchInit } from '@core/util/safeFetch';
+import { getMacroApiToken } from '@service-auth/fetch';
 import type { Result } from 'neverthrow';
 import type {
   AddDraftAttachmentRequest,
@@ -443,7 +443,10 @@ export const emailClient = {
   },
   async downloadAttachment(id: string, filename?: string) {
     const downloadUrl = this.getAttachmentDownloadUrl(id);
-    const token = await getMacroApiToken();
+    let token: string | null = null;
+    try {
+      token = await getMacroApiToken();
+    } catch {}
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
@@ -465,13 +468,14 @@ export const emailClient = {
     document.body.removeChild(anchor);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
   },
-  async getOrCreateAttachmentDocumentId(args: { id: string }) {
+  async getOrCreateAttachmentDocumentId(args: { id: string }, linkId?: string) {
     const { id } = args;
     return (
       await emailFetch<GetAttachmentDocumentIDResponse>(
         `/email/attachments/${id}/document_id`,
         {
           method: 'GET',
+          headers: emailLinkHeaders(linkId),
         }
       )
     ).map((result) => result);

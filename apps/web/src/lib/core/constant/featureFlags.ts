@@ -684,9 +684,8 @@ export const enableNotificationSettings = defineFlag({
 });
 
 // Email attachments: direct download/stream from email_service via Gmail API
-// bypassing DSS document creation and local S3 upload. Defaults to true for lightweight email profile.
+// bypassing DSS document creation and local S3 upload.
 export const enableDirectAttachmentDownload = defineFlag({
   env: 'ENABLE_DIRECT_ATTACHMENT_DOWNLOAD',
-  default: true,
+  default: false,
 });
-

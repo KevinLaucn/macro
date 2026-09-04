@@ -23,6 +23,7 @@ import { registerHotkey } from '@core/hotkey/hotkeys';
 import { TOKENS } from '@core/hotkey/tokens';
 import { isPaymentError } from '@core/util/handlePaymentError';
 import { createRenameDssEntityMutation } from '@entity';
+import { t } from '@macro/i18n';
 import { invalidateAllSoup } from '@queries/soup/normalized-cache';
 import { cognitionApiServiceClient } from '@service-cognition/client';
 import { Navigate } from '@solidjs/router';
@@ -69,9 +70,9 @@ function AnimatedHeroLogo(props: { class?: string }) {
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t('Good morning');
+  if (hour < 18) return t('Good afternoon');
+  return t('Good evening');
 }
 
 export function Home() {
@@ -95,7 +96,7 @@ function HomeContent() {
     return name.includes('@') ? name.split('@')[0] : name.split(' ')[0];
   };
 
-  const greeting = getGreeting();
+  const greeting = () => getGreeting();
 
   return (
     <main class="relative flex h-full flex-col bg-surface">
@@ -126,7 +127,7 @@ function HomeContent() {
           <header class="flex items-center gap-2.5">
             <AnimatedHeroLogo class="size-6 shrink-0 text-accent" />
             <h1 class="text-xl font-normal tracking-tight text-ink">
-              {greeting}, <span class="capitalize">{firstName()}</span>
+              {greeting()}, <span class="capitalize">{firstName()}</span>
             </h1>
           </header>
 

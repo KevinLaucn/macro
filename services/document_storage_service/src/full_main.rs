@@ -1,3 +1,7 @@
+use crate::config::{
+    CallRecordingS3AccessKey, CallRecordingS3Bucket, CallRecordingS3Region, CallRecordingS3Secret,
+    CallRingStatusBaseUrl, Config, Environment,
+};
 use crate::{
     api::{
         MACRO_INTERNAL_USER_ID,
@@ -54,7 +58,6 @@ use collab_surface::{
     outbound::pg_collab_surface_repo::PgCollabSurfaceRepo,
     outbound::surface_init::LexicalSyncSurfaceInitializer,
 };
-use config::{Config, Environment};
 use connection::{
     domain::service::ConnectionServiceImpl,
     outbound::connection_gateway_client::ConnectionGatewayImpl,
@@ -72,7 +75,8 @@ use email::{
 };
 use embedding::embedding_provider::openai::TextEmbedding3Small;
 use favorites::{
-    domain::service::FavoritesServiceImpl, inbound::axum_router::FavoritesRouterState,
+    domain::{mutation_service::FavoritesMutationServiceImpl, service::FavoritesServiceImpl},
+    inbound::axum_router::FavoritesRouterState,
     outbound::pg_favorites_repo::PgFavoritesRepo,
 };
 use foreign_entity::{
@@ -91,7 +95,6 @@ use macro_authorization::{
     MacroAuthorizationState, PgBotAuthorizationRepo, PgBotAuthorizer, PgHarnessAuthorizationRepo,
     PgHarnessAuthorizer, PgUserApiKeyAuthorizationRepo, PgUserApiKeyAuthorizer,
 };
-use macro_entrypoint::MacroEntrypoint;
 use macro_env_var::maybe_env_vars;
 use macro_event_broker::{KafkaEventPublisher, MacroEventBrokerService};
 #[cfg(feature = "delete_document_worker")]
@@ -595,10 +598,10 @@ pub(crate) async fn run() -> anyhow::Result<()> {
         ConnectionServiceImpl::new(entity_access_service.clone(), connection_gateway.clone());
     let call_repo = PgCallRepo::new(db.clone());
     let egress_config = match (
-        config::CallRecordingS3Bucket::new(),
-        config::CallRecordingS3Region::new(),
-        config::CallRecordingS3AccessKey::new(),
-        config::CallRecordingS3Secret::new(),
+        CallRecordingS3Bucket::new(),
+        CallRecordingS3Region::new(),
+        CallRecordingS3AccessKey::new(),
+        CallRecordingS3Secret::new(),
     ) {
         (Some(bucket), Some(region), Some(access_key), Some(secret)) => {
             tracing::info!(bucket = bucket.as_ref(), "call recording enabled");
@@ -649,7 +652,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
     if let Some(config) = egress_config {
         call_service_builder = call_service_builder.with_egress(config);
     }
-    if let Some(base_url) = config::CallRingStatusBaseUrl::new() {
+    if let Some(base_url) = CallRingStatusBaseUrl::new() {
         call_service_builder =
             call_service_builder.with_ring_status_base_url(base_url.as_ref().to_owned());
     }
@@ -1010,7 +1013,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             std::sync::Arc::new(SpawnedChannelEventDispatcher::new(channel_side_effects)),
             lexical_client.clone(),
         );
-    let macro_agent_tools = ai_tools::all_tools();
+    let macro_agent_tools = ai_tools::tools_for(ai_tools::AiHost::ChannelBot);
     let bot_trigger_router = channel_bots::inbound::BotTriggerRouter::new(
         channels_service.clone(),
         Arc::new(channel_bots::outbound::AgentLoopResponder::new(
@@ -1199,6 +1202,10 @@ pub(crate) async fn run() -> anyhow::Result<()> {
     });
 
     let favorites_service = Arc::new(FavoritesServiceImpl::new(PgFavoritesRepo::new(db.clone())));
+    let favorites_mutation_service = Arc::new(FavoritesMutationServiceImpl::new(
+        favorites_service.clone(),
+        entity_access_service.clone(),
+    ));
     let user_api_key_service = Arc::new(UserApiKeyServiceImpl::new(PgUserApiKeysRepo::new(
         db.clone(),
     )));
@@ -1271,8 +1278,8 @@ pub(crate) async fn run() -> anyhow::Result<()> {
 
     let redis_sha_client = Arc::new(Redis::new(redis_client));
 
-    let graphql_entity_mutation_service =
-        Arc::new(service::entity_mutation::DssEntityMutationService::new(
+    let graphql_entity_mutation_service = Arc::new(
+        crate::service::entity_mutation::DssEntityMutationService::new(
             document_service.clone(),
             chat_mutation_service,
             channels_service.clone(),
@@ -1280,14 +1287,16 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             Arc::new(email_service.clone()),
             project_service.clone(),
             entity_access_service.clone(),
-            favorites_service.clone(),
-            Arc::new(outbound::entity_mutation::DssEntityLifecycleAdapter::new(
-                db.clone(),
-                redis_sha_client.clone(),
-                sqs_client.clone(),
-                macro_event_broker.clone(),
-            )),
-        ));
+            Arc::new(
+                crate::outbound::entity_mutation::DssEntityLifecycleAdapter::new(
+                    db.clone(),
+                    redis_sha_client.clone(),
+                    sqs_client.clone(),
+                    macro_event_broker.clone(),
+                ),
+            ),
+        ),
+    );
 
     let api_context = ApiContext {
         contacts_ingress: contacts_ingress.clone(),
@@ -1298,7 +1307,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             authorization_state.clone(),
         )
         .with_favorites_reader(Arc::new(
-            service::soup_favorites_reader::DssSoupFavoritesReader(favorites_service.clone()),
+            crate::service::soup_favorites_reader::DssSoupFavoritesReader(favorites_service.clone()),
         )),
         favorites_state: FavoritesRouterState::new(
             favorites_service.clone(),
@@ -1306,6 +1315,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             authorization_state.clone(),
         ),
         favorites_service,
+        favorites_mutation_service,
         user_api_key_state: UserApiKeyRouterState::new(
             user_api_key_service,
             authorization_state.clone(),
@@ -1416,22 +1426,23 @@ pub(crate) async fn run() -> anyhow::Result<()> {
         );
 
         // Spawn the delete document worker.
-        let delete_worker_ctx = service::delete_document_worker::DeleteDocumentWorkerContext {
-            worker: Arc::new(delete_document_worker),
-            db: db.clone(),
-            s3_client: api_context.s3_client.clone(),
-            redis_client: api_context.redis_client.clone(),
-            sync_service_client: api_context.sync_service_client.clone(),
-            editing_worker_client,
-            properties_service: api_context.properties_service.clone(),
-        };
+        let delete_worker_ctx =
+            crate::service::delete_document_worker::DeleteDocumentWorkerContext {
+                worker: Arc::new(delete_document_worker),
+                db: db.clone(),
+                s3_client: api_context.s3_client.clone(),
+                redis_client: api_context.redis_client.clone(),
+                sync_service_client: api_context.sync_service_client.clone(),
+                editing_worker_client,
+                properties_service: api_context.properties_service.clone(),
+            };
 
         tokio::spawn(async move {
-            service::delete_document_worker::run_worker(delete_worker_ctx).await;
+            crate::service::delete_document_worker::run_worker(delete_worker_ctx).await;
         });
     }
 
-    let server_result = api::setup_and_serve(api_context).await;
+    let server_result = crate::api::setup_and_serve(api_context).await;
 
     tracing::info!("stopping event consumers");
     consumer_cancellation_token.cancel();

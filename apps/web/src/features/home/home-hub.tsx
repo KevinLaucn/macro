@@ -7,6 +7,7 @@ import { EntityIcon, getEntityIconType } from '@core/component/EntityIcon';
 import { useSettingsState } from '@core/constant/SettingsState';
 import { isMobile } from '@core/mobile/isMobile';
 import type { Entity } from '@core/types';
+import { t } from '@macro/i18n';
 import {
   compositeEntity,
   fetchNotificationsForEntities,
@@ -131,13 +132,13 @@ export function RecommendedSection() {
   return (
     <section>
       <div class="mb-2 flex items-center justify-between px-1">
-        <span class="text-sm text-ink-muted">Recommended</span>
+        <span class="text-sm text-ink-muted">{t('Recommended')}</span>
         <button
           type="button"
           class="text-xs text-ink-extra-muted transition-colors hover:text-ink-muted"
           onClick={() => navigate(LIST_VIEW_PATHS.inbox)}
         >
-          Show all
+          {t('Show all')}
         </button>
       </div>
       <div class="flex flex-col gap-2">
@@ -156,10 +157,10 @@ export function RecommendedSection() {
             <div class="group flex w-full items-center gap-3.5 rounded-xl border border-edge-muted bg-active px-4 py-3 text-left">
               <div class="min-w-0 flex-1">
                 <div class="text-sm font-medium text-ink">
-                  Recommendations are unavailable
+                  {t('Recommendations are unavailable')}
                 </div>
                 <div class="text-xs text-ink-muted">
-                  Check your connection and try again.
+                  {t('Check your connection and try again.')}
                 </div>
               </div>
               <button
@@ -167,7 +168,7 @@ export function RecommendedSection() {
                 class="shrink-0 text-sm text-accent hover:text-accent/80"
                 onClick={retry}
               >
-                Try again
+                {t('Try again')}
               </button>
             </div>
           </Match>
@@ -190,22 +191,22 @@ export function RecommendedSection() {
             >
               <div class="min-w-0 flex-1">
                 <div class="truncate text-sm font-medium text-ink">
-                  Connect your inbox
+                  {t('Connect your inbox')}
                 </div>
                 <div class="truncate text-xs text-ink-muted">
-                  Macro reads & triages your email in seconds
+                  {t('Macro reads & triages your email in seconds')}
                 </div>
               </div>
               <span class="flex shrink-0 items-center gap-2 text-sm text-accent">
                 <span class="size-1.5 rounded-full bg-accent" />
-                Connect
+                {t('Connect')}
               </span>
               <ChevronRightIcon class="size-4 shrink-0 text-ink-extra-muted" />
             </button>
           </Match>
           <Match when={view().kind === 'caught-up'}>
             <div class="group flex w-full items-center gap-3.5 rounded-xl border border-edge-muted bg-active px-4 py-3 text-left text-sm text-ink-muted">
-              You're all caught up.
+              {t("You're all caught up.")}
             </div>
           </Match>
         </Switch>
@@ -242,7 +243,7 @@ export function GettingStartedSection(props: { preferences: HomePreferences }) {
     <Show when={!isMobile() && !props.preferences.isDismissed('setup')}>
       <section>
         <div class="mb-2 flex items-center justify-between px-1">
-          <span class="text-sm text-ink-muted">Getting started</span>
+          <span class="text-sm text-ink-muted">{t('Getting started')}</span>
           <button
             type="button"
             class="rounded-md p-1 text-ink-extra-muted transition-colors hover:bg-hover hover:text-ink-muted"
@@ -256,8 +257,8 @@ export function GettingStartedSection(props: { preferences: HomePreferences }) {
           <Show when={showConnectRow()}>
             <SetupRow
               icon={<PlusIcon class="size-4" />}
-              title="Connect your tools"
-              desc="Link your inbox, Linear, Notion, GitHub & more"
+              title={t('Connect your tools')}
+              desc={t('Link your inbox, Linear, Notion, GitHub & more')}
               trailing={
                 <span class="flex items-center gap-2">
                   <span class="text-xs tabular-nums text-ink-extra-muted">
@@ -272,8 +273,8 @@ export function GettingStartedSection(props: { preferences: HomePreferences }) {
           </Show>
           <SetupRow
             icon={<BookOpenIcon class="size-4" />}
-            title="Learn the basics"
-            desc="Mentions, search, shortcuts & more"
+            title={t('Learn the basics')}
+            desc={t('Mentions, search, shortcuts & more')}
             trailing={
               <ArrowUpRightIcon class="size-4 shrink-0 text-ink-extra-muted" />
             }
@@ -316,7 +317,7 @@ function RecommendedRow(props: {
           onClick={props.onSelect}
           aria-label={`${status().label} with AI about ${props.item.title}`}
         >
-          {status().label}
+          {t(status().label)}
         </button>
         <button
           type="button"
@@ -327,7 +328,7 @@ function RecommendedRow(props: {
           }}
           aria-label={`Open ${props.item.title}`}
         >
-          Open
+          {t('Open')}
         </button>
       </div>
     </div>

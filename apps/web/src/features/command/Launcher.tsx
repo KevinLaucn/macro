@@ -60,12 +60,12 @@ import WideStar from '@icon/wide-star.svg';
 import { AnimatedTaskIcon } from '@icon/wide-task';
 import WideTask from '@icon/wide-task.svg';
 import { Dialog } from '@kobalte/core/dialog';
+import { t } from '@macro/i18n';
 import { getMarkdownGoldenBytes } from '@macro-inc/lexical-core/markdown-golden';
 import type { Span } from '@macro-inc/observability';
 import BellSimpleIcon from '@phosphor/bell-simple.svg';
 import MagnifyingGlassIcon from '@phosphor/magnifying-glass.svg';
 import PlusIcon from '@phosphor/plus.svg';
-import Robot from '@phosphor/robot.svg';
 import { createProject } from '@queries/storage/projects';
 import { makePersisted } from '@solid-primitives/storage';
 import {
@@ -711,12 +711,12 @@ const LauncherMenuItem = (props: LauncherMenuItemProps) => {
 
       <div class="min-w-0 flex-1 flex items-baseline gap-2">
         <span class="truncate text-sm font-medium text-ink">
-          {props.creatableBlock.label}
+          {t(props.creatableBlock.label)}
         </span>
         <Show when={launcherHint()}>
           {(hint) => (
             <span class="min-w-0 truncate font-medium text-ink-extra-muted/70">
-              {hint()}
+              {t(hint())}
             </span>
           )}
         </Show>
@@ -885,7 +885,7 @@ export const LauncherInner = (props: LauncherInnerProps) => {
   registerHotkey({
     hotkey: 'escape',
     scopeId: launcherScope,
-    description: 'Exit',
+    description: t('Exit'),
     keyDownHandler: () => {
       props.onClose();
       return true;
@@ -895,7 +895,7 @@ export const LauncherInner = (props: LauncherInnerProps) => {
   registerHotkey({
     hotkey: 'shift+enter',
     scopeId: launcherScope,
-    description: 'Open in new split',
+    description: t('Open in new split'),
     keyDownHandler: () => {
       return runLauncherItem(blocks()[focusedIndex()]);
     },
@@ -906,7 +906,7 @@ export const LauncherInner = (props: LauncherInnerProps) => {
   const confirmHotkey = registerHotkey({
     hotkey: 'enter' as ValidHotkey,
     scopeId: launcherScope,
-    description: 'Open in current split',
+    description: t('Open in current split'),
     keyDownHandler: () => {
       return runLauncherItem(blocks()[focusedIndex()]);
     },
@@ -960,7 +960,9 @@ export const LauncherInner = (props: LauncherInnerProps) => {
             fallback={
               <div class="min-w-0 flex flex-1 items-center gap-2 text-ink-muted">
                 <PlusIcon class="size-4 shrink-0 text-ink-extra-muted" />
-                <h1 class="truncate text-base font-normal">Create New</h1>
+                <h1 class="truncate text-base font-normal">
+                  {t('Create New')}
+                </h1>
               </div>
             }
           >
@@ -969,7 +971,7 @@ export const LauncherInner = (props: LauncherInnerProps) => {
               <CommandMenuSearchInput
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search create options"
+                placeholder={t('Search create options')}
                 value={searchQuery()}
                 onInput={(event) => setSearchQuery(event.currentTarget.value)}
               />
@@ -981,7 +983,7 @@ export const LauncherInner = (props: LauncherInnerProps) => {
             size="xs"
             label={
               <span class="flex items-center gap-1 text-[11px] font-medium leading-none text-ink-extra-muted/70">
-                Search mode{' '}
+                {t('Search mode')}{' '}
                 <Hotkey
                   shortcut={searchModeHotkey.hotkey()}
                   theme="subtle"
@@ -1034,14 +1036,14 @@ export const LauncherInner = (props: LauncherInnerProps) => {
                 <Hotkey shortcut={navDownHotkey.hotkey()} class="space-x-1" />
               </div>
             </div>
-            Navigate
+            {t('Navigate')}
           </span>
           <CommandMenuHotkeyHint
             hotkey={<Hotkey shortcut={confirmHotkey.hotkey()} />}
-            label="Create"
+            label={t('Create')}
           />
           <span class="hidden touch:hidden md:flex items-center gap-1">
-            Hold
+            {t('Hold')}
             <span class="relative inline-flex place-items-center">
               <span
                 ref={shiftRippleRef}
@@ -1058,7 +1060,7 @@ export const LauncherInner = (props: LauncherInnerProps) => {
                 {getNormalizedKeyString({ shortcut: 'shift' })}
               </span>
             </span>
-            New split
+            {t('New split')}
           </span>
         </CommandMenuShell.Footer>
       </CommandMenuShell>

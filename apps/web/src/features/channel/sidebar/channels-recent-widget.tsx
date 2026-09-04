@@ -28,6 +28,7 @@ import { compareDateDesc } from '@core/util/date';
 import { type ChannelEntity, EntityRowIcon, isChannelEntity } from '@entity';
 import { ContextMenu } from '@kobalte/core/context-menu';
 import { Tooltip as KobalteTooltip } from '@kobalte/core/tooltip';
+import { t } from '@macro/i18n';
 import { openNotification } from '@notifications';
 import {
   isChannelNotification,
@@ -291,19 +292,19 @@ function ChannelRow(props: {
         <ContextMenuContent class="text-xs text-ink-muted">
           <MenuGroup>
             <MenuItem
-              text="Open in new split"
+              text={t('Open in new split')}
               onClick={openInNewSplit}
               disabled={!canOpenInNewSplit()}
             />
             <MenuItem
-              text="Open in current split"
+              text={t('Open in current split')}
               onClick={openInCurrentSplit}
             />
           </MenuGroup>
           <Show when={isUnread()}>
             <MenuSeparator />
             <MenuGroup>
-              <MenuItem text="Mark as read" onClick={markAllAsRead} />
+              <MenuItem text={t('Mark as read')} onClick={markAllAsRead} />
             </MenuGroup>
           </Show>
           <Show when={muteAction.canExecute(entity())}>
@@ -312,8 +313,8 @@ function ChannelRow(props: {
               <MenuItem
                 text={
                   muteAction.isMuted(entity())
-                    ? 'Unmute notifications'
-                    : 'Mute notifications'
+                    ? t('Unmute notifications')
+                    : t('Mute notifications')
                 }
                 onClick={() => void muteAction.execute([entity()])}
               />
@@ -581,14 +582,14 @@ export const ChannelsRecentWidget = (props: {
     >
       <Show when={recentChannels().length > 0}>
         <CollapsibleSidebarSection
-          label="Latest"
+          label={t('Latest')}
           persistKey="recent-channels"
           items={sectionItems()}
           headerWrapper={props.headerWrapper}
           headerMenu={(open) => (
             <Show when={open}>
               <Tooltip
-                label="Toggle unread filter"
+                label={t('Toggle unread filter')}
                 placement="top"
                 class="pointer-events-none rounded-full opacity-0 transition-opacity duration-100 group-hover/sidebar-section:pointer-events-auto group-hover/sidebar-section:opacity-100"
               >
@@ -602,7 +603,7 @@ export const ChannelsRecentWidget = (props: {
                     size="xs"
                     label={
                       <span class="text-[11px] font-medium leading-none text-ink-extra-muted/60">
-                        Unread
+                        {t('Unread')}
                       </span>
                     }
                     labelClass="flex items-center"

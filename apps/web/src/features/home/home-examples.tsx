@@ -3,6 +3,7 @@ import { isMobile } from '@core/mobile/isMobile';
 import { AnimatedEmailIcon } from '@icon/wide-email';
 import { AnimatedFileMdIcon } from '@icon/wide-fileMd';
 import { AnimatedSearchIcon } from '@icon/wide-search';
+import { t } from '@macro/i18n';
 import XIcon from '@phosphor/x.svg';
 import { createSignal, For, type JSX, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
@@ -49,7 +50,7 @@ export function HomeExamples(props: { preferences: HomePreferences }) {
     <Show when={!isMobile() && !props.preferences.isDismissed('examples')}>
       <section>
         <div class="mb-2 flex items-center justify-between px-1">
-          <span class="text-sm text-ink-muted">Examples</span>
+          <span class="text-sm text-ink-muted">{t('Examples')}</span>
           <button
             type="button"
             class="rounded-md p-1 text-ink-extra-muted transition-colors hover:bg-hover hover:text-ink-muted"
@@ -80,11 +81,11 @@ export function HomeExamples(props: { preferences: HomePreferences }) {
                     class="size-4 shrink-0 text-ink-muted transition-colors group-hover:text-accent"
                   />
                   <span class="text-sm font-medium text-ink">
-                    {example.title}
+                    {t(example.title)}
                   </span>
                 </div>
                 <span class="truncate text-xs text-ink-muted">
-                  {example.description}
+                  {t(example.description)}
                 </span>
               </button>
             )}

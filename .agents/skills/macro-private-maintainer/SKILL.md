@@ -113,7 +113,18 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 - **生产配置**：`docker compose config` 核验服务拓扑与网络边界
 - **网络边界**：核验 DevTools Network 与服务端日志中 `macro.com` 请求数为 0
 
-### 2. 标准响应结构
+### 2. 推送 GitHub 远端门禁 (Pre-push CI & Lint Gate)
+在向 GitHub 远端仓库（`main` 或 PR 分支）提交与推送代码前，**必须在本地预先执行并通过以下规范检查**，以确保 GitHub Actions CI 100% 绿灯且不泄露任何外部依赖：
+1. **统一本地质检门禁**：
+   - 执行 `just check`：快速执行 `rustfmt`、`biome`（前端格式与语法校验）、`oxlint` 以及 `ast-grep` 语法树规则扫描。
+   - 若改动涉及核心类型定义，执行 `just check full`（增加 `tsc` 与 `clippy` 全量分析）。
+2. **私有化与零外部云防御检查**：
+   - 确保没有引入写死的官方外部域名（如 `*.workers.dev`、`api.pipedream.com`、`macro-prox.*`、`*.posthog.com`、商业付费墙）。
+   - 保持前置路由与 Onboarding 中第三方未配置连接器处于解耦/旁路状态。
+3. **CI 对齐验证（GitHub Actions Parity）**：
+   - 本项目 GitHub Actions CI 采用与本地一致的 `biome ci` 和 `ast-grep scan` 验证；本地 `just check` 通过即代表 CI 规范检查可完全通过。
+
+### 3. 标准响应结构
 每次任务完成时必须遵循：
 1. 🔹方案概述（简短说明修改策略与架构归属）
 2. 🔹已修改的文件路径（绝对路径清单，不含代码块）

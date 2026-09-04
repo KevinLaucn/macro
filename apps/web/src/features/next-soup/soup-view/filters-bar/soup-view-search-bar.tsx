@@ -6,6 +6,7 @@ import { buildConfig } from '@core/component/LexicalMarkdown/builder/MarkdownCon
 import { MarkdownShell } from '@core/component/LexicalMarkdown/builder/MarkdownShell';
 import { registerHotkey } from '@core/hotkey/hotkeys';
 import SearchIcon from '@icon/macro-magnifying-glass.svg';
+import { t } from '@macro/i18n';
 import { markdownToPlainText } from '@macro-inc/lexical-core/utils/parsers';
 import XIcon from '@phosphor/x.svg?component-solid';
 import { cn, Hotkey } from '@ui';
@@ -181,7 +182,7 @@ export const SoupSearchbar = (props: SoupSearchbarProps) => {
         >
           <MarkdownShell
             config={editor}
-            placeholder={props.placeholder ?? 'Search'}
+            placeholder={t(props.placeholder ?? 'Search')}
             autofocus={props.autoFocus}
             initialValue={initialEditorValue}
             class="min-h-0! overflow-visible!"

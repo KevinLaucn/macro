@@ -17,6 +17,7 @@ import {
   openFilePicker,
   openFolderPicker,
 } from '@core/util/upload';
+import { t } from '@macro/i18n';
 import BuildingsIcon from '@phosphor/buildings.svg';
 import ChevronDownIcon from '@phosphor/caret-down.svg';
 import PlusCircleIcon from '@phosphor/plus-circle.svg';
@@ -197,7 +198,7 @@ export const SoupViewCreateButton = () => {
     >
       <PlusCircleIcon class="size-3.5 text-accent" />
       <Show when={!props.hideLabel}>
-        <span>{createLabel()}</span>
+        <span>{t(createLabel())}</span>
       </Show>
     </Button>
   );
@@ -213,7 +214,7 @@ export const SoupViewCreateButton = () => {
       >
         <PlusCircleIcon class="size-3.5" />
         <Show when={!props.hideLabel}>
-          <span>{createLabel()}</span>
+          <span>{t(createLabel())}</span>
         </Show>
         <ChevronDownIcon class="size-2.5" />
       </Dropdown.Trigger>
@@ -225,7 +226,9 @@ export const SoupViewCreateButton = () => {
                 <span class="size-3.5 flex items-center justify-center shrink-0 text-ink-muted">
                   <CreateOptionIcon id={item.id} />
                 </span>
-                <span class="flex-1 truncate text-ink-muted">{item.label}</span>
+                <span class="flex-1 truncate text-ink-muted">
+                  {t(item.label)}
+                </span>
               </Dropdown.Item>
             )}
           </For>
@@ -235,19 +238,17 @@ export const SoupViewCreateButton = () => {
   );
 
   return (
-    <>
-      <Show when={options().length > 0}>
-        <CollapsibleHeaderItem id="create-button" priority={2}>
-          {(isCollapsed) => (
-            <Show
-              when={options().length > 1}
-              fallback={<SingleOptionButton hideLabel={isCollapsed()} />}
-            >
-              <MultiOptionButton hideLabel={isCollapsed()} />
-            </Show>
-          )}
-        </CollapsibleHeaderItem>
-      </Show>
-    </>
+    <Show when={options().length > 0}>
+      <CollapsibleHeaderItem id="create-button" priority={2}>
+        {(isCollapsed) => (
+          <Show
+            when={options().length > 1}
+            fallback={<SingleOptionButton hideLabel={isCollapsed()} />}
+          >
+            <MultiOptionButton hideLabel={isCollapsed()} />
+          </Show>
+        )}
+      </CollapsibleHeaderItem>
+    </Show>
   );
 };

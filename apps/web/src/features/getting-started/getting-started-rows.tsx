@@ -1,3 +1,4 @@
+import { __t } from '@macro/i18n';
 import ChevronDownIcon from '@phosphor/caret-down.svg';
 import CheckCircleIcon from '@phosphor/check-circle.svg';
 import { cn, InlineCheckbox } from '@ui';
@@ -30,7 +31,9 @@ export function ActionRow(props: {
         <props.action.icon class="size-4" />
       </span>
       <div class="min-w-0 flex-1">
-        <div class="text-sm font-medium text-ink">{props.action.title}</div>
+        <div class="text-sm font-medium text-ink">
+          {__t(props.action.title)}
+        </div>
       </div>
       <InlineCheckbox checked={props.complete} />
     </button>
@@ -58,7 +61,7 @@ export function SectionHeader(props: {
       onClick={props.onToggle}
     >
       <div class="min-w-0 truncate text-sm font-medium text-ink">
-        {props.section.title}
+        {__t(props.section.title)}
       </div>
       <span class="flex shrink-0 items-center gap-2">
         <Show

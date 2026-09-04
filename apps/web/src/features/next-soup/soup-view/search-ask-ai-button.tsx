@@ -5,6 +5,7 @@ import {
 import { useSplitPanelOrThrow } from '@components/app/split-layout/layoutUtils';
 import { registerHotkey } from '@core/hotkey/hotkeys';
 import { TOKENS } from '@core/hotkey/tokens';
+import { t } from '@macro/i18n';
 import { Button, Hotkey } from '@ui';
 import { createSignal, onCleanup } from 'solid-js';
 import { useSoupView } from './soup-view-context';
@@ -33,7 +34,7 @@ export function SearchAskAiButton() {
     hotkey: 'tab',
     hotkeyToken: TOKENS.soup.askAi,
     scopeId: panel.splitHotkeyScope,
-    description: 'Ask AI',
+    description: t('Ask AI'),
     keyDownHandler: () => {
       askAi();
       return true;
@@ -47,12 +48,12 @@ export function SearchAskAiButton() {
       variant="ghost"
       size="sm"
       depth={2}
-      tooltip="Ask AI"
+      tooltip={t('Ask AI')}
       class="shrink-0 h-7 touch:h-9 gap-1.5 rounded-lg px-2"
       disabled={isAsking()}
       onClick={askAi}
     >
-      <span class="font-medium">Ask AI</span>
+      <span class="font-medium">{t('Ask AI')}</span>
       <Hotkey shortcut={askAiHotkey.hotkey()} theme="subtle" />
     </Button>
   );

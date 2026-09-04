@@ -13,8 +13,8 @@ import { ImageGalleryPreview } from '@core/component/ImageGalleryPreview';
 import { toast } from '@core/component/Toast/Toast';
 import { UserIcon, type UserIconProps } from '@core/component/UserIcon';
 import { VideoPreview } from '@core/component/VideoPreview';
-import { enableDirectAttachmentDownload } from '@core/constant/featureFlags';
 import { fileTypeToBlockName } from '@core/constant/allBlocks';
+import { enableDirectAttachmentDownload } from '@core/constant/featureFlags';
 import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import { Telemetry } from '@macro-inc/observability';
 import { refetchSoupEntity } from '@queries/soup/cache';
@@ -168,19 +168,23 @@ export function MessageContainer(props: MessageContainerProps) {
 
     if (enableDirectAttachmentDownload.enabled) {
       try {
-        await emailClient.downloadAttachment(dbId, attachment.filename ?? undefined);
+        await emailClient.downloadAttachment(
+          dbId,
+          attachment.filename ?? undefined
+        );
+        return;
       } catch (e) {
-        toast.failure('Failed to download attachment. Please try again.');
-        Telemetry.error(
-          new Error('Failed to download attachment via direct stream: ' + e)
+        Telemetry.warn(
+          'Failed to download attachment via direct stream, falling back to preview: ' +
+            e
         );
       }
-      return;
     }
 
-    const response = await emailClient.getOrCreateAttachmentDocumentId({
-      id: dbId,
-    });
+    const response = await emailClient.getOrCreateAttachmentDocumentId(
+      { id: dbId },
+      props.message.link_id
+    );
     if (response.isErr()) {
       toast.failure('Failed to get attachment. Please try again.');
       return Telemetry.error(

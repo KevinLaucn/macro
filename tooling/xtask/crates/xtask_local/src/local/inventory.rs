@@ -130,7 +130,7 @@ pub const RUST_SERVICES: &[RustService] = &[
         is_websocket: false,
         modes: &[Mode::Local, Mode::Dev],
         opt_in: false,
-        no_default_features: true,
+        no_default_features: false,
     },
     RustService {
         compose_name: "document_upload_finalizer",

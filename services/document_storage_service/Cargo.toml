@@ -12,6 +12,7 @@ path = "src/main.rs"
 [[bin]]
 name = "document_storage_service_openapi"
 path = "src/openapi.rs"
+required-features = ["full-product"]
 
 [[bin]]
 name = "document_storage_service_doppler_config"
@@ -48,6 +49,7 @@ full-product = [
   "dep:github",
   "dep:graphql_soup",
   "dep:harnesses",
+  "dep:lexical_client",
   "dep:lexical_mention_extractor",
   "dep:macro_db_client",
   "dep:macro_middleware",
@@ -59,6 +61,7 @@ full-product = [
   "dep:properties_service",
   "dep:projects_hex",
   "dep:reminders",
+  "dep:search_service",
   "dep:soup",
   "dep:soup_realtime",
   "dep:sqs_client",
@@ -69,9 +72,12 @@ full-product = [
   "documents_hex/ai_tools",
   "documents_hex/axum",
   "documents_hex/inbound",
+  "foreign_entity/inbound",
   "projects_hex/ai_tools",
   "projects_hex/axum",
   "projects_hex/inbound",
+  "activity/consumer",
+  "activity/outbound",
   "macro_event_broker/outbound",
   "properties/default",
   "task_dedup/backfill",

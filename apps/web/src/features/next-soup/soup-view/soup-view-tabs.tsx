@@ -30,6 +30,7 @@ import { TabsInset } from '@core/component/TabsInset';
 import { TabsInsetDropdown } from '@core/component/TabsInsetDropdown';
 import { enableReminders } from '@core/constant/featureFlags';
 import { useUserContext } from '@core/context/user';
+import { t } from '@macro/i18n';
 import { useIsTeamAdmin } from '@queries/team/teams';
 import { batch, createMemo, For, Match, Show, Switch } from 'solid-js';
 
@@ -225,17 +226,18 @@ export const SoupViewTabs = () => {
 };
 
 /** The Customers view swaps filter tabs for a board/list mode switch. */
-const COMPANY_MODE_TABS: TabItem[] = [
-  { value: 'board', label: 'Board' },
-  { value: 'list', label: 'List' },
+const getCompanyModeTabs = (): TabItem[] => [
+  { value: 'board', label: t('Board') },
+  { value: 'list', label: t('List') },
 ];
 
 const CompanyModeTabs = () => {
   const { viewMode, setViewMode } = useSoupView();
+  const tabs = createMemo(() => getCompanyModeTabs());
 
   return (
     <TabsInset
-      list={COMPANY_MODE_TABS}
+      list={tabs()}
       value={viewMode()}
       defaultValue="board"
       onChange={(value) => setViewMode(value as SoupViewMode)}
@@ -354,6 +356,7 @@ const MOBILE_TAB_CONTENT_CLASS = 'px-(--mobile-chrome-gutter)';
 
 const MobileCompanyModeTabs = () => {
   const { viewMode, setViewMode } = useSoupView();
+  const tabs = createMemo(() => getCompanyModeTabs());
 
   return (
     <PillTabs
@@ -361,7 +364,7 @@ const MobileCompanyModeTabs = () => {
       class={MOBILE_TAB_STRIP_CLASS}
       contentClass={MOBILE_TAB_CONTENT_CLASS}
       leading={<MobileFilterDrawer />}
-      items={COMPANY_MODE_TABS}
+      items={tabs()}
       value={viewMode()}
       onChange={(value) => setViewMode(value as SoupViewMode)}
     />

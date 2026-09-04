@@ -1,6 +1,7 @@
 import type { TagFilterMode } from '@app/features/next-soup/filters/filter-store/types';
 import { useSplitPanelOrThrow } from '@components/app/split-layout/layoutUtils';
 import { Combobox } from '@kobalte/core/combobox';
+import { t } from '@macro/i18n';
 import XIcon from '@phosphor/x.svg';
 import { Button, Dropdown, Layer, SingleSelectCheck } from '@ui';
 import {
@@ -40,7 +41,7 @@ const ValueDisplay = (props: { values: FacetOption[] }) => {
           </span>
         )}
       </Show>
-      <span class="truncate max-w-32">{first()?.label}</span>
+      <span class="truncate max-w-32">{first() ? t(first()!.label) : ''}</span>
       <Show when={overflowCount() > 0}>
         <span class="inline-flex items-center justify-center px-1 min-w-4 h-4 rounded-full bg-ink/10 text-xxs">
           +{overflowCount()}
@@ -82,7 +83,7 @@ const SingleValueSegment = (props: {
                     </span>
                   )}
                 </Show>
-                <span class="flex-1 truncate">{option.label}</span>
+                <span class="flex-1 truncate">{t(option.label)}</span>
                 <SingleSelectCheck
                   active={props.facet.selectedId() === option.id}
                 />
@@ -106,7 +107,7 @@ const ModeSegment = (props: { mode: FacetModeVM }) => (
       variant="ghost"
       class="inline-flex items-center px-2 h-auto! text-ink-muted hover:bg-ink/5 active:bg-ink/8 rounded-none"
     >
-      {MODE_OPTIONS.find((o) => o.id === props.mode.value())?.label}
+      {t(MODE_OPTIONS.find((o) => o.id === props.mode.value())?.label ?? '')}
     </Dropdown.Trigger>
     <Dropdown.Content class="shadow-menu">
       <Dropdown.Group>
@@ -116,7 +117,7 @@ const ModeSegment = (props: { mode: FacetModeVM }) => (
               onSelect={() => props.mode.onSelect(option.id)}
               closeOnSelect
             >
-              <span class="flex-1 truncate">{option.label}</span>
+              <span class="flex-1 truncate">{t(option.label)}</span>
               <SingleSelectCheck active={props.mode.value() === option.id} />
             </Dropdown.Item>
           )}
@@ -167,7 +168,7 @@ export const SearchFacetChip = (props: SearchFacetChipProps) => (
   <Layer depth={2}>
     <div class="h-7 flex items-stretch text-xs whitespace-nowrap rounded-md bg-surface text-ink border border-edge-muted overflow-clip">
       <span class="inline-flex items-center px-2 text-ink-muted">
-        {props.facet.label}
+        {t(props.facet.label)}
       </span>
 
       <ChipDivider />

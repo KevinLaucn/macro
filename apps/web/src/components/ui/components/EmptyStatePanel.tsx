@@ -1,4 +1,5 @@
 import { openExternalUrl } from '@core/util/url';
+import { t } from '@macro/i18n';
 import { type Component, type JSXElement, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { cn } from '../utils/classname';
@@ -83,10 +84,14 @@ export function EmptyStatePanel(props: EmptyStatePanelProps) {
           )}
         </Show>
         <Show when={props.title}>
-          <h2 class="text-base font-semibold text-ink">{props.title}</h2>
+          <h2 class="text-base font-semibold text-ink">{t(props.title!)}</h2>
         </Show>
         <Show when={props.description}>
-          <div class="mt-3 text-sm/6 text-ink-muted">{props.description}</div>
+          <div class="mt-3 text-sm/6 text-ink-muted">
+            {typeof props.description === 'string'
+              ? t(props.description)
+              : props.description}
+          </div>
         </Show>
         <Show when={props.primaryAction || props.documentationUrl}>
           <div
@@ -102,7 +107,7 @@ export function EmptyStatePanel(props: EmptyStatePanelProps) {
                   icon={action().icon}
                   onClick={action().onClick}
                 >
-                  {action().label}
+                  {t(action().label)}
                 </PillButton>
               )}
             </Show>
@@ -112,7 +117,9 @@ export function EmptyStatePanel(props: EmptyStatePanelProps) {
                   tone="subtle"
                   onClick={() => openExternalUrl(url())}
                 >
-                  {props.documentationLabel ?? 'Documentation'}
+                  {props.documentationLabel
+                    ? t(props.documentationLabel)
+                    : t('Documentation')}
                 </PillButton>
               )}
             </Show>

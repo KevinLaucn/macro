@@ -30,6 +30,7 @@ import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import type { EntityData } from '@entity';
 import { ContextMenu } from '@kobalte/core/context-menu';
 import { Tooltip as KobalteTooltip } from '@kobalte/core/tooltip';
+import { t } from '@macro/i18n';
 import { isChannelNotification } from '@notifications/notification-helpers';
 import { getChannelNotificationParams } from '@notifications/notification-navigation';
 import type { UnifiedNotification } from '@notifications/types';
@@ -222,7 +223,7 @@ export const FavoritesSection = (props: {
     <Show when={props.sidebarState === 'expanded' && favorites().length > 0}>
       <div class="w-full shrink-0">
         <FavoritesGroup
-          label="Favorites"
+          label={t('Favorites')}
           favorites={favorites()}
           persistKey="sidebar-favorites-expanded"
           onContextMenuOpenChange={props.onContextMenuOpenChange}
@@ -292,7 +293,7 @@ const FavoritesGroup = (props: {
           aria-expanded={expanded()}
           onClick={() => setExpanded(!expanded())}
         >
-          <span class="min-w-0 truncate">{props.label}</span>
+          <span class="min-w-0 truncate">{t(props.label)}</span>
           <CaretDownIcon
             class={cn(
               'size-3 shrink-0 transition-transform duration-[120ms] ease-in-out',
@@ -503,23 +504,32 @@ const FavoriteRow = (props: {
           <ContextMenuContent class="text-xs text-ink-muted">
             <MenuGroup>
               <MenuItem
-                text="Open in new split"
+                text={t('Open in new split')}
                 onClick={openInNewSplit}
                 disabled={!canOpenInNewSplit()}
               />
               <Show when={canOpenFullscreen()}>
-                <MenuItem text="Open fullscreen" onClick={openFullscreen} />
+                <MenuItem
+                  text={t('Open fullscreen')}
+                  onClick={openFullscreen}
+                />
               </Show>
               <MenuItem
-                text="Open in current split"
+                text={t('Open in current split')}
                 onClick={openInCurrentSplit}
               />
             </MenuGroup>
             <Show when={props.notifications().length > 0}>
               <MenuSeparator />
               <MenuGroup>
-                <MenuItem text="Mark all as read" onClick={markAllAsRead} />
-                <MenuItem text="Mark all as done" onClick={markAllAsDone} />
+                <MenuItem
+                  text={t('Mark all as read')}
+                  onClick={markAllAsRead}
+                />
+                <MenuItem
+                  text={t('Mark all as done')}
+                  onClick={markAllAsDone}
+                />
               </MenuGroup>
             </Show>
             <Show when={muteAction.canExecute(favoriteAsEntity())}>
@@ -528,8 +538,8 @@ const FavoriteRow = (props: {
                 <MenuItem
                   text={
                     muteAction.isMuted(favoriteAsEntity())
-                      ? 'Unmute notifications'
-                      : 'Mute notifications'
+                      ? t('Unmute notifications')
+                      : t('Mute notifications')
                   }
                   onClick={() => void muteAction.execute([favoriteAsEntity()])}
                 />
@@ -538,7 +548,7 @@ const FavoriteRow = (props: {
             <MenuSeparator />
             <MenuGroup>
               <MenuItem
-                text="Remove from favorites"
+                text={t('Remove from favorites')}
                 onClick={removeFromFavorites}
               />
             </MenuGroup>

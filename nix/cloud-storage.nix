@@ -572,6 +572,7 @@
           cargoArtifacts ? deployCargoArtifacts,
           buildArgs ? commonArgs,
           sourceForPackage ? prunedDeploySrc,
+          lockArg ? "--locked",
         }:
         craneLib.buildPackage (
           buildArgs
@@ -583,7 +584,7 @@
             pname = "cloud-storage-${serviceName}-binaries";
             doCheck = false;
             cargoExtraArgs =
-              "--locked --package ${packageName} "
+              "${lockArg} --package ${packageName} "
               + pkgs.lib.concatMapStringsSep " " (binary: "--bin ${binary}") binaries
               + pkgs.lib.optionalString (featureArgs != "") " ${featureArgs}";
             CARGO_PROFILE = "release";
@@ -757,6 +758,7 @@
               cargoArtifacts = selfHostEmailCargoArtifacts;
               buildArgs = selfHostEmailCommonArgs;
               sourceForPackage = selfHostEmailPrunedDeploySrc;
+              lockArg = "--offline";
             }
           );
         }) selfHostEmailBinaryDefinitions

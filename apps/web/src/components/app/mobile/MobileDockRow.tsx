@@ -16,6 +16,7 @@ import CreateIcon from '@icon/square-pen-create.svg';
 import { AnimatedChannelIcon } from '@icon/wide-channel';
 import { AnimatedEmailIcon } from '@icon/wide-email';
 import { AnimatedSearchIcon } from '@icon/wide-search';
+import { t } from '@macro/i18n';
 import BellIcon from '@phosphor/bell-simple.svg';
 import CaretUpIcon from '@phosphor/caret-up.svg';
 import UploadIcon from '@phosphor/upload-simple.svg';
@@ -67,7 +68,7 @@ function CreateMenu() {
               });
             }}
           >
-            Upload file
+            {t('Upload file')}
           </MobileTouchMenu.Item>
           {/* Labels key the rows: 'Message' and 'Channel' share a
               blockName. */}
@@ -84,13 +85,13 @@ function CreateMenu() {
                   // invoke it (e.g. Channel opens the new-channel modal).
                   onSelect={() => block.keyDownHandler?.()}
                 >
-                  {block.label}
+                  {t(block.label)}
                 </MobileTouchMenu.Item>
               );
             }}
           </For>
           <MobileTouchMenu.Separator />
-          <MobileTouchMenu.Footer>Create</MobileTouchMenu.Footer>
+          <MobileTouchMenu.Footer>{t('Create')}</MobileTouchMenu.Footer>
         </MobileTouchMenu.Content>
       </MobileTouchMenu>
     </MobileDockIsland>
@@ -170,7 +171,7 @@ function MoreViewsMenu(props: {
           animateIcon={false}
           onSelect={toggleSettings}
         >
-          Settings
+          {t('Settings')}
         </MobileTouchMenu.Item>
         <MobileTouchMenu.Separator />
         {/* Rows render top → bottom ending at the thumb: reverse the shared
@@ -184,12 +185,12 @@ function MoreViewsMenu(props: {
               active={props.isActive(view.id)}
               onSelect={() => props.onNavigate(view.id)}
             >
-              {view.label}
+              {t(view.label)}
             </MobileTouchMenu.Item>
           )}
         </For>
         <MobileTouchMenu.Separator />
-        <MobileTouchMenu.Footer>Views</MobileTouchMenu.Footer>
+        <MobileTouchMenu.Footer>{t('Views')}</MobileTouchMenu.Footer>
       </MobileTouchMenu.Content>
     </MobileTouchMenu>
   );

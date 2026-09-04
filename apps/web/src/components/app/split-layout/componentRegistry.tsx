@@ -37,7 +37,6 @@ import {
   LOCAL_ONLY,
 } from '@core/constant/featureFlags';
 import { useUserContext } from '@core/context/user';
-import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import type { ViewId } from '@core/types/view';
 import EmptyStatePreviewIcon from '@design/empty-state-doc.svg';
 import { useAutomationEntities } from '@queries/agent-schedule/entities';
@@ -47,10 +46,8 @@ import {
   createRenderEffect,
   type JSXElement,
   lazy,
-  Match,
   onMount,
   Show,
-  Switch,
 } from 'solid-js';
 import type { SplitContent } from './layoutManager';
 import { useSplitPanelOrThrow } from './layoutUtils';
@@ -423,8 +420,6 @@ registerComponent(
     );
   })
 );
-
-
 
 function RegisteredChannelsView() {
   usePageViewTracking('channels');

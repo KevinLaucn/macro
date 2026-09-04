@@ -102,6 +102,7 @@ import {
 } from '@entity';
 import type { SoupRowFamily } from '@entity/composed/list-entity/row-geometry';
 import SearchIcon from '@icon/macro-magnifying-glass.svg';
+import { t } from '@macro/i18n';
 import CaretDownIcon from '@phosphor/caret-down.svg';
 import ChevronRightIcon from '@phosphor/caret-right.svg';
 import CheckIcon from '@phosphor/check.svg';
@@ -605,13 +606,17 @@ export const SoupView = (props: SoupViewProps) => {
             </Show>
             <Show when={!isTouchDevice() && !narrowSearchExpanded()}>
               <div class="flex items-center gap-1">
-                <span class="text-sm font-semibold">{props.viewName}</span>
+                <span class="text-sm font-semibold">
+                  {typeof props.viewName === 'string'
+                    ? t(props.viewName)
+                    : props.viewName}
+                </span>
                 <Show when={docsUrl()}>
                   {(url) => (
                     <Button
                       variant="ghost"
                       class="p-0.5 rounded-sm text-ink-extra-muted hover:text-ink-muted @max-[380px]/split-header:hidden"
-                      label="View documentation"
+                      label={t('View documentation')}
                       onClick={() => openExternalUrl(url())}
                     >
                       <InfoIcon class="size-3.5" />
@@ -682,7 +687,7 @@ export const SoupView = (props: SoupViewProps) => {
                     <div class="grow ml-2 min-w-0 [contain:inline-size]">
                       <SoupSearchbar
                         variant="secondary"
-                        placeholder="Search, @mention contacts"
+                        placeholder={t('Search, @mention contacts')}
                         initialValue={props.initialSearchText}
                       />
                     </div>
@@ -704,7 +709,10 @@ export const SoupView = (props: SoupViewProps) => {
                     <Show
                       when={!isCollapsed()}
                       fallback={
-                        <Tooltip label="Search" hotkey={TOKENS.soup.openSearch}>
+                        <Tooltip
+                          label={t('Search')}
+                          hotkey={TOKENS.soup.openSearch}
+                        >
                           <Button
                             variant="outline"
                             class="p-1 size-7 rounded-lg ml-2 bg-surface"

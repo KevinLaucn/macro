@@ -6,6 +6,7 @@ import { setActiveScope } from '@core/hotkey/state';
 import { TOKENS } from '@core/hotkey/tokens';
 import { activateClosestDOMScope } from '@core/hotkey/utils';
 import CreateIcon from '@icon/square-pen-create.svg';
+import { t } from '@macro/i18n';
 import PlusIcon from '@phosphor/plus.svg';
 import { Button, Dropdown, Hotkey, NavRow } from '@ui';
 import {
@@ -103,7 +104,7 @@ export const SidebarCreateMenu = (props: SidebarCreateMenuProps) => {
                 fullWidth
                 tooltipPlacement="right"
                 tooltipDisabled={!isSlim()}
-                label="Create"
+                label={t('Create')}
                 hotkey={TOKENS.global.createCommand}
                 onMouseDown={(e: MouseEvent) => {
                   if (e.button !== 0) return;
@@ -114,7 +115,7 @@ export const SidebarCreateMenu = (props: SidebarCreateMenuProps) => {
                   <PlusIcon class="size-4" />
                 </div>
                 <span class="whitespace-nowrap group-data-[slim=true]/sidebar:hidden">
-                  Create
+                  {t('Create')}
                 </span>
                 <Show when={open()}>
                   <div class="text-xxs text-ink-extra-muted/50 rounded-sm ml-auto border border-ink/5 px-1.5 py-px -my-1 group-data-[slim=true]/sidebar:hidden">
@@ -133,7 +134,7 @@ export const SidebarCreateMenu = (props: SidebarCreateMenuProps) => {
               size="icon-sm"
               depth={1}
               class="size-[26px] rounded-full bg-surface shadow-md shadow-drop-shadow [&_svg]:size-4!"
-              label="Create"
+              label={t('Create')}
               hotkey={TOKENS.global.createCommand}
               onMouseDown={(e: MouseEvent) => {
                 if (e.button !== 0) return;
@@ -177,7 +178,7 @@ export const SidebarCreateMenu = (props: SidebarCreateMenuProps) => {
                     triggerAnimation={focusedIndex() === index()}
                   />
                 </div>
-                <span class="flex-1 text-ink">{block.label}</span>
+                <span class="flex-1 text-ink">{t(block.label)}</span>
                 <Hotkey token={block.hotkeyToken} theme="subtle" class="ml-6" />
               </Dropdown.Item>
             )}

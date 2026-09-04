@@ -6,6 +6,7 @@ import { MACRO_AGENT_BOT_ID } from '@core/constant/macroAgent';
 import { useChannelsContext } from '@core/context/channels';
 import { useUserId } from '@core/context/user';
 import MacroLogo from '@icon/macro-logo.svg';
+import { __t } from '@macro/i18n';
 import PencilIcon from '@phosphor/pencil-simple.svg';
 import PlusIcon from '@phosphor/plus.svg';
 import RobotIcon from '@phosphor/robot.svg';
@@ -28,7 +29,6 @@ import { useHarnessesQuery } from '@queries/harnesses/harnesses';
 import { useCurrentTeamQuery, useIsTeamOwner } from '@queries/team/teams';
 import { Avatar, Button, Dialog, Panel } from '@ui';
 import { createMemo, createSignal, For, Show } from 'solid-js';
-import { __t } from '@macro/i18n';
 import { botAssignableChannelOptions } from '../channel/Bots/botChannelOptions';
 import { canDeleteBot } from '../channel/Bots/botPermissions';
 import { ChannelMultiSelect } from '../channel/Bots/ChannelMultiSelect';
@@ -631,7 +631,7 @@ function AgentDialog(props: {
       <Panel depth={2} class="max-h-[88vh] rounded-xl text-ink">
         <Panel.Header class="justify-between px-3">
           <Dialog.Title as="span" class="m-0 p-0 text-sm font-medium">
-            {props.agent ? 'Edit agent' : 'Create agent'}
+            {props.agent ? __t('Edit agent') : __t('Create agent')}
           </Dialog.Title>
           <Dialog.CloseButton as={Button} variant="ghost" size="icon-sm">
             <XIcon />
@@ -673,9 +673,11 @@ function AgentDialog(props: {
                   />
                 </button>
                 <div class="min-w-0 flex-1">
-                  <div class="text-sm font-medium text-ink">Avatar</div>
+                  <div class="text-sm font-medium text-ink">
+                    {__t('Avatar')}
+                  </div>
                   <div class="mt-0.5 text-xs text-ink-muted">
-                    Optional · square images work best
+                    {__t('Optional · square images work best')}
                   </div>
                 </div>
                 <input
@@ -694,17 +696,19 @@ function AgentDialog(props: {
                   onClick={() => avatarInputRef?.click()}
                 >
                   <UploadIcon />
-                  Upload
+                  {__t('Upload')}
                 </Button>
               </div>
 
               <div class="mt-4 grid grid-cols-2 gap-3 mobile:grid-cols-1">
                 <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-medium text-ink">Name</span>
+                  <span class="text-xs font-medium text-ink">
+                    {__t('Name')}
+                  </span>
                   <input
                     autofocus
                     class="settings-input w-full"
-                    placeholder="Bug fixer"
+                    placeholder={__t('Bug fixer')}
                     value={name()}
                     onInput={(event) =>
                       handleNameInput(event.currentTarget.value)
@@ -736,11 +740,15 @@ function AgentDialog(props: {
               description="Instructions the agent receives at the start of every conversation."
             >
               <label class="flex flex-col gap-1.5">
-                <span class="text-xs font-medium text-ink">System prompt</span>
+                <span class="text-xs font-medium text-ink">
+                  {__t('System prompt')}
+                </span>
                 <textarea
                   rows={5}
                   class="settings-input h-auto min-h-30 w-full resize-y px-3 py-2.5 font-mono text-xs leading-5"
-                  placeholder="You are a bug-fixing agent. Reproduce issues, identify root causes, and make focused, tested fixes…"
+                  placeholder={__t(
+                    'You are a bug-fixing agent. Reproduce issues, identify root causes, and make focused, tested fixes…'
+                  )}
                   value={instructions()}
                   onInput={(event) =>
                     setSystemPrompt(event.currentTarget.value)
@@ -755,7 +763,9 @@ function AgentDialog(props: {
             >
               <div class="grid grid-cols-2 gap-3 mobile:grid-cols-1">
                 <label class="flex flex-col gap-1.5">
-                  <span class="text-xs font-medium text-ink">Harness</span>
+                  <span class="text-xs font-medium text-ink">
+                    {__t('Harness')}
+                  </span>
                   <select
                     class="settings-input w-full"
                     value={harnessId()}
@@ -772,7 +782,7 @@ function AgentDialog(props: {
                 </label>
                 <label class="flex flex-col gap-1.5">
                   <span class="text-xs font-medium text-ink">
-                    Default model
+                    {__t('Default model')}
                   </span>
                   <Show
                     when={selectedHarness()?.kind === 'macrod'}
@@ -911,7 +921,7 @@ function AgentDialog(props: {
 
         <Panel.Footer class="justify-end gap-2 px-3 py-2">
           <Button type="button" variant="ghost" size="sm" onClick={close}>
-            Cancel
+            {__t('Cancel')}
           </Button>
           <Button
             type="submit"
@@ -922,11 +932,11 @@ function AgentDialog(props: {
           >
             {props.pending
               ? props.agent
-                ? 'Saving…'
-                : 'Creating…'
+                ? __t('Saving…')
+                : __t('Creating…')
               : props.agent
-                ? 'Save changes'
-                : 'Create agent'}
+                ? __t('Save changes')
+                : __t('Create agent')}
           </Button>
         </Panel.Footer>
       </Panel>
@@ -942,8 +952,8 @@ function AgentFormSection(props: {
   return (
     <section>
       <div class="mb-2 px-1">
-        <h2 class="text-sm font-semibold text-ink">{props.title}</h2>
-        <p class="mt-0.5 text-xs text-ink-muted">{props.description}</p>
+        <h2 class="text-sm font-semibold text-ink">{__t(props.title)}</h2>
+        <p class="mt-0.5 text-xs text-ink-muted">{__t(props.description)}</p>
       </div>
       <div class="rounded-xl border border-ink/[0.06] bg-surface-2 p-4">
         {props.children}

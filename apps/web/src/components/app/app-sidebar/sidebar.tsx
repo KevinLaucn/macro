@@ -47,7 +47,6 @@ import { inboxIconProps } from '@core/component/inboxIcon';
 import { toast } from '@core/component/Toast/Toast';
 import { UserIcon } from '@core/component/UserIcon';
 import {
-  ENABLE_CALLS,
   enableCrm,
   enableNewPricing,
   isFeatureEnabled,
@@ -70,9 +69,6 @@ import { activateClosestDOMScope } from '@core/hotkey/utils';
 import { getDisplayName, tryMacroId } from '@core/user';
 import LogoIcon from '@icon/macro-logo.svg';
 import { AnimatedActivityIcon } from '@icon/wide-activity';
-import WideCalendarIcon from '@icon/wide-calendar.svg';
-import { AnimatedCallIcon } from '@icon/wide-call';
-import PhoneIcon from '@icon/wide-call.svg';
 import { AnimatedChannelIcon } from '@icon/wide-channel';
 import { AnimatedCompanyIcon } from '@icon/wide-company';
 import { AnimatedEmailIcon } from '@icon/wide-email';
@@ -82,6 +78,7 @@ import { AnimatedInboxIcon } from '@icon/wide-inbox';
 import { AnimatedSearchIcon } from '@icon/wide-search';
 import { AnimatedStarIcon } from '@icon/wide-star';
 import { ContextMenu } from '@kobalte/core/context-menu';
+import { __t, t } from '@macro/i18n';
 import CaretRightIcon from '@phosphor/caret-right.svg';
 import CaretUpIcon from '@phosphor/caret-up.svg';
 import CompassIcon from '@phosphor/compass.svg';
@@ -90,7 +87,6 @@ import GearIcon from '@phosphor/gear.svg';
 import MagnifyingGlassIcon from '@phosphor/magnifying-glass.svg';
 import SignOutIcon from '@phosphor/sign-out.svg';
 import UsersThreeIcon from '@phosphor/users-three.svg';
-import { __t } from '@macro/i18n';
 import XIcon from '@phosphor/x.svg';
 import { isRealNamePart, useOwnUserName } from '@queries/auth/user-name-self';
 import { useEmailLinksQuery } from '@queries/email/link';
@@ -537,7 +533,7 @@ const SidebarSectionMenu = (props: {
     <Dropdown.Trigger
       variant="ghost"
       class="opacity-0 group-hover/section:opacity-100 focus-visible:opacity-100 transition-opacity rounded-md size-5 min-h-0 p-0 bg-transparent hover:bg-ink/6 [&_svg]:size-3.5"
-      label={`Customize ${props.label}`}
+      label={t('Customize {label}', { label: props.label })}
       onMouseDown={(e: MouseEvent) => {
         if (e.button !== 0) return;
         e.preventDefault();
@@ -549,7 +545,7 @@ const SidebarSectionMenu = (props: {
     </Dropdown.Trigger>
     <Dropdown.Content class="w-56 shadow-menu">
       <Dropdown.Group>
-        <Dropdown.GroupLabel>Customize</Dropdown.GroupLabel>
+        <Dropdown.GroupLabel>{t('Customize')}</Dropdown.GroupLabel>
         <For each={props.options}>
           {(option) => (
             <Dropdown.CheckboxItem
@@ -557,7 +553,7 @@ const SidebarSectionMenu = (props: {
               onChange={() => props.onToggle(option.id)}
               closeOnSelect={false}
             >
-              <span class="flex-1 truncate">{option.label}</span>
+              <span class="flex-1 truncate">{t(option.label)}</span>
             </Dropdown.CheckboxItem>
           )}
         </For>
@@ -592,7 +588,9 @@ const TryCardRow = (props: { item: TryCardItem }) => {
       <span class="size-5 shrink-0 flex items-center justify-center">
         <Dynamic component={props.item.icon} triggerAnimation={isHovering()} />
       </span>
-      <span class="min-w-0 flex-1 truncate text-left">{__t(props.item.label)}</span>
+      <span class="min-w-0 flex-1 truncate text-left">
+        {__t(props.item.label)}
+      </span>
     </button>
   );
 };
@@ -772,7 +770,7 @@ const SidebarHeaderSearchButton = (props: { link: SidebarItem }) => {
     <Button
       size="icon-sm"
       class="[&_svg]:size-4!"
-      label="Search"
+      label={t('Search')}
       hotkey={props.link.hotkeyToken}
       onMouseDown={(e) => {
         if (e.button !== 0) return;
@@ -926,7 +924,7 @@ export const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
                     class="size-4 shrink-0 text-ink-extra-muted"
                   />
                 </span>
-                <span class="flex-1 text-ink">{link().label}</span>
+                <span class="flex-1 text-ink">{t(link().label)}</span>
                 <Hotkey
                   // Hardcoding this so that we can include the command scope activation
                   shortcut="g s"
@@ -943,7 +941,7 @@ export const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
             <span class="size-5 flex items-center justify-center text-ink-extra-muted">
               ⌘
             </span>
-            <span class="flex-1 text-ink">Command menu</span>
+            <span class="flex-1 text-ink">{t('Command menu')}</span>
             <Hotkey
               token={TOKENS.global.commandMenu}
               theme="subtle"
@@ -957,7 +955,7 @@ export const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
             <span class="size-5 flex items-center justify-center">
               <GearIcon class="size-4 shrink-0 text-ink-extra-muted" />
             </span>
-            <span class="flex-1 text-ink">Settings</span>
+            <span class="flex-1 text-ink">{t('Settings')}</span>
             <Hotkey
               token={TOKENS.global.toggleSettings}
               theme="subtle"
@@ -971,7 +969,7 @@ export const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
             <span class="size-5 flex items-center justify-center">
               <SignOutIcon class="size-4 shrink-0" />
             </span>
-            <span>Log out</span>
+            <span>{t('Log out')}</span>
           </Dropdown.Item>
         </Dropdown.Group>
       </Dropdown.Content>
@@ -1090,16 +1088,19 @@ const TeamInviteSidebarPromo = (props: { invite: TeamInviteDetails }) => {
 
   return (
     <SidebarPromoCard
-      label="Team invitation"
-      description={`${inviterName() || 'A teammate'} invited you to join a team as ${props.invite.team_role}.`}
+      label={t('Team invitation')}
+      description={t('{name} invited you to join a team as {role}.', {
+        name: inviterName() || t('A teammate'),
+        role: props.invite.team_role,
+      })}
       primaryAction={{
-        label: 'Accept',
+        label: t('Accept'),
         disabled: mutationPending(),
         onClick: () =>
           joinTeamMutation.mutate({ teamInviteId: props.invite.id }),
       }}
       secondaryAction={{
-        label: 'Decline',
+        label: t('Decline'),
         disabled: mutationPending(),
         onClick: () =>
           rejectInvitationMutation.mutate({ teamInviteId: props.invite.id }),
@@ -1522,13 +1523,13 @@ export const AppSidebar = (props: AppSidebarProps) => {
           class="size-full overflow-y-auto flex flex-col gap-3"
         >
           <CollapsibleSidebarSection
-            label="Workspace"
+            label={t('Workspace')}
             persistKey="workspace"
             items={workspaceItems()}
             headerMenu={() => (
               <div class="pointer-events-auto">
                 <SidebarSectionMenu
-                  label="Workspace"
+                  label={t('Workspace')}
                   options={sectionMenuOptionsFor(WORKSPACE_LINK_IDS)}
                   onToggle={toggleSectionVisibility}
                   onOpenChange={handleWorkspaceContextMenuOpenChange}
@@ -1590,18 +1591,20 @@ export const AppSidebar = (props: AppSidebarProps) => {
           }
         >
           <SidebarPromoCard
-            label="Upgrade to Premium"
-            description="Unlock MCP integrations, better AI models, and team collaboration."
+            label={t('Upgrade to Premium')}
+            description={t(
+              'Unlock MCP integrations, better AI models, and team collaboration.'
+            )}
             onDismiss={() => {
               setPremiumCardDismissed(true);
               setPremiumHintVisible(true);
             }}
             primaryAction={{
-              label: 'Upgrade',
+              label: t('Upgrade'),
               onClick: () => openSettingsTab('Billing'),
             }}
             secondaryAction={{
-              label: 'Later',
+              label: t('Later'),
               onClick: () => {
                 setPremiumCardDismissed(true);
                 setPremiumHintVisible(true);
@@ -1621,11 +1624,11 @@ export const AppSidebar = (props: AppSidebarProps) => {
           }
         >
           <SidebarPromoHint
-            title="Maybe later"
-            message="You can upgrade anytime from Account settings."
+            title={t('Maybe later')}
+            message={t('You can upgrade anytime from Account settings.')}
             onDone={() => setPremiumHintVisible(false)}
             secondaryAction={{
-              label: 'Take me there',
+              label: t('Take me there'),
               onClick: () => openSettingsTab('Account'),
             }}
           />
@@ -1751,14 +1754,17 @@ export const SidebarOpenInSplitMenu = (props: SidebarOpenInSplitMenuProps) => {
       <ContextMenu.Portal>
         <ContextMenuContent class="text-xs text-ink-muted">
           <MenuItem
-            text="Open in new split"
+            text={t('Open in new split')}
             onClick={openInNewSplit}
             disabled={!canOpenInNewSplit()}
           />
           <Show when={canOpenFullscreen()}>
-            <MenuItem text="Open fullscreen" onClick={openFullscreen} />
+            <MenuItem text={t('Open fullscreen')} onClick={openFullscreen} />
           </Show>
-          <MenuItem text="Open in current split" onClick={openInCurrentSplit} />
+          <MenuItem
+            text={t('Open in current split')}
+            onClick={openInCurrentSplit}
+          />
         </ContextMenuContent>
       </ContextMenu.Portal>
     </ContextMenu>
@@ -1803,7 +1809,7 @@ const SidebarLinkRow = (props: SidebarLinkProps) => {
       fullWidth
       tooltipPlacement="right"
       onMouseEnter={() => setIsHovering(true)}
-      label={`Go to ${props.label}`}
+      label={t('Go to {label}', { label: props.label })}
       hotkey={
         props.standaloneHotkey
           ? props.hotkeyToken
@@ -1892,7 +1898,7 @@ const SidebarLinkRow = (props: SidebarLinkProps) => {
       </Show>
 
       <div class="flex items-center gap-1 group-data-[slim=true]/sidebar:hidden">
-        <span class="whitespace-nowrap">{__t(props.label)}</span>
+        <span class="whitespace-nowrap">{t(props.label)}</span>
       </div>
 
       <Show when={props.trailing}>
@@ -1961,7 +1967,7 @@ const SidebarLinkRow = (props: SidebarLinkProps) => {
 };
 
 const SidebarLink = (props: SidebarLinkProps) => {
-  const [contextMenuOpen, setContextMenuOpen] = createSignal(false);
+  const [_contextMenuOpen, setContextMenuOpen] = createSignal(false);
   const content = () => sidebarContent(props.id, props.params);
   const handleContextMenuOpenChange = (open: boolean) => {
     setContextMenuOpen(open);

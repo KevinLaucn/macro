@@ -194,6 +194,15 @@ impl InfraEnv {
             "OVERRIDE_AUTH_SERVICE_URL".into(),
             "http://authentication-service:8080".into(),
         );
+        env.insert(
+            "OVERRIDE_STATIC_FILE_SERVICE_URL".into(),
+            "http://static_file_service:8080".into(),
+        );
+        // Calibrated Gmail API rate limits: Google Cloud's strict quota is 6,000 units/min.
+        // Cap backfill at 4,000 to reserve 1,500+ units for interactive live operations (attachments/read/send).
+        env.insert("REDIS_RATE_LIMIT_REQS".into(), "5200".into());
+        env.insert("REDIS_RATE_LIMIT_REQS_BACKFILL".into(), "4000".into());
+        env.insert("BACKFILL_QUEUE_WORKERS".into(), "6".into());
         // The alias LocalStack provisions for the Cursor API key CMK. Named by
         // alias rather than key id because `CreateKey` mints a random id every
         // run, and KMS accepts an alias anywhere a key id goes. Required by
@@ -605,6 +614,18 @@ impl BootStubEnv {
             "SLACK_MCP_CLIENT_SECRET".into(),
             "local-slack-mcp-secret".into(),
         );
+        // Pipedream MCP is inert with local credentials, but both
+        // document_cognition_service and agent_harness_service load the same
+        // required config keys at boot.
+        env.insert(
+            "PIPEDREAM_CLIENT_ID".into(),
+            "local-pipedream-client".into(),
+        );
+        env.insert(
+            "PIPEDREAM_CLIENT_SECRET".into(),
+            "local-pipedream-secret".into(),
+        );
+        env.insert("PIPEDREAM_PROJECT_ID".into(), "proj_local".into());
         // document_storage_service's GitHub sync + LiveKit + LLM + Cal config.
         // All boot-required; the integrations they back are inert locally.
         env.insert("GITHUB_SYNC_APP_URL".into(), "http://localhost:8080".into());

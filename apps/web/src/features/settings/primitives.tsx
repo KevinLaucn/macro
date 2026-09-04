@@ -1,6 +1,6 @@
+import { __t } from '@macro/i18n';
 import { cn, Layer } from '@ui';
 import { type JSX, Show } from 'solid-js';
-import { __t } from '@macro/i18n';
 
 /*
  * Shared building blocks for the settings panels. Every settings tab composes
@@ -81,7 +81,9 @@ export function SettingsSection(props: {
           <div class="flex flex-col gap-0.5 min-w-0">
             <Show when={props.title}>
               <h2 class="text-[15px] font-semibold text-ink">
-                {typeof props.title === 'string' ? __t(props.title) : props.title}
+                {typeof props.title === 'string'
+                  ? __t(props.title)
+                  : props.title}
               </h2>
             </Show>
             <Show when={props.description}>
@@ -229,9 +231,13 @@ export function ChoiceRow(props: {
         class="mt-0.5 accent-accent"
       />
       <span class="min-w-0">
-        <span class="block text-sm font-medium text-ink">{props.title}</span>
+        <span class="block text-sm font-medium text-ink">
+          {typeof props.title === 'string' ? __t(props.title) : props.title}
+        </span>
         <span class="mt-0.5 block text-xs text-ink-muted">
-          {props.description}
+          {typeof props.description === 'string'
+            ? __t(props.description)
+            : props.description}
         </span>
       </span>
     </label>

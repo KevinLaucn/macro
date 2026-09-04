@@ -23,6 +23,7 @@ import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import { useTouchOutsideToDismissKeyboard } from '@core/mobile/useTouchOutsideToDismissKeyboard';
 import { getItemBlockName } from '@core/util/getItemBlockName';
 import { handleFileFolderDrop } from '@core/util/upload';
+import { t } from '@macro/i18n';
 import PaperclipIcon from '@phosphor/paperclip.svg';
 import { createElementSize } from '@solid-primitives/resize-observer';
 import { createCallback } from '@solid-primitives/rootless';
@@ -385,7 +386,7 @@ export function ChatInput(props: ChatInputComponentProps) {
             >
               <MarkdownShell
                 config={props.editor}
-                placeholder="Ask AI, @mention anything"
+                placeholder={t('Ask AI, @mention anything')}
                 initialValue={props.initialValue}
                 autofocus={
                   !isMobile() &&

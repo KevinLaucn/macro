@@ -1,6 +1,7 @@
 import type { HotkeyToken } from '@core/hotkey/tokens';
 import type { Placement } from '@floating-ui/dom';
 import { Tooltip as KobalteTooltip } from '@kobalte/core/tooltip';
+import { t } from '@macro/i18n';
 import type { ParentProps } from 'solid-js';
 import { createEffect, createSignal, For, on, onCleanup, Show } from 'solid-js';
 import { Hotkey } from '../../ui/components/Hotkey';
@@ -126,7 +127,11 @@ export function Tooltip(props: TooltipProps) {
               depth={3}
             >
               <div class="flex flex-row items-center gap-2">
-                <div class="text-xs">{props.label}</div>
+                <div class="text-xs">
+                  {typeof props.label === 'string'
+                    ? t(props.label)
+                    : props.label}
+                </div>
                 <Show when={hasHotkey()}>
                   <div class="flex items-center gap-1 ml-auto">
                     <For each={tokens()}>
@@ -134,7 +139,9 @@ export function Tooltip(props: TooltipProps) {
                         <>
                           <Hotkey token={token} theme="subtle" />
                           <Show when={ndx() < tokens().length - 1}>
-                            <span class="text-ink-extra-muted">then</span>
+                            <span class="text-ink-extra-muted">
+                              {t('then')}
+                            </span>
                           </Show>
                         </>
                       )}
@@ -144,7 +151,9 @@ export function Tooltip(props: TooltipProps) {
                         <>
                           <Hotkey shortcut={shortcut} theme="subtle" />
                           <Show when={ndx() < shortcuts().length - 1}>
-                            <span class="text-ink-extra-muted">then</span>
+                            <span class="text-ink-extra-muted">
+                              {t('then')}
+                            </span>
                           </Show>
                         </>
                       )}

@@ -121,8 +121,8 @@ const initializePosthog = (instance: PostHog) => {
   if (!key) return;
 
   instance.init(key, {
-    api_host: 'https://macro-prox.macroverse.workers.dev/i/ph',
-    ui_host: 'https://us.posthog.com',
+    api_host: import.meta.env.VITE_POSTHOG_HOST || '/i/ph',
+    ui_host: import.meta.env.VITE_POSTHOG_UI_HOST || 'https://us.posthog.com',
     defaults: '2026-01-30',
     prepare_external_dependency_script: (script) => {
       const url = new URL(script.src);

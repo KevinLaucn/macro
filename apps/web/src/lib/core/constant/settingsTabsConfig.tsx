@@ -182,7 +182,7 @@ export const useSettingsTabAvailable = () => {
       case 'Shortcuts':
         return !isTouchDevice();
       case 'Agent':
-        return !isNativeMobilePlatform();
+        return false;
       // Configurable agents are still rolling out; keep both tabs behind the
       // same enable-chat-v3-agents gate as the channel mention surfaces, so
       // settings never advertises agents to a user who cannot mention one.

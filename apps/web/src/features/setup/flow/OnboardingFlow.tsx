@@ -37,7 +37,6 @@ import {
   resolveOnboardingConnectorNames,
   resolveOnboardingStepIndex,
 } from './onboardingConnectorConfig';
-import { PlanStep } from './PlanStep';
 import { connectorLogo, StepModule } from './StepModule';
 import { SummaryStep } from './SummaryStep';
 import {
@@ -212,20 +211,8 @@ function buildSteps(
       subtitle:
         "Here's what we're bringing into Macro. Imports keep running in the background — no need to wait.",
       wide: true,
-      render: (controls) => <SummaryStep onContinue={controls.next} />,
-    },
-    {
-      key: 'plan',
-      title: 'Choose your plan',
-      subtitle: 'Start free, or go Premium. You can change this anytime.',
-      wide: true,
       render: (controls) => (
-        <PlanStep
-          finishing={controls.finishing()}
-          onFree={controls.finishFree}
-          onStartCheckout={controls.startPremiumCheckout}
-          onPremiumPaid={controls.finishPremium}
-        />
+        <SummaryStep onContinue={() => controls.finishFree(true)} />
       ),
     },
   ];

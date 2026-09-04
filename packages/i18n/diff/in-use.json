@@ -1,4 +1,38 @@
 {
+  "Ask AI": [
+    "features/next-soup/soup-view/search-ask-ai-button.tsx"
+  ],
+  "All": [
+    "features/next-soup/soup-view/filters-bar/searchable-multi-select.tsx"
+  ],
+  "Only": [
+    "features/next-soup/soup-view/filters-bar/searchable-multi-select.tsx"
+  ],
+  "Search...": [
+    "features/next-soup/soup-view/filters-bar/searchable-multi-select.tsx"
+  ],
+  "No options match \"{query}\"": [
+    "features/next-soup/soup-view/filters-bar/searchable-multi-select.tsx"
+  ],
+  "No options available": [
+    "features/next-soup/soup-view/filters-bar/searchable-multi-select.tsx"
+  ],
+  "Board": [
+    "features/next-soup/soup-view/soup-view-tabs.tsx"
+  ],
+  "List": [
+    "features/next-soup/soup-view/soup-view-tabs.tsx"
+  ],
+  "View documentation": [
+    "features/next-soup/soup-view/soup-view.tsx"
+  ],
+  "Search, @mention contacts": [
+    "features/next-soup/soup-view/soup-view.tsx"
+  ],
+  "Search": [
+    "features/next-soup/soup-view/soup-view.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
   "Back to app": [
     "features/settings/Settings.tsx"
   ],
@@ -6,16 +40,22 @@
     "features/settings/Settings.tsx"
   ],
   "Settings": [
-    "features/settings/Settings.tsx"
+    "features/settings/Settings.tsx",
+    "components/app/app-sidebar/sidebar.tsx",
+    "components/app/mobile/MobileDockRow.tsx"
   ],
   "Open fullscreen": [
-    "features/settings/Settings.tsx"
+    "features/settings/Settings.tsx",
+    "features/favorites/sidebar/favorites-section.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
   ],
   "Log out": [
-    "features/settings/Settings.tsx"
+    "features/settings/Settings.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
   ],
   "Cancel": [
-    "features/settings/Crm.tsx"
+    "features/settings/Crm.tsx",
+    "features/settings/Agents.tsx"
   ],
   "CRM enabled": [
     "features/settings/Crm.tsx"
@@ -68,6 +108,49 @@
   "Enable or disable your team's CRM.": [
     "features/settings/Crm.tsx"
   ],
+  "Edit agent": [
+    "features/settings/Agents.tsx"
+  ],
+  "Create agent": [
+    "features/settings/Agents.tsx"
+  ],
+  "Avatar": [
+    "features/settings/Agents.tsx"
+  ],
+  "Optional · square images work best": [
+    "features/settings/Agents.tsx"
+  ],
+  "Upload": [
+    "features/settings/Agents.tsx"
+  ],
+  "Name": [
+    "features/settings/Agents.tsx"
+  ],
+  "Bug fixer": [
+    "features/settings/Agents.tsx"
+  ],
+  "System prompt": [
+    "features/settings/Agents.tsx"
+  ],
+  "You are a bug-fixing agent. Reproduce issues, identify root causes, and make focused, tested fixes…": [
+    "features/settings/Agents.tsx"
+  ],
+  "Harness": [
+    "features/settings/Agents.tsx"
+  ],
+  "Default model": [
+    "features/settings/Agents.tsx"
+  ],
+  "Saving…": [
+    "features/settings/Agents.tsx",
+    "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Creating…": [
+    "features/settings/Agents.tsx"
+  ],
+  "Save changes": [
+    "features/settings/Agents.tsx"
+  ],
   "Interface": [
     "features/settings/Appearance.tsx"
   ],
@@ -95,6 +178,142 @@
   "Screencast keys": [
     "features/settings/Shortcuts.tsx"
   ],
+  "Importing your inbox": [
+    "features/home/home-backfill-progress.tsx"
+  ],
+  "Examples": [
+    "features/home/home-examples.tsx"
+  ],
+  "Good morning": [
+    "features/home/home.tsx"
+  ],
+  "Good afternoon": [
+    "features/home/home.tsx"
+  ],
+  "Good evening": [
+    "features/home/home.tsx"
+  ],
+  "Recommended": [
+    "features/home/home-hub.tsx"
+  ],
+  "Show all": [
+    "features/home/home-hub.tsx"
+  ],
+  "Recommendations are unavailable": [
+    "features/home/home-hub.tsx"
+  ],
+  "Check your connection and try again.": [
+    "features/home/home-hub.tsx"
+  ],
+  "Try again": [
+    "features/home/home-hub.tsx"
+  ],
+  "Connect your inbox": [
+    "features/home/home-hub.tsx"
+  ],
+  "Macro reads & triages your email in seconds": [
+    "features/home/home-hub.tsx"
+  ],
+  "Connect": [
+    "features/home/home-hub.tsx"
+  ],
+  "You're all caught up.": [
+    "features/home/home-hub.tsx"
+  ],
+  "Getting started": [
+    "features/home/home-hub.tsx"
+  ],
+  "Connect your tools": [
+    "features/home/home-hub.tsx"
+  ],
+  "Link your inbox, Linear, Notion, GitHub & more": [
+    "features/home/home-hub.tsx"
+  ],
+  "Learn the basics": [
+    "features/home/home-hub.tsx"
+  ],
+  "Mentions, search, shortcuts & more": [
+    "features/home/home-hub.tsx"
+  ],
+  "Open": [
+    "features/home/home-hub.tsx"
+  ],
+  "Favorites": [
+    "features/favorites/sidebar/favorites-section.tsx"
+  ],
+  "Open in new split": [
+    "features/favorites/sidebar/favorites-section.tsx",
+    "features/channel/sidebar/channels-recent-widget.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Open in current split": [
+    "features/favorites/sidebar/favorites-section.tsx",
+    "features/channel/sidebar/channels-recent-widget.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Mark all as read": [
+    "features/favorites/sidebar/favorites-section.tsx"
+  ],
+  "Mark all as done": [
+    "features/favorites/sidebar/favorites-section.tsx"
+  ],
+  "Unmute notifications": [
+    "features/favorites/sidebar/favorites-section.tsx",
+    "features/channel/sidebar/channels-recent-widget.tsx"
+  ],
+  "Mute notifications": [
+    "features/favorites/sidebar/favorites-section.tsx",
+    "features/channel/sidebar/channels-recent-widget.tsx"
+  ],
+  "Remove from favorites": [
+    "features/favorites/sidebar/favorites-section.tsx"
+  ],
+  "Mark as read": [
+    "features/channel/sidebar/channels-recent-widget.tsx"
+  ],
+  "Latest": [
+    "features/channel/sidebar/channels-recent-widget.tsx"
+  ],
+  "Toggle unread filter": [
+    "features/channel/sidebar/channels-recent-widget.tsx"
+  ],
+  "Unread": [
+    "features/channel/sidebar/channels-recent-widget.tsx"
+  ],
+  "Create": [
+    "features/command/sidebar/sidebar-create-menu.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/mobile/MobileDockRow.tsx"
+  ],
+  "Exit": [
+    "features/command/Launcher.tsx"
+  ],
+  "Create New": [
+    "features/command/Launcher.tsx"
+  ],
+  "Search create options": [
+    "features/command/Launcher.tsx"
+  ],
+  "Search mode": [
+    "features/command/Launcher.tsx"
+  ],
+  "Navigate": [
+    "features/command/Launcher.tsx"
+  ],
+  "Hold": [
+    "features/command/Launcher.tsx"
+  ],
+  "New split": [
+    "features/command/Launcher.tsx"
+  ],
+  "Search or ask AI...": [
+    "features/command/mobile/MobileSearchInput.tsx"
+  ],
+  "Close search": [
+    "features/command/mobile/MobileSearchInput.tsx"
+  ],
   "Attach": [
     "features/block-email/component/compose/ComposeToolbar.tsx"
   ],
@@ -102,9 +321,6 @@
     "features/block-email/component/compose/ComposeToolbar.tsx"
   ],
   "Delete draft": [
-    "features/block-email/component/compose/ComposeToolbar.tsx"
-  ],
-  "Saving…": [
     "features/block-email/component/compose/ComposeToolbar.tsx"
   ],
   "Save Draft": [
@@ -115,6 +331,78 @@
   ],
   "Send email": [
     "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "then": [
+    "components/ui/components/Tooltip.tsx"
+  ],
+  "Documentation": [
+    "components/ui/components/EmptyStatePanel.tsx"
+  ],
+  "Dismiss": [
+    "components/app/app-sidebar/sidebar-promo.tsx"
+  ],
+  "Got it": [
+    "components/app/app-sidebar/sidebar-promo.tsx"
+  ],
+  "Customize {label}": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Customize": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Command menu": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Team invitation": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "{name} invited you to join a team as {role}.": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "A teammate": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Accept": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Decline": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Workspace": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Upgrade to Premium": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Unlock MCP integrations, better AI models, and team collaboration.": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Upgrade": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Later": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Maybe later": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "You can upgrade anytime from Account settings.": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Take me there": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Go to {label}": [
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Upload file": [
+    "components/app/mobile/MobileDockRow.tsx"
+  ],
+  "Views": [
+    "components/app/mobile/MobileDockRow.tsx"
+  ],
+  "Ask AI, @mention anything": [
+    "lib/core/component/AI/component/input/ChatInput.tsx"
   ],
   "Copied": [
     "lib/core/component/AI/component/McpSetupCards.tsx"

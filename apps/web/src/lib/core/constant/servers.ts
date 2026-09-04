@@ -155,18 +155,17 @@ function selectLocalServers(): Servers {
   return servers;
 }
 
-const syncServiceSuffix =
-  import.meta.env.MODE === 'development' ? '-dev3' : '-prod2';
-
 const syncServiceHostLocal = {
   worker: 'http://localhost:8787',
   ws: 'ws://localhost:8787',
 } as const;
 
-const syncServiceHostRemote = {
-  worker: `https://sync-service${syncServiceSuffix}.macroverse.workers.dev`,
-  ws: `wss://sync-service${syncServiceSuffix}.macroverse.workers.dev`,
-} as const;
+const syncServiceHostRemote: { worker: string; ws: string } = (() => {
+  const host = import.meta.env.VITE_SYNC_SERVICE_REMOTE_HOST;
+  if (host) return { worker: `https://${host}`, ws: `wss://${host}` };
+  // Fallback: proxy-based sync (no external SaaS endpoint).
+  return syncServiceHostLocal;
+})();
 
 function selectSyncServiceHost():
   | typeof syncServiceHostRemote

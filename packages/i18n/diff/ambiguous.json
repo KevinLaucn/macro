@@ -1,1 +1,29 @@
-{}
+{
+  "Settings": [
+    "features/settings/Settings.tsx",
+    "components/app/app-sidebar/sidebar.tsx",
+    "components/app/mobile/MobileDockRow.tsx"
+  ],
+  "Open fullscreen": [
+    "features/settings/Settings.tsx",
+    "features/favorites/sidebar/favorites-section.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Open in new split": [
+    "features/favorites/sidebar/favorites-section.tsx",
+    "features/channel/sidebar/channels-recent-widget.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Open in current split": [
+    "features/favorites/sidebar/favorites-section.tsx",
+    "features/channel/sidebar/channels-recent-widget.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/app-sidebar/sidebar.tsx"
+  ],
+  "Create": [
+    "features/command/sidebar/sidebar-create-menu.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/mobile/MobileDockRow.tsx"
+  ]
+}

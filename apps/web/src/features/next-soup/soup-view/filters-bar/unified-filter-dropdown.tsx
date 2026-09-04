@@ -30,6 +30,7 @@ import { useUserId } from '@core/context/user';
 import { registerHotkey } from '@core/hotkey/hotkeys';
 import { TOKENS } from '@core/hotkey/tokens';
 import { idToDisplayName } from '@core/user/util';
+import { t } from '@macro/i18n';
 import CaretRightIcon from '@phosphor/caret-right.svg';
 import CheckIcon from '@phosphor/check.svg';
 import CircleDashedIcon from '@phosphor/circle-dashed.svg';
@@ -463,7 +464,7 @@ const SearchableFilterSubmenu = (props: {
           if (!isOpen()) setIsOpen(true);
         }}
       >
-        <span class="text-ink">{props.label}</span>
+        <span class="text-ink">{t(props.label)}</span>
         <CaretRightIcon class="size-3 text-ink-muted" />
       </Dropdown.SubTrigger>
 
@@ -471,7 +472,7 @@ const SearchableFilterSubmenu = (props: {
         <Dropdown.Group class="p-0 gap-0">
           <SearchableMultiSelectInline
             onRequestClose={() => setIsOpen(false)}
-            placeholder={props.placeholder}
+            placeholder={props.placeholder ? t(props.placeholder) : undefined}
             activeIds={props.activeIds}
             onChange={props.onChange}
             options={props.options}
@@ -510,7 +511,7 @@ const ReadStatusSubmenu = (props: {
   return (
     <Dropdown.Sub>
       <Dropdown.SubTrigger>
-        <span class="text-ink">Status</span>
+        <span class="text-ink">{t('Status')}</span>
         <CaretRightIcon class="size-3 text-ink-muted" />
       </Dropdown.SubTrigger>
 
@@ -531,7 +532,7 @@ const ReadStatusSubmenu = (props: {
                       active() ? 'text-ink' : 'text-ink-muted'
                     )}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </span>
                 </Dropdown.Item>
               );
@@ -946,15 +947,15 @@ export const UnifiedFilterDropdown = (
           <Switch>
             <Match when={props.customTrigger}>{props.customTrigger}</Match>
             <Match when={true}>
-              <Tooltip label="Filter" hotkey={TOKENS.soup.filter}>
+              <Tooltip label={t('Filter')} hotkey={TOKENS.soup.filter}>
                 <Dropdown.Trigger
                   depth={2}
                   class="bg-surface"
-                  aria-label={props.hideLabel ? 'Filter' : undefined}
+                  aria-label={props.hideLabel ? t('Filter') : undefined}
                 >
                   <FilterIcon />
                   <Show when={!props.hideLabel}>
-                    <span>Filter</span>
+                    <span>{t('Filter')}</span>
                   </Show>
                 </Dropdown.Trigger>
               </Tooltip>
@@ -994,7 +995,7 @@ export const UnifiedFilterDropdown = (
                     {(category) => (
                       <Dropdown.Sub>
                         <Dropdown.SubTrigger>
-                          <span class="text-ink">{category.label}</span>
+                          <span class="text-ink">{t(category.label)}</span>
                           <CaretRightIcon class="size-3 text-ink-muted" />
                         </Dropdown.SubTrigger>
 
@@ -1024,7 +1025,7 @@ export const UnifiedFilterDropdown = (
                                         active() ? 'text-ink' : 'text-ink-muted'
                                       )}
                                     >
-                                      {option.label}
+                                      {t(option.label)}
                                     </span>
                                   </Dropdown.Item>
                                 );
@@ -1103,7 +1104,7 @@ export const UnifiedFilterDropdown = (
                           active() ? 'text-ink' : 'text-ink-muted'
                         )}
                       >
-                        {option.label}
+                        {t(option.label)}
                       </span>
                     </Dropdown.Item>
                   );
