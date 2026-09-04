@@ -121,13 +121,17 @@
 	handle_path /app/* {
 		root * /srv/frontend
 
-		# Cache control: HTML and env configs must never be cached across updates
-		@html path / /index.html /app /app/ /env-config.js /app/env-config.js
-		header @html Cache-Control "no-cache, no-store, must-revalidate"
+		# Cache control: HTML, entrypoint scripts, manifests and runtime configs must never be cached across updates
+		@no_cache path / /index.html /app /app/ /env-config.js /manifest.json /semver.txt
+		header @no_cache Cache-Control "no-cache, no-store, must-revalidate"
 
-		# Static hashed bundles, WASM, fonts, and assets can be cached immutably
-		@assets path *.js *.css *.wasm *.png *.jpg *.jpeg *.svg *.woff *.woff2 *.ico
-		header @assets Cache-Control "public, max-age=31536000, immutable"
+		# Static content-hashed bundles (*-*.js, *-*.css, *-*.wasm) and assets/ can be cached immutably
+		# env-config.js does not contain a hyphen hash and is explicitly excluded by @no_cache
+		@immutable_assets {
+			not path / /index.html /env-config.js /manifest.json /semver.txt
+			path /assets/* *-*.js *-*.css *-*.wasm *-*.png *-*.jpg *-*.jpeg *-*.svg *-*.woff *-*.woff2 *-*.ico
+		}
+		header @immutable_assets Cache-Control "public, max-age=31536000, immutable"
 
 		try_files {path} /index.html
 		file_server

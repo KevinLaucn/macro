@@ -47,17 +47,18 @@ uuid4() {
 }
 
 cmd_generate_secrets() {
-  local domain="" acme="" smtp_host="" smtp_port="587" smtp_user="" smtp_pass="" admin=""
+  local domain="" acme="" smtp_host="" smtp_port="587" smtp_user="" smtp_pass="" admin="" macro_version=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --domain)     domain="$2"; shift 2 ;;
-      --acme-email) acme="$2"; shift 2 ;;
-      --smtp-host)  smtp_host="$2"; shift 2 ;;
-      --smtp-port)  smtp_port="$2"; shift 2 ;;
-      --smtp-user)  smtp_user="$2"; shift 2 ;;
-      --smtp-pass)  smtp_pass="$2"; shift 2 ;;
-      --admin-email) admin="$2"; shift 2 ;;
-      --force)      FORCE=1; shift ;;
+      --domain)        domain="$2"; shift 2 ;;
+      --acme-email)    acme="$2"; shift 2 ;;
+      --smtp-host)     smtp_host="$2"; shift 2 ;;
+      --smtp-port)     smtp_port="$2"; shift 2 ;;
+      --smtp-user)     smtp_user="$2"; shift 2 ;;
+      --smtp-pass)     smtp_pass="$2"; shift 2 ;;
+      --admin-email)   admin="$2"; shift 2 ;;
+      --macro-version) macro_version="$2"; shift 2 ;;
+      --force)         FORCE=1; shift ;;
       *) die "unknown flag: $1" ;;
     esac
   done
@@ -71,6 +72,9 @@ cmd_generate_secrets() {
   [ -n "$domain" ] || die "a domain is required"
   [ -n "$acme" ] || read -r -p "Email for Let's Encrypt notices: " acme
   [ -n "$smtp_host" ] || read -r -p "SMTP host (login codes are emailed): " smtp_host
+  [ -n "$macro_version" ] || read -r -p "Macro version tag (e.g. test-2ae8c8320 or v2.5.1, 'latest' is prohibited): " macro_version
+  [ -n "$macro_version" ] || die "a macro version tag is required"
+  [ "$macro_version" != "latest" ] || die "MACRO_VERSION=latest is prohibited in production; please pin an exact version tag"
   # Default the admin address to the mail domain. Dropping the first label
   # suits a subdomain like macro.acme.io, but on an apex domain it would leave
   # a bare TLD, so only strip when there is a label to spare.
@@ -105,6 +109,7 @@ cmd_generate_secrets() {
   JWT="$jwt" FA_API="$fa_api" FA_CLIENT_SECRET="$fa_client_secret" OS_PW="$os_pw" \
   AWS_SECRET="$aws_secret" ADMIN_PW="$admin_pw" MCP_KEY="$mcp_key" \
   APP_ID="$app_id" TENANT_ID="$tenant_id" KEY_ID="$key_id" TEMPLATE_ID="$template_id" \
+  MACRO_VERSION="$macro_version" \
   awk '
     function env(n) { return ENVIRON[n] }
     BEGIN {
@@ -146,6 +151,7 @@ cmd_generate_secrets() {
       v["ISSUER"]                               = env("MACRO_DOMAIN")
       v["MACRO_API_TOKEN_ISSUER"]               = env("MACRO_DOMAIN")
       v["SENDER_BASE_ADDRESS"]                  = env("MACRO_DOMAIN")
+      v["MACRO_VERSION"]                        = env("MACRO_VERSION")
     }
     # Comments and blanks pass through untouched.
     /^[[:space:]]*#/ || /^[[:space:]]*$/ { print; next }
