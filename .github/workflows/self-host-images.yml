@@ -20,6 +20,26 @@ on:
         type: string
         required: true
         default: latest
+      services_runner:
+        description: Runner for macro-services Rust build (github or self-hosted)
+        type: choice
+        options:
+          - github
+          - self-hosted
+        required: false
+        default: github
+      profile:
+        description: Build profile (full = full local-stack; email = focused email production core)
+        type: choice
+        options:
+          - full
+          - email
+        required: false
+        default: full
+
+concurrency:
+  group: self-host-images-${{ github.ref }}-${{ inputs.profile || 'full' }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 permissions:
   contents: read
@@ -44,7 +64,7 @@ jobs:
   services:
     name: macro-services
     needs: check-drift
-    runs-on: ubuntu-latest
+    runs-on: ${{ (inputs.services_runner == 'self-hosted') && fromJSON('["self-hosted", "linux", "x64", "macro-builder"]') || 'ubuntu-latest' }}
     outputs:
       version: ${{ steps.version.outputs.value }}
     steps:
@@ -62,26 +82,40 @@ jobs:
           free -h
           echo "=== Disk ==="
           df -h
+          echo "=== Profile & Target ==="
+          echo "Profile: ${{ inputs.profile || 'full' }}"
+          echo "Runner: ${{ inputs.services_runner || 'github' }}"
+          echo "BUILD_START_TIME=$(date -u +%s)" >> "$GITHUB_ENV"
 
       - name: Build service binaries
         run: |
           set -euo pipefail
-          nix build --print-build-logs ".#local-stack-binaries" --out-link result-bins
+          profile="${{ inputs.profile || 'full' }}"
           mkdir -p self-host/build/bin
-          cp -L result-bins/bin/* self-host/build/bin/ 2>/dev/null \
-            || cp -RL result-bins/* self-host/build/bin/
 
-          # The local-stack aggregate builds authentication_service with
-          # `--no-default-features --features return_passwordless_code`, which
-          # hands the one-time login code back in the API response and drops
-          # the default rate_limit feature. That is a local-development
-          # affordance and a full authentication bypass if it is ever served
-          # publicly: anyone who can reach the deployment could request a code
-          # for any address and read it out of the response. Replace it with
-          # the production build the deploy pipeline uses.
-          nix build --print-build-logs \
-            ".#deploy-service-binaries-authentication-service" --out-link result-auth
-          cp -L result-auth/bin/authentication_service self-host/build/bin/authentication_service
+          if [ "$profile" = "email" ]; then
+            echo "Building focused email production aggregate: .#self-host-email-binaries"
+            nix build --print-build-logs ".#self-host-email-binaries" --out-link result-bins
+            cp -L result-bins/bin/* self-host/build/bin/ 2>/dev/null \
+              || cp -RL result-bins/* self-host/build/bin/
+          else
+            echo "Building full local stack aggregate: .#local-stack-binaries"
+            nix build --print-build-logs ".#local-stack-binaries" --out-link result-bins
+            cp -L result-bins/bin/* self-host/build/bin/ 2>/dev/null \
+              || cp -RL result-bins/* self-host/build/bin/
+
+            # The local-stack aggregate builds authentication_service with
+            # `--no-default-features --features return_passwordless_code`, which
+            # hands the one-time login code back in the API response and drops
+            # the default rate_limit feature. That is a local-development
+            # affordance and a full authentication bypass if it is ever served
+            # publicly: anyone who can reach the deployment could request a code
+            # for any address and read it out of the response. Replace it with
+            # the production build the deploy pipeline uses.
+            nix build --print-build-logs \
+              ".#deploy-service-binaries-authentication-service" --out-link result-auth
+            cp -L result-auth/bin/authentication_service self-host/build/bin/authentication_service
+          fi
 
           # The seeding CLI is development tooling; it has no place in a
           # deployment image.
@@ -89,21 +123,23 @@ jobs:
           ls -la self-host/build/bin
 
       - name: Verify the auth binary is the production build
-        # A silent failure of the copy above would ship the code-leaking build,
-        # so assert the swap actually happened rather than trusting it.
+        # Assert the production build is in place and seed CLI is excluded.
         run: |
           set -euo pipefail
-          if cmp -s result-bins/bin/authentication_service \
-                    self-host/build/bin/authentication_service; then
-            echo "::error::authentication_service is still the local-stack build," \
-                 "which returns passwordless login codes in its API response"
-            exit 1
+          profile="${{ inputs.profile || 'full' }}"
+          if [ "$profile" = "full" ]; then
+            if cmp -s result-bins/bin/authentication_service \
+                      self-host/build/bin/authentication_service; then
+              echo "::error::authentication_service is still the local-stack build," \
+                   "which returns passwordless login codes in its API response"
+              exit 1
+            fi
           fi
           test ! -e self-host/build/bin/seed_cli
           echo "auth binary is the production build; seed CLI is not shipped"
 
       - name: Build the migration runner
-        # Not part of the local-stack aggregate: only the init image needs it.
+        # Build the migration runner into /app/out/macro_db_migrate.
         run: |
           set -euo pipefail
           nix develop --command cargo build --release \
@@ -114,6 +150,14 @@ jobs:
         run: |
           echo "=== Disk after build ==="
           df -h
+          if [ -d /nix/store ]; then
+            echo "=== /nix/store size ==="
+            du -sh /nix/store 2>/dev/null || true
+          fi
+          build_end=$(date -u +%s)
+          build_dur=$(( build_end - BUILD_START_TIME ))
+          echo "Nix/Rust build duration: ${build_dur}s"
+          echo "BUILD_DURATION=${build_dur}" >> "$GITHUB_ENV"
 
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
@@ -124,13 +168,31 @@ jobs:
       - name: Build and push
         run: |
           set -euo pipefail
+          docker_start=$(date -u +%s)
           ns="$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]')"
-          img="$REGISTRY/$ns/macro-services:${{ steps.version.outputs.value }}"
+          v="${{ steps.version.outputs.value }}"
+          profile="${{ inputs.profile || 'full' }}"
+          img="$REGISTRY/$ns/macro-services:$v"
           docker build -f self-host/images/Dockerfile.services \
             --build-arg BIN_DIR=build/bin \
-            --build-arg MACRO_VERSION="${{ steps.version.outputs.value }}" \
+            --build-arg MACRO_VERSION="$v" \
+            --label "com.kevinlaucn.macro.profile=$profile" \
             -t "$img" self-host
           docker push "$img"
+          docker_dur=$(( $(date -u +%s) - docker_start ))
+          bin_count=$(find self-host/build/bin -type f -perm -111 | wc -l | tr -d ' ')
+          bin_size=$(du -sh self-host/build/bin | awk '{print $1}')
+
+          {
+            echo "### 🚀 Macro Services Build Summary"
+            echo "- **Runner**: \`${{ inputs.services_runner || 'github' }}\`"
+            echo "- **Profile**: \`${profile}\`"
+            echo "- **Image**: \`${img}\`"
+            echo "- **Nix/Rust Build Duration**: \`${BUILD_DURATION}s\`"
+            echo "- **Docker Build & Push Duration**: \`${docker_dur}s\`"
+            echo "- **Binary Count**: \`${bin_count}\`"
+            echo "- **Output Binaries Size**: \`${bin_size}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   web:
     name: macro-web
