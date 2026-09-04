@@ -762,43 +762,6 @@
       # glibc 2.26 == Amazon Linux 2; forward-compatible with al2023.
       lambdaZigTarget = "${lambdaTarget}.2.26";
 
-      callRecordingPreviewFfmpegLayer =
-        let
-          ffmpegVersion = "7.0.2";
-          ffmpegArchive = pkgs.fetchurl {
-            url = "https://johnvansickle.com/ffmpeg/releases/ffmpeg-${ffmpegVersion}-amd64-static.tar.xz";
-            hash = "sha256-q9qNd86DCRQfg6uO3wWWg0CHxSRn9rrfN2pqKkyHz2c=";
-          };
-        in
-        pkgs.runCommand "call-recording-preview-ffmpeg-layer"
-          {
-            nativeBuildInputs = [
-              pkgs.coreutils
-              pkgs.gnutar
-              pkgs.unzip
-              pkgs.xz
-              pkgs.zip
-            ];
-          }
-          ''
-            set -euo pipefail
-
-            archive_dir="ffmpeg-${ffmpegVersion}-amd64-static"
-            mkdir -p extract package/bin "$out/call_recording_preview_handler"
-            tar -xJf ${ffmpegArchive} -C extract \
-              "$archive_dir/ffmpeg" \
-              "$archive_dir/ffprobe"
-            install -m 0755 "extract/$archive_dir/ffmpeg" package/bin/ffmpeg
-            install -m 0755 "extract/$archive_dir/ffprobe" package/bin/ffprobe
-            touch -h -d @315532800 package/bin/ffmpeg package/bin/ffprobe
-
-            (
-              cd package
-              zip -9 -q -X "$out/call_recording_preview_handler/ffmpeg-layer.zip" bin/ffmpeg bin/ffprobe
-            )
-            unzip -tqq "$out/call_recording_preview_handler/ffmpeg-layer.zip" >/dev/null
-          '';
-
       lambdaCommonArgs = commonArgs // {
         # zig links the final binary (cargo-zigbuild); drop the host-only mold arg.
         RUSTFLAGS = "";
@@ -926,9 +889,6 @@
                 # root, so the blob has to ride along in bootstrap.zip at that
                 # same relative path.
                 ( cd services/${lambdaName} && ${pkgs.zip}/bin/zip -r -X "$out/${lambdaName}/bootstrap.zip" pdfium-lib/linux )
-              ''}
-              ${pkgs.lib.optionalString (lambdaName == "call_recording_preview_handler") ''
-                cp "${callRecordingPreviewFfmpegLayer}/${lambdaName}/ffmpeg-layer.zip" "$out/${lambdaName}/ffmpeg-layer.zip"
               ''}
             '';
           }

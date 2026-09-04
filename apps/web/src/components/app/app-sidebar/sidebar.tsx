@@ -1,7 +1,6 @@
 import { GO_TO_COMMAND_SCOPE, GO_TO_LEADER_KEY } from '@app/constants/hotkeys';
 import { LIST_VIEW_PATHS, type ListView } from '@app/constants/list-views';
 import { useActivityFeedFlag } from '@app/features/activity/use-activity-feed-flag';
-import { SidebarActiveCallWidget } from '@app/features/block-call/sidebar/active-call-widget';
 import { useCalendarUiFlag } from '@app/features/calendar/hooks/use-calendar-ui-flag';
 import { ChannelsRecentWidget } from '@app/features/channel/sidebar/channels-recent-widget';
 import { CommandState } from '@app/features/command';
@@ -27,8 +26,6 @@ import { useFeatureFlag } from '@app/lib/analytics/posthog';
 import { useHotkeyInterceptor } from '@app/signal/hotkeyRoot';
 import { globalSplitManager } from '@app/signal/splitLayout';
 import { CALENDAR_BLOCK_ID } from '@block-calendar/types';
-import { useCallContextOptional } from '@channel/Call/CallContext';
-import { InCallPanel } from '@channel/Call/InCallPanel';
 import {
   CollapsibleSidebarSection,
   type CollapsibleSidebarSectionItem,
@@ -97,7 +94,6 @@ import UsersThreeIcon from '@phosphor/users-three.svg';
 import { __t } from '@macro/i18n';
 import XIcon from '@phosphor/x.svg';
 import { isRealNamePart, useOwnUserName } from '@queries/auth/user-name-self';
-import { useActiveCallsQuery } from '@queries/call/call';
 import { useEmailLinksQuery } from '@queries/email/link';
 import {
   useJoinTeamMutation,
@@ -144,7 +140,6 @@ export interface SidebarItem {
 type SidebarSectionLinkId =
   | 'mail'
   | 'channels'
-  | 'calls'
   | 'documents'
   | 'tasks'
   | 'calendar'
@@ -160,7 +155,6 @@ type TryItemVisibility = Record<TryItemId, boolean>;
 const WORKSPACE_LINK_IDS = [
   'mail',
   'channels',
-  'calls',
   'documents',
   'tasks',
   'calendar',
@@ -171,7 +165,6 @@ const WORKSPACE_LINK_IDS = [
 const DEFAULT_SECTION_VISIBILITY: SidebarSectionVisibility = {
   mail: true,
   channels: true,
-  calls: true,
   documents: true,
   tasks: true,
   calendar: true,
@@ -1011,15 +1004,6 @@ export const SidebarSettingsWidget = (props: SidebarSettingsWidgetProps) => {
   );
 };
 
-const CALLS_LINK: SidebarItem = {
-  id: 'calls',
-  label: 'Calls',
-  href: LIST_VIEW_PATHS.calls,
-  icon: AnimatedCallIcon,
-  hotkey: 'l',
-  hotkeyToken: TOKENS.sidebar.goTo.calls,
-};
-
 const COMPANIES_LINK: SidebarItem = {
   id: 'companies',
   label: 'Customers',
@@ -1069,11 +1053,11 @@ const RECENT_LINK: SidebarItem = {
 
 /**
  * Assemble the ordered sidebar link list: the static links plus Home, Getting
- * started, and the flag-gated Activity, Calendar, Calls, and CRM entries in
+ * started, and the flag-gated Activity, Calendar, and CRM entries in
  * their correct positions.
  * Shared by the rendered sidebar (`AppSidebar.visibleLinks`) and the
  * always-mounted `GoToHotkeys` registrar so their link sets can't drift. Call
- * from a reactive context — it reads `ENABLE_CALLS` / `isFeatureEnabled(enableCrm)`.
+ * from a reactive context — it reads `isFeatureEnabled(enableCrm)`.
  * `showGettingStarted` is the account-age gate (`useGettingStartedEnabled`),
  * passed in because this runs outside a component; when false the link is
  * fully absent — row, `g s` hotkey, and command menu entry.
@@ -1108,14 +1092,9 @@ const buildSidebarLinks = (
     ];
   }
 
-  if (ENABLE_CALLS) {
-    const idx = links.findIndex((l) => l.id === 'channels');
-    links = [...links.slice(0, idx + 1), CALLS_LINK, ...links.slice(idx + 1)];
-  }
-
   if (isFeatureEnabled(enableCrm)) {
-    // Customers sits just after Channels (and Calls when present).
-    const anchorId = ENABLE_CALLS ? 'calls' : 'channels';
+    // Customers sits just after Channels.
+    const anchorId = 'channels';
     const idx = links.findIndex((l) => l.id === anchorId);
     links = [
       ...links.slice(0, idx + 1),
@@ -1171,7 +1150,6 @@ export const AppSidebar = (props: AppSidebarProps) => {
     createSignal<TryItemVisibility>(DEFAULT_TRY_VISIBILITY),
     { name: 'sidebar-try-visibility' }
   );
-  const callCtx = useCallContextOptional();
 
   const hasPaidAccess = useHasPaidAccess();
 
@@ -1333,7 +1311,6 @@ export const AppSidebar = (props: AppSidebarProps) => {
       sidebarState={sidebarDisplayState()}
       hotkeyVisible={goToHotkeyVisible()}
       onContextMenuOpenChange={handleOverlayDropdownOpenChange}
-      trailing={link.id === 'channels' ? <ChannelsActiveCallIcon /> : undefined}
       removeAction={
         link.id === 'getting-started'
           ? {
@@ -1623,17 +1600,6 @@ export const AppSidebar = (props: AppSidebarProps) => {
       </div>
 
       <div class="shrink-0 w-full pt-2 flex flex-col gap-2">
-        <Show when={isExpandedView()}>
-          <SidebarActiveCallWidget
-            sidebarState="expanded"
-            class="rounded-xl border border-edge-muted bg-surface shadow-menu p-1"
-          />
-        </Show>
-        <Show when={isExpandedView() && callCtx?.isInCall()}>
-          <div data-ui="sidebar-in-call-panel">
-            <InCallPanel isSlim={() => false} />
-          </div>
-        </Show>
         <Show keyed when={isExpandedView() ? firstTeamInvite() : undefined}>
           {(invite) => <TeamInviteSidebarPromo invite={invite} />}
         </Show>
@@ -1820,21 +1786,6 @@ export const SidebarOpenInSplitMenu = (props: SidebarOpenInSplitMenuProps) => {
         </ContextMenuContent>
       </ContextMenu.Portal>
     </ContextMenu>
-  );
-};
-
-/**
- * Accent phone icon on the Channels link while any channel the user is a
- * member of has a live call. Backed by the shared all-active-calls query,
- * which the call websocket events keep current.
- */
-const ChannelsActiveCallIcon = () => {
-  const activeCallsQuery = useActiveCallsQuery();
-
-  return (
-    <Show when={(activeCallsQuery.data ?? []).length > 0}>
-      <PhoneIcon class="size-4 shrink-0 text-accent fill-accent" />
-    </Show>
   );
 };
 

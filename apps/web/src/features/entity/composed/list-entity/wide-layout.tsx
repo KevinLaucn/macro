@@ -1,13 +1,10 @@
 import { useMaybeSoupView } from '@app/features/next-soup/soup-view/soup-view-context';
-import { formatCallDuration } from '@block-call/utils';
 import { EntityRowTags } from '@property/tags';
 import { EntityType } from '@service-properties/generated/schemas/entityType';
 import type { SoupProperty } from '@service-storage/generated/schemas/soupProperty';
 import { cn } from '@ui';
 import { Match, Show, Switch } from 'solid-js';
 import {
-  CallDurationBadge,
-  CallStatusBadge,
   SharedBadge,
 } from '../../components/Badges';
 import { MultiSelectCheckbox } from '../../components/MultiSelectCheckbox';
@@ -241,32 +238,6 @@ export function WideLayout(props: LayoutProps) {
         </Show>
         <Show when={isGithubPrEntity(props.entity) && props.entity}>
           {(entity) => <GithubPullRequestPills entity={entity()} />}
-        </Show>
-        <Show when={isCallEntity(props.entity) && props.entity}>
-          {(entity) => (
-            <>
-              <Show when={(soupView?.activeTab() ?? 'all') === 'all'}>
-                <CallStatusBadge status={entity().status} />
-              </Show>
-              <Show
-                when={entity().durationMs}
-                fallback={
-                  <Show when={entity().isActive}>
-                    <CallDurationBadge duration="In progress" />
-                  </Show>
-                }
-              >
-                {(durationMs) => (
-                  <CallDurationBadge
-                    duration={formatCallDuration(durationMs())}
-                  />
-                )}
-              </Show>
-              <span class="flex w-10 shrink-0 justify-end">
-                <CallParticipants participantIds={entity().participantIds} />
-              </span>
-            </>
-          )}
         </Show>
         <Show when={isTaskEntity(props.entity) && props.entity}>
           {(entity) => <Entity.Properties entity={entity()} />}

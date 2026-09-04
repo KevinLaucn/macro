@@ -49,15 +49,6 @@
         "upload_extractor_lambda_trigger"
       ]
     },
-    "call-recording": {
-      "source_paths": [
-        "services/call_recording_preview_handler/**"
-      ],
-      "stack_path": "infra/stacks/call-recording/**",
-      "deploy_lambdas": [
-        "call_recording_preview_handler"
-      ]
-    },
     "connection-gateway": {
       "source_paths": [
         "services/connection_gateway/**"

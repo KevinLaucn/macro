@@ -70,9 +70,6 @@ chmod -R u+w "$OUTPUT_DIR"
 
 for lambda in "${LAMBDAS[@]}"; do
   test -f "$OUTPUT_DIR/target/lambda/$lambda/bootstrap.zip"
-  if [[ "$lambda" == "call_recording_preview_handler" ]]; then
-    test -f "$OUTPUT_DIR/target/lambda/$lambda/ffmpeg-layer.zip"
-  fi
   # document_text_extractor dlopen's ./pdfium-lib/linux/libpdfium.so at runtime,
   # so the blob has to be bundled inside bootstrap.zip (see deployLambdaPackage
   # in flake.nix) -- guard against shipping the binary without it.

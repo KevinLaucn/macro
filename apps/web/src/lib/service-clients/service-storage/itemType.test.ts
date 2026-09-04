@@ -57,7 +57,6 @@ describe('stringToItemType', () => {
 describe('blockNameToItemType', () => {
   test.each([
     ['chat', 'chat'],
-    ['call', 'call'],
     ['calendar', 'calendar_event'],
     ['channel', 'channel'],
     ['project', 'project'],

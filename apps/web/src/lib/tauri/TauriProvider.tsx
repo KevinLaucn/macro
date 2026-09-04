@@ -1,5 +1,3 @@
-import { NativeCallProvider } from '@channel/Call/native-call-state';
-import { useCallKitSetup } from '@channel/Call/use-callkit';
 import { NativeAppUpdateRequiredDialog } from '@core/mobile/NativeAppUpdateRequiredDialog';
 import { isPlatform, isTauri } from '@core/util/platform';
 import { PlatformNotificationProvider } from '@notifications';
@@ -98,8 +96,6 @@ function TauriProvider(props: { children: JSX.Element }) {
     setNativeAppUpdateRequiredDialogOpen(true);
   });
 
-  if (isTauri() && isPlatform('ios')) useCallKitSetup();
-
   const value: TauriContextValue = {
     runtimeInsets: insets,
     os: osType(),
@@ -188,13 +184,11 @@ function TauriProvider(props: { children: JSX.Element }) {
 export function MaybeTauriProvider(props: { children: JSX.Element }) {
   if (isTauri()) {
     return (
-      <NativeCallProvider>
-        <TauriProvider>
-          <MaybePushNotificationRegistration>
-            {props.children}
-          </MaybePushNotificationRegistration>
-        </TauriProvider>
-      </NativeCallProvider>
+      <TauriProvider>
+        <MaybePushNotificationRegistration>
+          {props.children}
+        </MaybePushNotificationRegistration>
+      </TauriProvider>
     );
   }
 

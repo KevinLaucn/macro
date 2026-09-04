@@ -26,9 +26,6 @@ LAMBDAS_ENV="${LAMBDAS[*]}" nix develop .# -c bash -lc '
     ulimit -n 10240
     just "services/$lambda/build"
     test -f "target/lambda/$lambda/bootstrap.zip"
-    if [[ "$lambda" == "call_recording_preview_handler" ]]; then
-      test -f "target/lambda/$lambda/ffmpeg-layer.zip"
-    fi
     echo "::endgroup::"
   done
 '

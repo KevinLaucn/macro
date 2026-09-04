@@ -49,7 +49,6 @@ import type { ObjectLike, ResultError } from './util/result';
  * List of valid block types that can be used in the application.
  */
 export const BlockRegistry = [
-  'call',
   'calendar',
   'chat',
   'write',

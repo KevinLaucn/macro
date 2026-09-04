@@ -57,7 +57,7 @@ export function blockNameToItemType(
   blockName: BlockName | BlockAlias
 ): ItemType {
   return match<BlockName | BlockAlias, ItemType>(blockName)
-    .with('chat', 'call', 'channel', 'project', 'email', 'automation', (b) => b)
+    .with('chat', 'channel', 'project', 'email', 'automation', (b) => b)
     .with('calendar', () => 'calendar_event')
     .with('company', () => 'crm_company')
     .with('contact', () => 'crm_contact')

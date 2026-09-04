@@ -502,22 +502,6 @@ function RegisteredChannelsView() {
 registerComponent('channels', withAuth(RegisteredChannelsView));
 
 registerComponent(
-  'calls',
-  withAuth(() => {
-    usePageViewTracking('calls');
-    const preset = getViewPreset('calls');
-    return (
-      <SoupView
-        viewName="Calls"
-        initialFilters={preset?.filters}
-        initialClientFilters={preset?.clientFilters}
-        initialGroupBy={preset?.groupBy}
-      />
-    );
-  })
-);
-
-registerComponent(
   'companies',
   withAuth(() => {
     // Registered even when the CRM feature is off so direct navigation /

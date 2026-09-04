@@ -83,7 +83,6 @@ members = [
   "services/agent_trigger_service",
   "services/ai_projections_refresh_handler",
   "services/authentication_service",
-  "services/call_recording_preview_handler",
   "services/connection_gateway",
   "services/contacts_service",
   "services/convert_service",

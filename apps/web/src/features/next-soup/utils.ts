@@ -5,8 +5,7 @@ import { createCalendarBlockRange } from '@block-calendar/calendar-range';
 import {
   CALENDAR_BLOCK_ID,
   type CalendarBlockProps,
-} from '@block-calendar/types';
-import { URL_PARAMS as CALL_PARAMS } from '@block-call/constants';
+} from '@block-calendar/constants';
 import { URL_PARAMS as CHANNEL_PARAMS } from '@block-channel/constants';
 import {
   getChannelParams,
@@ -305,14 +304,6 @@ export const openEntityInNewTab = ({
         }
         if (location.searchSnippet) {
           entityUrl.searchParams.set('search_snippet', location.searchSnippet);
-        }
-        break;
-      case 'call_record':
-        if (location.transcriptId) {
-          entityUrl.searchParams.set(
-            CALL_PARAMS.transcriptId,
-            location.transcriptId
-          );
         }
         break;
     }
@@ -704,8 +695,6 @@ export const openEntityInSplitFromUnifiedList = async (
       channelMessageTarget.messageId,
       channelMessageTarget.threadId
     );
-  } else if (entity.type === 'call' && location?.type === 'call_record') {
-    params = { [CALL_PARAMS.transcriptId]: location.transcriptId };
   }
 
   const sourceContent =
@@ -965,12 +954,6 @@ async function navigateToLocation(
           location.highlightTerms
         ),
         [PDF_PARAMS.searchSnippet]: location.searchSnippet,
-      });
-      break;
-    }
-    case 'call_record': {
-      await blockHandle.goToLocationFromParams({
-        [CALL_PARAMS.transcriptId]: location.transcriptId,
       });
       break;
     }

@@ -22,7 +22,6 @@ import {
 } from '@queries/soup/cache';
 import { soupKeys } from '@queries/soup/keys';
 import { ownTouchStamp } from '@queries/soup/normalized-cache/own-touch';
-import { callServiceClient } from '@service-call/client';
 import { scheduledActionClient } from '@service-scheduled-action/client';
 import { storageServiceClient } from '@service-storage/client';
 import { useMutation } from '@tanstack/solid-query';
@@ -35,7 +34,6 @@ export function createBulkDeleteDssItemsMutation() {
       type === 'chat' ||
       type === 'document' ||
       type === 'project' ||
-      type === 'call' ||
       type === 'automation' ||
       type === 'reminder'
     );
@@ -45,11 +43,6 @@ export function createBulkDeleteDssItemsMutation() {
       const deletable = entities.filter(isDeletable);
       const results = await Promise.all(
         deletable.map((e) => {
-          if (e.type === 'call') {
-            return throwOnErr(() =>
-              callServiceClient.deleteCallRecord(e.id)
-            ).then(() => true);
-          }
           if (e.type === 'automation') {
             return throwOnErr(() =>
               scheduledActionClient.deleteSchedule({ scheduleId: e.id })

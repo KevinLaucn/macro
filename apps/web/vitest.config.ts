@@ -109,13 +109,6 @@ export default defineConfig({
       {
         extends: './src/lib/core/vitest.config.ts',
         test: {
-          include: ['src/features/block-call/**/*.{test,spec}.{ts,tsx}'],
-          name: 'block-call',
-        },
-      },
-      {
-        extends: './src/lib/core/vitest.config.ts',
-        test: {
           include: ['src/features/block-pr/**/*.{test,spec}.{ts,tsx}'],
           name: 'block-pr',
         },
@@ -172,7 +165,7 @@ export default defineConfig({
           environment: 'jsdom',
           exclude: [
             ...configDefaults.exclude,
-            'src/features/{theme,block-channel,block-call,block-pr,block-md,channel,notifications,block-email}/**/*',
+            'src/features/{theme,block-channel,block-pr,block-md,channel,notifications,block-email}/**/*',
           ],
           include: [
             'src/components/**/*.{test,spec}.{ts,tsx}',

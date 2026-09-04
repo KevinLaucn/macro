@@ -24,10 +24,6 @@ import { useInvalidateQueriesOnReconnect } from '@app/lib/queries/invalidate-on-
 import { useSoupBackfills } from '@app/lib/queries/soup/backfill';
 import { setHotkeyRoot } from '@app/signal/hotkeyRoot';
 import { globalSplitManager } from '@app/signal/splitLayout';
-import { IncomingCallEvents } from '@block-call/sidebar/incoming-calls';
-import { CallProvider } from '@channel/Call/CallContext';
-import { CallStartedNotifier } from '@channel/Call/CallStartedNotifier';
-import { CallKitSync } from '@channel/Call/use-callkit';
 import { GlobalAppStateProvider } from '@components/app/GlobalAppState';
 import { Layout } from '@components/app/Layout';
 import { ReactiveFavicon } from '@components/app/ReactiveFavicon';
@@ -264,10 +260,6 @@ const ROUTES: RouteDefinition[] = [
   },
   {
     path: '/channels',
-    component: LAYOUT_ROUTE.component,
-  },
-  {
-    path: '/calls',
     component: LAYOUT_ROUTE.component,
   },
   {
@@ -588,34 +580,29 @@ export function Root() {
                     <ConfiguredGlobalAppStateProvider>
                       <MutationUndoProvider>
                         <ChannelsContextProvider>
-                          <CallProvider>
-                            <CallKitSync />
-                            <CallStartedNotifier />
-                            <IncomingCallEvents />
-                            <QuickAccessProvider>
-                              <SearchProvider>
-                                <ChatAttachmentsInit />
-                                <ReactiveFavicon />
-                                <Title>{tabTitle()}</Title>
-                                <Suspense>
-                                  <IsomorphicRouter
-                                    transformUrl={transformShortIdInUrlPathname}
-                                    root={Layout}
-                                    rootPreload={rootPreload}
-                                    base={ROUTER_BASE}
-                                  >
-                                    {{
-                                      path: '/',
-                                      component: TauriRouteListener,
-                                      children: ROUTES,
-                                    }}
-                                  </IsomorphicRouter>
-                                </Suspense>
-                                <InitialInteractiveOnboardingModal />
-                                <ToastRegion />
-                              </SearchProvider>
-                            </QuickAccessProvider>
-                          </CallProvider>
+                          <QuickAccessProvider>
+                            <SearchProvider>
+                              <ChatAttachmentsInit />
+                              <ReactiveFavicon />
+                              <Title>{tabTitle()}</Title>
+                              <Suspense>
+                                <IsomorphicRouter
+                                  transformUrl={transformShortIdInUrlPathname}
+                                  root={Layout}
+                                  rootPreload={rootPreload}
+                                  base={ROUTER_BASE}
+                                >
+                                  {{
+                                    path: '/',
+                                    component: TauriRouteListener,
+                                    children: ROUTES,
+                                  }}
+                                </IsomorphicRouter>
+                              </Suspense>
+                              <InitialInteractiveOnboardingModal />
+                              <ToastRegion />
+                            </SearchProvider>
+                          </QuickAccessProvider>
                         </ChannelsContextProvider>
                       </MutationUndoProvider>
                     </ConfiguredGlobalAppStateProvider>

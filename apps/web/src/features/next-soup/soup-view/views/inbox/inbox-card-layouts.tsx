@@ -1,6 +1,5 @@
 import { ListPropertyValue } from '@app/features/next-soup/soup-view/views/tasks/list-property-value';
 import { describeReminderWhen } from '@app/features/reminders/reminder-schedule';
-import { formatCallDuration } from '@block-call/utils';
 import { BotIcon } from '@channel/Message/BotIcon';
 import { MACRO_AI_BOT_ID, MACRO_AI_NAME } from '@channel/macroAi';
 import { EntityIcon, getEntityIconType } from '@core/component/EntityIcon';
@@ -1297,95 +1296,6 @@ function CallParticipantName(props: { id: string }) {
   return <>{displayName()}</>;
 }
 
-export function CallCardLayout(props: InboxCardLayoutProps) {
-  const senderId = () => props.item.notification?.sender_id ?? undefined;
-
-  const senderName = createSenderDisplayName(senderId, () =>
-    props.item.notification
-      ? getNotificationSenderFallbackName(props.item.notification)
-      : undefined
-  );
-
-  const text = createMemo(() => {
-    const entity = props.item.entity;
-    const location = entityLocation(entity);
-
-    if (getNotificationTag(props.item.notification) === 'call_started') {
-      return {
-        title: buildActionLabel({
-          sender: senderName(),
-          action: location ? 'started a call in' : 'started a call',
-          location,
-        }),
-      };
-    }
-
-    if (entity.type === 'call' && entity.status === 'MISSED') {
-      return {
-        title: entity.name ? `Missed call in ${entity.name}` : 'Missed call',
-      };
-    }
-
-    if (entity.type === 'call' && entity.status === 'UNATTENDED') {
-      return {
-        title: entity.name
-          ? `Call unattended in ${entity.name}`
-          : 'Call unattended',
-      };
-    }
-
-    return { title: entity.name ? `Call in ${entity.name}` : 'Call' };
-  });
-
-  const participantIds = () =>
-    props.item.entity.type === 'call' ? props.item.entity.participantIds : [];
-
-  const duration = () => {
-    const entity = props.item.entity;
-    if (entity.type !== 'call') {
-      return getNotificationTag(props.item.notification) === 'call_started'
-        ? 'In progress'
-        : undefined;
-    }
-    if (entity.durationMs != null) return formatCallDuration(entity.durationMs);
-    return entity.isActive ? 'In progress' : 'No duration';
-  };
-
-  return (
-    <BaseCard
-      {...props}
-      icon={
-        <EntityIcon
-          class={AVATAR_GLYPH_CLASS}
-          targetType="call"
-          size="fill"
-          theme="monochrome"
-        />
-      }
-      title={text().title}
-    >
-      <Show when={participantIds().length}>
-        <InboxCard.Content class="truncate">
-          <For each={participantIds()}>
-            {(participantId, index) => (
-              <>
-                {index() > 0 ? ', ' : ''}
-                <CallParticipantName id={participantId} />
-              </>
-            )}
-          </For>
-        </InboxCard.Content>
-      </Show>
-
-      <Show when={duration()}>
-        {(value) => (
-          <InboxCard.Content class="truncate">{value()}</InboxCard.Content>
-        )}
-      </Show>
-    </BaseCard>
-  );
-}
-
 /**
  * A calendar event row exists because its alarm fired: the event title leads,
  * the occurrence's date sits on the second line, and its local time on the
@@ -1571,14 +1481,6 @@ export function InboxCardLayout(props: InboxCardLayoutProps) {
     <Switch>
       <Match when={props.item.entity.type === 'email'}>
         <EmailCardLayout {...props} />
-      </Match>
-      <Match
-        when={
-          notificationTag() === 'call_started' ||
-          props.item.entity.type === 'call'
-        }
-      >
-        <CallCardLayout {...props} />
       </Match>
       <Match when={isGithub()}>
         <GithubCardLayout {...props} />

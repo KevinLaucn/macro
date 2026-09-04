@@ -23,7 +23,6 @@ import PlusCircleIcon from '@phosphor/plus-circle.svg';
 import UploadIcon from '@phosphor/upload-simple.svg';
 import { Button, cn, Dropdown } from '@ui';
 import { createMemo, For, Show } from 'solid-js';
-import { NewCallButton } from './NewCallButton';
 import { useMaybeSoupView } from './soup-view-context';
 
 // Which blocks to show as create options per view, in order
@@ -239,9 +238,6 @@ export const SoupViewCreateButton = () => {
 
   return (
     <>
-      <Show when={currentView() === 'calls'}>
-        <NewCallButton />
-      </Show>
       <Show when={options().length > 0}>
         <CollapsibleHeaderItem id="create-button" priority={2}>
           {(isCollapsed) => (

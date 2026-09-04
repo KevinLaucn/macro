@@ -41,7 +41,6 @@ build_dev_service_images:
 # Build all lambda functions
 build_lambdas compiler="":
     ulimit -n 10240 && just services/docx_unzip_handler/build {{compiler}}
-    ulimit -n 10240 && just services/call_recording_preview_handler/build {{compiler}}
     ulimit -n 10240 && just services/delete_chat_handler/build {{compiler}}
     ulimit -n 10240 && just services/organization_retention_handler/build {{compiler}}
     ulimit -n 10240 && just services/organization_retention_trigger/build {{compiler}}
@@ -114,7 +113,6 @@ setup_test_envs:
     echo "DATABASE_URL={{ DATABASE_URL }}" >> ./crates/task_dedup/.env
     echo "DATABASE_URL={{ DATABASE_URL }}" >> ./crates/crm/.env
     echo "DATABASE_URL={{ DATABASE_URL }}" >> ./crates/bots/.env
-    echo "DATABASE_URL={{ DATABASE_URL }}" >> ./services/call_recording_preview_handler/.env
     echo "DATABASE_URL={{ DATABASE_URL }}" >> ./crates/share_permission_db_utils/.env
     echo "DATABASE_URL={{ DATABASE_URL }}" >> ./crates/ai_projections/.env
     echo "DATABASE_URL={{ DATABASE_URL }}" >> ./services/ai_projections_refresh_handler/.env
