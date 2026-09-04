@@ -36,8 +36,6 @@ use models_email::service::attachment::{
 use models_email::service::message::{Message, is_inbound, is_outbound, is_spam_or_trash};
 use models_email::service::pubsub::{DetailedError, FailureReason, ProcessingError};
 use models_email::service::thread::Thread;
-use notification::domain::models::{SendNotificationRequest, SendNotificationRequestBuilder};
-use notification::domain::service::NotificationIngress;
 use std::collections::HashSet;
 use std::result;
 use std::sync::Arc;
@@ -51,6 +49,19 @@ enum MessageSyncEventKind {
     DraftSynced,
     Received,
     Sent,
+}
+
+const BROWSER_NEW_EMAIL_NOTIFICATION_EVENT_TYPE: &str = "browser_new_email_notification";
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct BrowserNewEmailNotification {
+    sender: Option<String>,
+    to_email: String,
+    thread_id: String,
+    subject: String,
+    snippet: String,
+    sent_at: chrono::DateTime<chrono::Utc>,
 }
 
 fn select_message_sync_event(
@@ -678,7 +689,7 @@ async fn send_notifications(
         return Ok(());
     }
 
-    let Some((message, tier)) =
+    let Some((message, _tier)) =
         filter_notifiable_message(ctx, link, new_message_provider_id).await?
     else {
         return Ok(());
@@ -707,9 +718,6 @@ async fn send_notifications(
             .unwrap_or_else(|| contact.email.clone())
     });
 
-    let sender_id =
-        sender_contact.and_then(|contact| MacroUserIdStr::try_from_email(&contact.email).ok());
-
     let notification = NewEmailMetadata {
         sender,
         to_email: link.email_address.0.as_ref().to_string(),
@@ -732,66 +740,44 @@ async fn send_notifications(
     })?;
 
     let recipient_ids = build_notification_recipients(&link.macro_id, primaries);
-    let (staff_recipients, customer_recipients) = partition_email_push_recipients(recipient_ids);
-
-    let notification_entity =
-        EntityType::EmailThread.with_entity_string(message.thread_db_id.to_string());
-
-    if !staff_recipients.is_empty() {
-        let request = SendNotificationRequestBuilder {
-            notification_entity: notification_entity.clone(),
-            secondary_notification_entity: None,
-            notification: notification.clone(),
-            sender_id: sender_id.clone(),
-            recipient_ids: staff_recipients,
-        }
-        .into_request()
-        .with_conn_gateway();
-        match tier {
-            NewEmailTier::Signal => publish_new_email_notification(ctx, request.with_apns()).await,
-            NewEmailTier::StaffInbox => publish_new_email_notification(ctx, request).await,
-        }
-    }
-
-    if !customer_recipients.is_empty() {
-        let request = SendNotificationRequestBuilder {
-            notification_entity,
-            secondary_notification_entity: None,
-            notification,
-            sender_id,
-            recipient_ids: customer_recipients,
-        }
-        .into_request()
-        .with_conn_gateway();
-        publish_new_email_notification(ctx, request).await;
-    }
+    publish_browser_new_email_notification(ctx, &recipient_ids, notification).await;
 
     Ok(())
 }
 
-async fn publish_new_email_notification<U: serde::Serialize + Send + Sync + 'static>(
+async fn publish_browser_new_email_notification(
     ctx: &PubSubContext,
-    request: SendNotificationRequest<'_, NewEmailMetadata, U>,
+    recipient_ids: &HashSet<MacroUserIdStr<'static>>,
+    notification: NewEmailMetadata,
 ) {
+    if recipient_ids.is_empty() {
+        return;
+    }
+
+    let entities = recipient_ids
+        .iter()
+        .map(|id| EntityType::User.with_entity_str(id.as_ref()))
+        .collect();
+    let payload = BrowserNewEmailNotification {
+        sender: notification.sender,
+        to_email: notification.to_email,
+        thread_id: notification.thread_id,
+        subject: notification.subject,
+        snippet: notification.snippet,
+        sent_at: chrono::Utc::now(),
+    };
+
     if let Err(e) = ctx
-        .notification_ingress_service
-        .send_notification(request)
+        .connection_gateway_client
+        .batch_send_message(
+            BROWSER_NEW_EMAIL_NOTIFICATION_EVENT_TYPE.to_string(),
+            serde_json::to_value(payload).unwrap_or_default(),
+            entities,
+        )
         .await
     {
-        tracing::error!(error=?e, "unable to send notification");
+        tracing::error!(error=?e, "unable to send browser new email notification");
     }
-}
-
-/// Split recipients so only `@macro.com` users are on the APNS path.
-fn partition_email_push_recipients(
-    recipient_ids: HashSet<MacroUserIdStr<'static>>,
-) -> (
-    HashSet<MacroUserIdStr<'static>>,
-    HashSet<MacroUserIdStr<'static>>,
-) {
-    recipient_ids
-        .into_iter()
-        .partition(|id| id.is_macro_staff())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

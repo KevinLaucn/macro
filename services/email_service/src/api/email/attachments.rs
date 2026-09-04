@@ -11,7 +11,9 @@ pub fn router(state: ApiContext) -> Router<ApiContext> {
     // The attachment download unions across the caller's inboxes: it resolves the
     // owning inbox (and that inbox's Gmail token) itself, so it carries neither
     // the single-inbox link middleware nor the primary-inbox token middleware.
-    let union_read_routes = Router::new().route("/{id}", get(get::handler));
+    let union_read_routes = Router::new()
+        .route("/{id}", get(get::handler))
+        .route("/{id}/download", get(get::download_handler));
 
     let single_inbox_routes = Router::new()
         .route("/{id}/document_id", get(get_document_id::handler))

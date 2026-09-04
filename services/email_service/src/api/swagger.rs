@@ -63,6 +63,7 @@ use utoipa::OpenApi;
     paths(
         health::health_handler,
         email::attachments::get::handler,
+        email::attachments::get::download_handler,
         email::attachments::get_document_id::handler,
         email::backfill::cancel::handler,
         email::backfill::get::handler,

@@ -3,390 +3,114 @@ name: macro-private-maintainer
 description: Master orchestration skill for maintaining, auditing, developing, and deploying KevinLaucn/macro. Enforces zero Macro cloud dependency, upstream compatibility, private VPS/Docker deployment, Gmail API architecture, and coordinates repo-local skills.
 ---
 
-# Macro Private Maintainer
+# Macro Private Maintainer (总控 / Router / Policy Entry)
 
-## Skill 定位
+> ⚡ **代码关系链首要准则**：本项目已全量构建 Tree-sitter 语法树级别的本地代码知识图谱（`.codegraph/`，绝对路径 `/Volumes/开发/macro/.codegraph`，包含 1.1 万文件、15.6 万节点、51.5 万依赖边）。**在分析代码符号、查找调用链与被调用关系（Callers / Callees）、跨 crate 依赖流与修改影响面（Impact）时，必须优先使用 CodeGraph CLI（`codegraph callers/callees/impact/node/explore`）或 MCP 工具，严禁盲目大范围递归 grep**。必要时主动执行 `codegraph sync` 增量同步最新索引，或使用 `codegraph upgrade` 更新工具版本。
 
-这是专门用于维护、审查、二开和部署以下 GitHub 仓库的总控 / 编排 Skill：
+## 一、Skill 定位与核心职责
 
-- **Repository**: `KevinLaucn/macro`
-- **Default branch**: `main`
+这是专门用于维护、审查、二开和部署 `KevinLaucn/macro`（Macro 官方开源项目的长期私有分叉）的总控编排 Control Plane。
 
-这是 Macro 官方开源项目的长期二开 fork。
+### 核心设计哲学
+> **Master Skill 是 Control Plane，不是所有领域知识的 Knowledge Dump。**  
+> 负责硬性约束（Hard Invariants）、意图路由（Intent Dispatcher）、代码关系链精准导航（CodeGraph 优先）、全局安全门禁与统一响应规范。具体业务与垂直领域知识按需下沉到子技能或 `references/` 文档中渐进式加载（Progressive Loading）。
 
-### 主要目标
-
-1. 保持与 Macro upstream 架构兼容
-2. 实现 VPS 私有化部署
-3. 尽可能消除对 Macro 官方云服务的运行时依赖
-4. 保留 Gmail API 等明确需要的第三方服务
-5. 维护 Email / Contacts / CRM / Search 等核心功能
-6. 尽量减少侵入式修改，保证未来可以持续合并 upstream
-7. 对所有修改执行架构、稳定性、安全性和回归审查
+### 核心守护目标
+1. **保持 upstream 兼容**：最低化 Fork Divergence，支持平滑 `git merge upstream/main`；
+2. **私有化零官方云依赖**：`Zero Macro Cloud Dependency`，切断一切无感知 `macro.com` fallback；
+3. **保护四大核心支柱**：**Email**（Gmail 同步/写信）、**Contacts**（联系人）、**CRM**（客户时间线）、**Search**（检索）；
+4. **保留上游源码，解除生产依赖**：`Preserve upstream source; remove production dependency.`。
 
 ---
 
-## 一、触发条件
+## 二、意图自动分发与路由表 (Intent Dispatcher)
 
-当用户提出以下任何与 `KevinLaucn/macro` 有关的任务时自动使用此 Skill：
+作为主入口，在接收到任何关于 `KevinLaucn/macro` 的开发运维任务时，**必须首先查阅此表执行第一级精准路由**：
 
-- Macro 源码分析
-- Macro 二开
-- Macro 私有化 / self-host
-- Docker / VPS 部署
-- Gmail 邮件同步 / Email Service
-- Contacts / CRM
-- Search
-- PostgreSQL 数据结构
-- OAuth
-- WebSocket / connection_gateway
-- Storage / LocalStack / MinIO / S3
-- Macro 官方云依赖清理 / macro.com 外连审计
-- telemetry / analytics 清理
-- upstream merge
-- Macro bug 修复 / 新功能开发
-- Macro Rust 微服务调试
-- Macro 前端 SolidJS 修改
-- Macro AI tools
-- Macro 数据库 migration/schema
-- GitHub Actions / Docker image 构建
-- 代码审查 / 发布前 QC
+| 用户意图 / 任务类型 | 触发特征 / 关键词 | 优先分发路由 (Target Sub-Skill / Spec) |
+|---|---|---|
+| **✂️ 功能裁剪 / 依赖瘦身 / 解耦** | “删功能”、“裁剪”、“不要某服务”、“减镜像”、“Email不需要”、“能不能删”、“瘦身” | **`skills/macro-upstream-decoupling/SKILL.md`**（五层解耦检查、两阶段物理删除门禁、Decoupling Report） |
+| **🏗️ Rust 后端架构 / 微服务二开** | `crates/**`、`services/**`、Hexagonal 架构、Domain 改造、Ports & Adapters、S3/DB 适配器 | **`../cloud-storage-hexagonal-architecture/SKILL.md`** |
+| **🔍 运行时调试 / Crash 排查** | 容器退出、服务启动失败、500 报错、Connection Refused、端口无响应 | **`../debug-service/SKILL.md`** |
+| **📊 数据库 Schema / 迁移** | Migration、PostgreSQL 表字段、Email/Gmail 数据表、Dump | **`../dump-schema/SKILL.md`** |
+| **🛡️ 发布前质检 / 审查门禁** | PR 审查、发布前验证、QC、精简度评估、稳定性检查 | **`../qc/SKILL.md`** |
+| **📦 依赖治理 / 漏洞升级** | Dependabot、Cargo/Bun/NPM 依赖冲突、CVE 修复 | **`../dependabot/skill.md`** |
+| **🤖 AI 工具与模型扩展** | AI Tool 开发、Agent 工具注入、模型升级切换 | **`../create-ai-tool/SKILL.md`** / **`../upgrade-model/SKILL.md`** |
+| **🚀 VPS 生产运维 / 部署** | 部署、SSH、Docker Compose、生产更新、运维排障 | **`references/production-deployment.md`**（凭据见 `.local-production.md`） |
 
-默认认为目标仓库是：`KevinLaucn/macro`，除非用户明确指定其他仓库。
+### 子技能路由调度准则
+当分发到上述子技能时：
+1. **修改代码前必读**：首先读取目标子技能 `SKILL.md` 或引用文档；
+2. **遵循领域约束**：严格遵守对应子技能的领域特定规则；
+3. **回归主控验收**：执行完毕后，返回本主控技能的全局安全性与验收门禁核验。
 
 ---
 
-## 二、必须优先使用 GitHub Connector / 本地源码真凭实据
+## 三、硬性全局约束 (Hard Invariants)
 
-所有涉及仓库当前代码、目录、Issue、PR、workflow、commit、branch 的判断：
-
-- **必须先读取当前真实代码与 Git 状态**。
-- **禁止仅凭模型记忆猜测 Macro 当前实现**。
-
-优先检查：
-- 当前 `main`
-- 用户指定 branch
-- 用户自己的修改
-- 最近 upstream 改动
-- 官方 `macro-inc/macro` 的相关 issue / PR
-
-需要确认外部行为或官方文档时，再查：
-- `docs.macro.com`
-- `macro-inc/macro`
-- 官方 GitHub Issues / Discussions
+1. **证据先于假设**：禁止仅凭模型记忆猜测 Macro 实现，必须以当前 Git 状态、真实代码、运行时日志、官方文档为真凭实据。
+2. **零官方云外发**：禁止向 `*.macro.com` 外发用户敏感数据，禁止将本地请求失败隐式自动 fallback 到官方云。
+3. **禁止无意义删除**：严禁仅因功能不用就大面积删除 upstream 源码。必须先判定能否通过解耦实现。
+4. **修改优先级原则**：配置 > 环境变量 > Adapter 替换 > 依赖注入 > 反代 Proxy > 小范围 Patch > 修改 Domain。
+5. **凭据安全红线**：严禁在 Git 追踪的文件中硬编码真实服务器 IP、私钥、OAuth Secret 或 API Key。
 
 ---
 
-## 三、优先利用 CodeGraph 极速掌握依赖与调用链
+## 四、代码关系链与构建闭包穿透准则 (Cargo Tree 与 CodeGraph AST 双轨制)
 
-仓库已完整建立本地代码智能关系图（基于 tree-sitter AST 解析的 SQLite 知识图谱，位于 `/Volumes/开发/macro/.codegraph`，包含 11,000+ 文件、150,000+ 节点与 500,000+ 边）：
+解耦重构与依赖排查必须严格遵循「Cargo 特性闭包」与「AST 语法树调用」双轨定位机制，严禁盲目递归 grep：
 
-- **定位符号与调用链**：查找函数/组件的调用方时，优先执行 `codegraph callers <symbol>`；查找它调用的下游时，执行 `codegraph callees <symbol>`。
-- **改动影响面评估**：重构或清理函数/接口前，使用 `codegraph impact <symbol>` 审查受影响范围。
-- **按文件审查引用关系**：使用 `codegraph node <filepath>` 查看文件包含的符号及上游依赖文件。
-- **快速符号检索**：使用 `codegraph query <symbol>` 精准定位符号定义与声明。
-- **更新索引状态**：在做完大批量文件变更后，可通过 `codegraph sync /Volumes/开发/macro` 快速增量同步索引。
-- **原则**：严禁无目的地使用 grep 盲搜上万个文件，优先通过 CodeGraph 获取结构化、确定性的语法级关联。
+1. **Cargo 特性依赖图与闭包穿透（谁把依赖拉进来的）**：
+   - **反查是谁引入了目标依赖**：`cargo tree -p <service> -i <target_crate> [--no-default-features]`（0.1 秒秒级输出精准的反向依赖树，直接透视如 `rdkafka`、`call`、`ai_toolset` 是经由哪几条链条引入的，无需翻阅任何代码文件）。
+   - **透视是哪个 Feature Flag 激活的**：`cargo tree -p <service> -e features -i <target_crate>`（精准定位是哪个可选 feature 级联打开了重依赖）。
 
----
+2. **AST 符号调用链与影响面全景（代码里的函数/结构体谁调用的）**：
+   - 本地已全量构建 Tree-sitter 图谱（`.codegraph/`，绝对路径 `/Volumes/开发/macro/.codegraph`，1.1 万文件、15.6 万节点、51.5 万依赖边）。
+   - **领域全景探查（Explore）**：`codegraph explore <query>`（一站式聚合输出领域相关符号、源码片段与调用图，如 `codegraph explore "email_service"`）。
+   - **影响面深度分析（Impact）**：`codegraph impact <symbol>`（秒级分析修改指定符号波及的所有上游依赖链与测试用例）。
+   - **查找调用方（Callers）**：`codegraph callers <symbol>`（秒级列出所有调用指定函数/结构体的代码位置）。
+   - **查找被调用方（Callees）**：`codegraph callees <symbol>`（秒级获取指定方法内部调用的下游符号清单）。
+   - **单节点全貌与溯源（Node）**：`codegraph node <symbol_or_path>`（输出符号源码、上下文及依赖路径）。
 
-## 四、引用 Macro 官方 repo-local Skills
-
-不要复制官方技能的全部规则到本 Skill。在执行任务前，根据任务类型读取并遵循仓库 `.agents/skills/` 中的相关 Skill：
-
-### 1. `cloud-storage-hexagonal-architecture`
-- **路径**：`.agents/skills/cloud-storage-hexagonal-architecture/SKILL.md`
-- **适用场景**：修改或审查 `crates/**`、`services/**`、Rust backend、database adapter、external HTTP client、S3 / Storage、Redis、OpenSearch、authorization、inbound/outbound/domain、service client 时必须读取。
-- **原则**：必须保持 Macro 的 hexagonal / ports-and-adapters 架构。`domain` 不直接依赖 SQLx、AWS SDK、Redis、HTTP client、reqwest、环境变量或传输 DTO。外部服务替换优先通过 outbound adapter 完成。
-
-### 2. `debug-service`
-- **路径**：`.agents/skills/debug-service/SKILL.md`
-- **适用场景**：Rust service 无法启动、运行时错误、Docker container crash、API 500、connection refused、service startup failure 时优先使用。
-
-### 3. `dump-schema`
-- **路径**：`.agents/skills/dump-schema/SKILL.md`
-- **适用场景**：分析 PostgreSQL、Email 表结构、Gmail message/thread 数据、attachments、contacts、users、workspace、migrations 时优先使用。
-
-### 4. `qc`
-- **路径**：`.agents/skills/qc/SKILL.md`
-- **适用场景**：任何较大代码修改完成后，执行对应 QC 思路（Code Review, Simplification, Consistency, Robustness, Scope），特别检查是否为了小功能侵入过多 upstream 代码。
-
-### 5. `dependabot`
-- **路径**：`.agents/skills/dependabot/skill.md`
-- **适用场景**：处理 Cargo, Bun, npm, pnpm 依赖升级与安全漏洞。
-
-### 6. `create-ai-tool`
-- **路径**：`.agents/skills/create-ai-tool/SKILL.md`
-- **适用场景**：增加或修改 Macro AI Tool。优先设计 read-only AI tools（如 AI 查询历史邮件、搜索历史沟通）。未经用户明确要求，禁止赋予 AI 自动发信、删信或修改数据的权限。
-
-### 7. `upgrade-model`
-- **路径**：`.agents/skills/upgrade-model/SKILL.md`
-- **适用场景**：用户明确要求修改 Macro AI Chat 模型时读取。
+3. **图谱维护准则**：
+   - **增量同步（Sync）**：编辑代码或重构 crate 后，主动执行 `codegraph sync /Volumes/开发/macro` 刷新索引。
+   - **全量重建（Re-index）**：合并上游主干或拓扑巨变时执行 `codegraph index /Volumes/开发/macro`。
+   - **引擎升级（Upgrade）**：执行 `codegraph upgrade` 更新至官方最新引擎。
 
 ---
 
-## 四、我们的私有化原则
+## 五、按需知识库索引 (Progressive Loading References)
 
-- **核心目标**：`Zero Macro Cloud Dependency`（零 Macro 官方云依赖）。
-- **边界定义**：不是 `Zero Internet`。允许必要的第三方 SaaS/API（如 Gmail 访问 Google）。
+涉及具体垂直领域的深度实现细节时，按需直接读取 `references/` 目录：
 
-### 默认允许的外部服务
-- **Google**：`accounts.google.com`、`oauth2.googleapis.com`、`gmail.googleapis.com`、`googleapis.com`
-- **GitHub**：仅当用户启用 GitHub integration 时
-- **用户自选指定**：自定义 LLM API、用户自建 OAuth Provider、CDN、外部 Webhook
-
-### 默认禁止依赖 Macro 官方云
-审查所有 `*.macro.com`，包括：
-`macro.com`、`dev.macro.com`、`mcp-server.macro.com`、`connection-gateway.macro.com`、`cloud-storage`、`auth-service`、`document-cognition`、`notification`、`contacts`、`email service`、`websocket service`。
-
-- **原则**：本地已有对应服务必须连接本地服务；本地暂时无对应服务，明确标记 `LOCALIZATION GAP`，禁止静默 fallback 到 Macro 官方云。
+- **Gmail 架构与 OAuth 同步**：读取 [`references/gmail-self-host.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/gmail-self-host.md)
+- **存储与附件生命周期策略**：读取 [`references/storage-attachments.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/storage-attachments.md)
+- **WebSocket 与实时通信网关**：读取 [`references/realtime.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/realtime.md)
+- **网络白名单与隐私审计规约**：读取 [`references/privacy-network.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/privacy-network.md)
+- **生产环境部署与运维架构**：读取 [`references/production-deployment.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/references/production-deployment.md)
+- **真实生产环境 SSH 连接凭据 (Local Only)**：读取 [`.local-production.md`](file:///Volumes/开发/macro/.agents/skills/macro-private-maintainer/.local-production.md)（已受 `.gitignore` 保护）
 
 ---
 
-## 五、禁止隐式官方云 fallback
+## 六、辅助目录管理策略
 
-代码中若出现「本地服务失败 → 自动请求 macro.com」，视为高风险 P1 缺陷！
-必须遵循：
-`本地请求失败 → 返回明确错误 → UI graceful degradation（优雅降级）`。
-
-特别审查：
-`safeFetch`、`fetchWithToken`、`platformFetch`、各 service clients、websocket 初始化、OAuth 回调。
+1. **`.sqlx/`（必须保留）**：离线查询元数据，修改 SQL 后必须在根目录执行 `nix develop --command just prepare_db` 更新。严禁手动编辑。
+2. **`.claude/`（保留）**：Claude 开发规范资产，不作为业务运行时删除。
+3. **`.cursor/`（可清理）**：Cursor Cloud 开发辅助环境配置，自托管与生产部署不依赖。
 
 ---
 
-## 六、Gmail 架构原则
+## 七、验收门禁与标准输出契约
 
-我们的 Email 模式为：
-```text
-Gmail / Google Workspace
-         │ (Gmail REST API)
-         ▼
-Local Macro Email Service
-         │
-         ▼
-Local PostgreSQL / Search / Storage
-         │
-         ▼
-     Macro Web
-```
-不部署 Postfix、Dovecot 或自建 SMTP server（除非用户未来明确要求）。
+### 1. 按波及范围的验收基线
+- **Rust 后端**：`cargo fmt --check`、`cargo check -p <crate>`、`cargo clippy -p <crate>`、`cargo test -p <crate>`
+- **前端 Web**：`bun format --check`、`bun check`、生产打包构建验证
+- **生产配置**：`docker compose config` 核验服务拓扑与网络边界
+- **网络边界**：核验 DevTools Network 与服务端日志中 `macro.com` 请求数为 0
 
-### Gmail OAuth
-必须使用用户自建凭证：`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`GOOGLE_REDIRECT_URI`。严禁依赖 Macro 官方 Google OAuth App。
-
-### Gmail 数据落地
-通过 migration、schema、`crates/email`、`email_service` 明确 thread metadata、message body、labels、attachments 等的落地逻辑，不凭猜测判断。
-
----
-
-## 七、附件策略
-
-不要默认强制所有 Gmail attachment 二进制永久保存本地。先确认 Macro 现有架构：
-1. Gmail attachment reference
-2. Macro local file ingestion
-3. Search indexing
-4. PDF text parsing
-5. Object storage
-
-- 若仅用于前端查看：优先保留 Gmail API lazy fetch。
-- 若 AI / 全文搜索 / PDF 解析依赖本地附件：保留 Macro 官方 ingestion pipeline。
-- 不得未经分析直接剔除 storage pipeline。
-
----
-
-## 八、WebSocket / Realtime
-
-审查 `connection_gateway`、`websocket_service`、`collaboration` 及其重试行为。
-- VPS self-host 下优先使用本地 WebSocket。
-- 严禁客户端向 `wss://*.macro.com` 无限重试。
-- 若某功能未启用 realtime，静默关闭对应连接，杜绝 Console error storm、无限 retry 与页面崩溃。
-
----
-
-## 九、Telemetry / Analytics
-
-所有遥测默认必须可配置关闭。重点核查：
-`packages/observability`、Sentry、PostHog、Datadog、OpenTelemetry exporter 等。
-- 允许：本地日志、本地 Prometheus、本地 OpenTelemetry collector。
-- 严禁向第三方外漏用户邮箱、服务器 IP、工作区数据、文档及邮件敏感元数据。
-
----
-
-## 十、代码修改准则
-
-修改优先级：
-1. 配置解决
-2. 环境变量（Environment variable）
-3. Adapter 替换
-4. 依赖注入（Dependency injection）
-5. Wrapper / Proxy 反代
-6. 小范围 patch
-7. 最后才考虑修改核心 domain
-
-**目标**：`Minimize Fork Divergence`（最小化分叉差异）。每次修改必须确保未来 `upstream merge` 轻松平滑。
-
----
-
-## 十一、禁止无意义删除功能
-
-不要因为当前不用某模块就大面积删除 upstream 代码（如 Docs、Canvas、Calls、Agents 等）。
-- 优先采用：`disable` / `feature flag` / `no-route` / `no-start`。
-- 避免直接删除源码，将合并冲突降至最低。
-
----
-
-## 十二、代码修改后的验收标准
-
-- **Rust**：`cargo fmt`、`cargo check`、`cargo clippy`、`cargo test -p <affected crate>`
-- **Frontend**：`bun format`、`bun check`，必要时 `bun gen-api` / `bun gen-tools`
-- **Docker**：`docker compose config`、容器健康检查、日志审查
-- **Database**：`migration validation`、`schema diff`
-
----
-
-## 十三、私有化网络验收标准
-
-在完成自托管任务后，必须给出严密的网络验证方式：
-1. **浏览器 DevTools Network**：过滤 `macro.com`，验证请求数为 0。
-2. **服务器侧验证**：DNS / firewall / proxy logs 验证 `*.macro.com = 0 runtime requests`。
-3. **白名单核验**：确保仅用户明确批准的 Google Gmail API / OAuth / 自选 LLM Provider 通过。
-
----
-
-## 十四、风险分级
-
-- **P0 / Critical**：用户邮件、密钥、Token 直接外发至 Macro 官方服务器。
-- **P1 / High**：本地请求失败隐式自动 fallback 到官方云服务。
-- **P2 / Medium**：无敏感数据的第三方 telemetry / 上报。
-- **P3 / Low**：构建阶段（build-time）访问官方文档或通用源。
-
----
-
-## 十五、标准响应输出格式
-
-### 代码审计类任务
-1. **结论**：一句话说明当前是否安全 / 可行。
-2. **发现**：Markdown 表格汇总（Severity, Module, File, Behavior, External Endpoint, Fix）。
-3. **改造方案**：最小侵入路径。
-4. **需要修改的文件**：精确路径列表。
-5. **验证**：具体测试命令或网络验证流程。
-
-### Bug 修复类任务
-1. **Root Cause**
-2. **Affected Files**
-3. **Fix**
-4. **Regression Risk**
-5. **Test**
-
-### 部署类任务
-1. **Required Containers**
-2. **Optional Containers**
-3. **Environment Variables**
-4. **Reverse Proxy**
-5. **Persistent Volumes**
-6. **Health Checks**
-7. **External Allowlist**
-
----
-
-## 十五.一、生产环境基础设施连接规范 (Production VPS SSH & Deploy Spec)
-
-在执行远程部署、运维排障、日志审查或容器重启时，使用以下标准生产环境凭据与配置：
-
-- **主机别名**: `tencent-us2h8g`
-- **服务器 IP**: `43.135.149.165`
-- **SSH 端口**: `18222`
-- **登录用户**: `root`
-- **密钥路径**: `~/.ssh/us2h8g.pem`
-- **SSH 配置模板**:
-  ```ssh-config
-  Host tencent-us2h8g
-      HostName 43.135.149.165
-      User root
-      Port 18222
-      IdentityFile ~/.ssh/us2h8g.pem
-      IdentitiesOnly yes
-      PubkeyAuthentication yes
-      PreferredAuthentications publickey
-      PasswordAuthentication no
-      ServerAliveInterval 30
-      ServerAliveCountMax 6
-      TCPKeepAlive yes
-  ```
-- **生产部署绝对路径**:
-  - Compose 与环境文件：`/app/macro/docker-compose.yml`、`/app/macro/.env`
-  - 数据持久化目录：`/app/macro/data/` (`postgres/`, `redis/`)
-  - 1Panel / OpenResty 反向代理站点配置：`/app/1panel/www/conf.d/macro.chnprints.com.conf`
-  - 1Panel / OpenResty 站点专属反代扩展目录：`/app/1panel/www/sites/macro.chnprints.com/proxy/root.conf`
-- **生产运维高频检查命令**:
-  - 容器状态：`ssh -p 18222 -i ~/.ssh/us2h8g.pem root@43.135.149.165 "docker ps -a"`
-  - 服务健康状态：`ssh -p 18222 -i ~/.ssh/us2h8g.pem root@43.135.149.165 "docker logs --tail 100 macro-web"`
-  - 生产镜像快速更新拉取：`ssh -p 18222 -i ~/.ssh/us2h8g.pem root@43.135.149.165 "cd /app/macro && docker compose pull macro-web && docker compose up -d --force-recreate macro-web"`
-
-
----
-
-## 十六、核心重点保护业务
-
-重点保护四大核心支柱：
-- **Email**（Gmail 客服、同步、写信）
-- **Contacts**（联系人）
-- **CRM**（客户沟通全流程、历史时间线）
-- **Search**（历史邮件与文档检索）
-
----
-
-## 十七、禁止事项清单
-
-- 严禁在未读取当前代码的情况下猜测实现
-- 严禁将 Macro Hosted 架构当成本地架构
-- 严禁为解决单一小问题大面积重构 upstream
-- 严禁引入新的 `macro.com` 外部依赖
-- 严禁硬编码 VPS IP、OAuth Secret、API Key，严禁提交 Secret 至 Git
-- 严禁未经测试随意修改数据库 migration
-- 严禁为简单需求增加冗余沉重微服务
-
----
-
-## 十八、Upstream 合并与版本维系
-
-- 任何功能开发需保持 upstream 兼容，单独放置 adapter 或独立配置。
-- 保持 `git fetch upstream` 与 `git merge upstream/main` 的低成本合并能力。
-- 若 upstream 官方已实现相同能力，优先采用官方标准方案，主动废除自身过时的临时 patch。
-
----
-
-## 十九、开发规范与辅助目录归类
-
-本仓库包含若干面向 AI / IDE / 构建系统的辅助目录。执行产品瘦身、私有化清理或删除目录前，必须先区分它们是否属于产品运行时。
-
-### `.claude/`：保留
-
-`.claude/` 是 Claude Code 使用的开发规范、命令和 repo-local skills，不是 Macro 产品运行时功能，也不是 VPS 部署必需项，但对长期二开维护有价值。
-
-默认策略：
-- 保留 `.claude/`，作为开发规范与 AI 辅助维护资料。
-- 不把 `.claude/` 视为可随 Phase 1 产品精简一起删除的业务模块。
-- 若未来不再使用 Claude Code，可先把仍有价值的规范迁移到 `.agents/skills/` 或 `AGENTS.md`，再考虑删除。
-- 修改 `.claude/skills/*` 时，保持与 `.agents/skills/*` 的职责一致，避免两套规范互相冲突。
-
-### `.cursor/`：可清理候选
-
-`.cursor/` 主要是 Cursor / Cursor Cloud 专用开发环境配置和 MCP 调试配置，不属于 Macro 产品功能。
-
-默认策略：
-- 本地二开与 VPS 私有化部署不依赖 `.cursor/`。
-- 如果不再使用 Cursor Cloud Agent，可以纳入清理范围。
-- 删除前检查是否仍有人依赖 `.cursor/environment.json`、`.cursor/stack.sh`、`.cursor/infra.sh`、`.cursor/rebuild.sh` 或 `.cursor/mcp.json` 做远程开发。
-
-### `.sqlx/`：必须保留
-
-`.sqlx/` 是 SQLx 离线查询元数据缓存，Rust build、clippy、CI 中的 `SQLX_OFFLINE=true` 会依赖它。
-
-默认策略：
-- 禁止删除 `.sqlx/`。
-- 禁止手动编辑 `.sqlx/query-*.json`。
-- 修改 Rust SQL 查询或 migration 后，从仓库根目录运行：
-  ```bash
-  nix develop --command just prepare_db
-  ```
+### 2. 标准响应结构
+每次任务完成时必须遵循：
+1. 🔹方案概述（简短说明修改策略与架构归属）
+2. 🔹已修改的文件路径（绝对路径清单，不含代码块）
+3. 🔹测试方法（具体验证命令与操作步骤）
+4. 🔹可选优化（仅在具有高实际价值时提供，严禁低收益过度优化）

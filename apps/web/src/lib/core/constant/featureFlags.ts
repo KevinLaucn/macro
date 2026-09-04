@@ -199,7 +199,7 @@ export const ENABLE_DOCX_TO_PDF = defineFlag({
 
 export const ENABLE_MARKDOWN_LIVE_COLLABORATION = defineFlag({
   env: 'ENABLE_MARKDOWN_LIVE_COLLABORATION',
-  default: true,
+  default: false,
 }).enabled;
 
 export const ENABLE_EMAIL = defineFlag({
@@ -682,3 +682,11 @@ export const enableNotificationSettings = defineFlag({
   env: 'ENABLE_NOTIFICATION_SETTINGS',
   default: onInDev,
 });
+
+// Email attachments: direct download/stream from email_service via Gmail API
+// bypassing DSS document creation and local S3 upload. Defaults to true for lightweight email profile.
+export const enableDirectAttachmentDownload = defineFlag({
+  env: 'ENABLE_DIRECT_ATTACHMENT_DOWNLOAD',
+  default: true,
+});
+

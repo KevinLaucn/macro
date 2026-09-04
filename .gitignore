@@ -46,3 +46,8 @@ infra/local/generated/
 /macro.toml
 /macro.credentials.json
 /macro.webhook-state.json
+
+# Local-only production infrastructure credentials and specs
+**/.local*
+*.local.md
+

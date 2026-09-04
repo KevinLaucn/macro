@@ -23,9 +23,7 @@ const TRANSPARENT_PIXEL_GIF: &[u8] = &[
     0x00, 0x00, 0x00, // color 0: black
     0xFF, 0xFF, 0xFF, // color 1: white
     0x21, 0xF9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, // transparent index 0
-    0x2C, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
-    0x02, 0x02, 0x44, 0x01, 0x00,
-    0x3B,
+    0x2C, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3B,
 ];
 
 pub fn router() -> Router<ApiContext> {
@@ -35,10 +33,7 @@ pub fn router() -> Router<ApiContext> {
 // Never attach the token to tracing spans: it is a per-message secret and is
 // also extremely high-cardinality telemetry.
 #[tracing::instrument(skip_all)]
-async fn open_pixel_handler(
-    State(ctx): State<ApiContext>,
-    Path(token): Path<String>,
-) -> Response {
+async fn open_pixel_handler(State(ctx): State<ApiContext>, Path(token): Path<String>) -> Response {
     if let Ok(token) = Uuid::parse_str(token.trim()) {
         match email_db_client::messages::open_tracking::record_message_open(&ctx.db, token).await {
             Ok(Some(open)) => {

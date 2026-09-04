@@ -1,3 +1,4 @@
+#[cfg(feature = "call")]
 use call::domain::models::{CallRecord, CallRecordParticipant};
 use chrono::{DateTime, Utc};
 use item_filters::CallStatus;
@@ -57,6 +58,7 @@ pub struct SoupCallRecord<T = ()> {
     pub extra: T,
 }
 
+#[cfg(feature = "call")]
 fn participant_derived_status(participants: &[CallRecordParticipant], user_id: &str) -> CallStatus {
     if participants.iter().any(|p| p.user_id == user_id) {
         return CallStatus::Attended;
@@ -65,6 +67,7 @@ fn participant_derived_status(participants: &[CallRecordParticipant], user_id: &
     CallStatus::Unattended
 }
 
+#[cfg(feature = "call")]
 impl SoupCallRecord<()> {
     /// Build a `SoupCallRecord` from a domain `CallRecord` in the context of a
     /// specific viewer.

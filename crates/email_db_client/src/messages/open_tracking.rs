@@ -71,10 +71,12 @@ pub async fn record_message_open(
     .fetch_optional(pool)
     .await?;
 
-    Ok(row.map(|(message_id, link_id, thread_db_id, open_count)| RecordedOpen {
-        message_id,
-        link_id,
-        thread_db_id,
-        open_count,
-    }))
+    Ok(row.map(
+        |(message_id, link_id, thread_db_id, open_count)| RecordedOpen {
+            message_id,
+            link_id,
+            thread_db_id,
+            open_count,
+        },
+    ))
 }

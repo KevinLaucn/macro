@@ -13,6 +13,7 @@ import { ImageGalleryPreview } from '@core/component/ImageGalleryPreview';
 import { toast } from '@core/component/Toast/Toast';
 import { UserIcon, type UserIconProps } from '@core/component/UserIcon';
 import { VideoPreview } from '@core/component/VideoPreview';
+import { enableDirectAttachmentDownload } from '@core/constant/featureFlags';
 import { fileTypeToBlockName } from '@core/constant/allBlocks';
 import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import { Telemetry } from '@macro-inc/observability';
@@ -164,6 +165,19 @@ export function MessageContainer(props: MessageContainerProps) {
   ) => {
     const dbId = attachment.db_id;
     if (!dbId) return;
+
+    if (enableDirectAttachmentDownload.enabled) {
+      try {
+        await emailClient.downloadAttachment(dbId, attachment.filename ?? undefined);
+      } catch (e) {
+        toast.failure('Failed to download attachment. Please try again.');
+        Telemetry.error(
+          new Error('Failed to download attachment via direct stream: ' + e)
+        );
+      }
+      return;
+    }
+
     const response = await emailClient.getOrCreateAttachmentDocumentId({
       id: dbId,
     });

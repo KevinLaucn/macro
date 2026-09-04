@@ -17,9 +17,9 @@ use calendar_events::{
     outbound::pg::PgCalendarRepository,
 };
 use call::{
-    domain::service::CallServiceImpl,
+    domain::{ports::NoOpVoiceRepository, service::CallServiceImpl},
     inbound::axum_router::{CallRouterState, InternalCallRouterState, WebhookRouterState},
-    outbound::{livekit_rtc_client::LivekitRtcClient, pg_call_repo::PgCallRepo},
+    outbound::{DisabledCallRtcClient, pg_call_repo::PgCallRepo},
 };
 use channels::{
     domain::{
@@ -396,14 +396,14 @@ pub(crate) type DssVoipPushSender = Option<
 /// Type alias for the call service.
 pub(crate) type DssCallService = CallServiceImpl<
     PgCallRepo,
-    LivekitRtcClient,
+    DisabledCallRtcClient,
     CallConnectionService,
     EntityAccessService,
     NotificationIngressType,
     Option<call::outbound::s3_recording_storage::S3RecordingStorage>,
     call::outbound::ai_call_summarizer::AiCallSummarizer,
     DssVoipPushSender,
-    call::outbound::pg_voice_repo::PgVoiceRepo,
+    NoOpVoiceRepository,
     DssEventBroker,
 >;
 

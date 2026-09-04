@@ -75,9 +75,7 @@ fn strip_keeps_lookalike_third_party_pixels() {
 #[test]
 fn inject_after_strip_leaves_one_tracking_pixel() {
     let old_url = open_tracking_pixel_url(BASE_URL, "11111111-2222-3333-4444-555555555555");
-    let html = format!(
-        r#"<html><body><p>reply</p><img src="{old_url}" width="1"></body></html>"#
-    );
+    let html = format!(r#"<html><body><p>reply</p><img src="{old_url}" width="1"></body></html>"#);
 
     let new_url = open_tracking_pixel_url(BASE_URL, TOKEN);
     let cleaned = strip_open_tracking_pixels(&html, BASE_URL);

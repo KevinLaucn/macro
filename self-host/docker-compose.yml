@@ -367,9 +367,6 @@ services:
   document_storage_service:
     <<: *service
     command: ["/app/out/document_storage_service"]
-    environment:
-      OVERRIDE_SYNC_SERVICE_URL: http://sync-service:8787
-      OVERRIDE_LEXICAL_SERVICE_URL: http://lexical-service:8096
     depends_on:
       postgres:
         condition: service_healthy
@@ -378,10 +375,6 @@ services:
       connection_gateway:
         condition: service_started
       authentication-service:
-        condition: service_started
-      sync_service:
-        condition: service_started
-      lexical_service:
         condition: service_started
     networks:
       databases:
@@ -400,10 +393,6 @@ services:
         condition: service_healthy
       localstack:
         condition: service_healthy
-      sync_service:
-        condition: service_started
-      lexical_service:
-        condition: service_started
     networks:
       - databases
       - services
@@ -495,8 +484,6 @@ services:
   search_processing_service:
     <<: *service
     command: ["/app/out/search_processing_service"]
-    environment:
-      OVERRIDE_LEXICAL_SERVICE_URL: http://lexical-service:8096
     depends_on:
       postgres:
         condition: service_healthy
@@ -504,8 +491,6 @@ services:
         condition: service_healthy
       localstack:
         condition: service_healthy
-      lexical_service:
-        condition: service_started
     networks:
       databases:
       services:
@@ -565,7 +550,6 @@ services:
     user: root
     environment:
       OVERRIDE_CONNECTION_GATEWAY_URL: http://connection-gateway:8080
-      OVERRIDE_LEXICAL_SERVICE_URL: http://lexical-service:8096
       LOCAL_CONTAINER_NETWORK: macro-selfhost_services
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -575,8 +559,6 @@ services:
       kafka:
         condition: service_started
       connection_gateway:
-        condition: service_started
-      lexical_service:
         condition: service_started
     networks:
       databases:
@@ -588,6 +570,7 @@ services:
   # Workers (Cloudflare Workers running on workerd, via wrangler)
   # ==========================================================================
   sync_service:
+    profiles: ["docs-collab", "full"]
     <<: *env
     image: ${MACRO_IMAGE_SYNC:-ghcr.io/kevinlaucn/macro-sync-service}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: unless-stopped
@@ -610,6 +593,7 @@ services:
       test: ["CMD", "node", "-e", "fetch('http://localhost:8787/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
   lexical_service:
+    profiles: ["docs-collab", "full"]
     <<: *env
     image: ${MACRO_IMAGE_LEXICAL:-ghcr.io/kevinlaucn/macro-lexical-service}:${MACRO_VERSION:?set MACRO_VERSION in .env}
     restart: unless-stopped

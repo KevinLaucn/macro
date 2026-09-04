@@ -3,6 +3,7 @@ import {
   type FetchWithTokenErrorCode,
   fetchWithToken,
 } from '@core/util/fetchWithToken';
+import { getMacroApiToken } from '@service-auth/fetch';
 import type { ObjectLike, ResultError } from '@core/util/result';
 import type { SafeFetchInit } from '@core/util/safeFetch';
 import type { Result } from 'neverthrow';
@@ -436,6 +437,33 @@ export const emailClient = {
         method: 'GET',
       })
     ).map((result) => result);
+  },
+  getAttachmentDownloadUrl(id: string): string {
+    return `${emailHost}/email/attachments/${id}/download`;
+  },
+  async downloadAttachment(id: string, filename?: string) {
+    const downloadUrl = this.getAttachmentDownloadUrl(id);
+    const token = await getMacroApiToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    const res = await fetch(downloadUrl, {
+      headers,
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to download attachment: HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = filename || 'attachment';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
   },
   async getOrCreateAttachmentDocumentId(args: { id: string }) {
     const { id } = args;
