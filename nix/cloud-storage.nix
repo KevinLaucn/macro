@@ -532,13 +532,22 @@
         }
       ];
 
+      # Same --no-default-features stripping as selfHostEmailBinaryCargoExtraArgs:
+      # cargo rejects the flag when it appears more than once, and the aggregate
+      # deps-only command concatenates featureArgs from every definition.
+      # Currently only DSS uses the flag here, but a second package would break.
       deployBinaryCargoExtraArgs =
         "--locked "
         + pkgs.lib.concatMapStringsSep " " (
           def:
+          let
+            rawFeatureArgs = def.featureArgs or "";
+            featuresOnly = builtins.replaceStrings [ "--no-default-features" ] [ "" ] rawFeatureArgs;
+            trimmed = pkgs.lib.strings.trim featuresOnly;
+          in
           "--package ${def.packageName} "
           + pkgs.lib.concatMapStringsSep " " (binary: "--bin ${binary}") def.binaries
-          + pkgs.lib.optionalString ((def.featureArgs or "") != "") " ${def.featureArgs or ""}"
+          + pkgs.lib.optionalString (trimmed != "") " ${trimmed}"
         ) deployServiceBinaryDefinitions;
 
       deployCargoArtifacts = craneLib.buildDepsOnly (
