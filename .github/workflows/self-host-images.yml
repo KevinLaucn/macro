@@ -73,6 +73,7 @@ jobs:
           nix-cache-public-key: ${{ vars.NIX_CACHE_PUBLIC_KEY }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          nix-cache-signing-key: ${{ secrets.NIX_CACHE_SIGNING_KEY }}
 
       - name: Build diagnostics before build
         run: |
@@ -86,6 +87,11 @@ jobs:
           echo "BUILD_START_TIME=$(date -u +%s)" >> "$GITHUB_ENV"
 
       - name: Build service binaries
+        env:
+          NIX_CACHE_URL: ${{ vars.NIX_CACHE_URL }}
+          NIX_CACHE_SIGNING_KEY: ${{ secrets.NIX_CACHE_SIGNING_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           set -euo pipefail
           mkdir -p self-host/build/bin
@@ -103,13 +109,176 @@ jobs:
 
           echo "Building focused email production aggregate: .#self-host-email-binaries"
 
+          # 1. Print S3 cache status
+          if [ -n "${NIX_CACHE_URL:-}" ]; then
+            SAN_URL=$(echo "$NIX_CACHE_URL" | sed -E 's/secret-key=[^&]+(&|$)/[REDACTED]\1/g')
+            echo "[CACHE] S3 substituter: enabled"
+            echo "[CACHE] S3 URL: $SAN_URL"
+          else
+            echo "[CACHE] S3 substituter: disabled"
+          fi
+
+          # 2. Dry-run to generate pre-build plan
+          echo "Generating build plan via dry-run..."
+          nix build --dry-run ".#self-host-email-binaries" 2> /tmp/nix-dry-run.log || true
+
+          cat << 'EOF' > /tmp/print_plan.py
+          import re, sys
+
+          KEY_PATTERNS = [
+              'self-host-email-binaries',
+              'self-host-email-deps',
+              'cargo-vendor-dir',
+              'crane-utils',
+              'rustc',
+              'cargo',
+              'clippy',
+          ]
+
+          def get_name(path):
+              fn = path.split('/')[-1]
+              if '-' in fn:
+                  parts = fn.split('-', 1)
+                  if len(parts[0]) == 32:
+                      fn = parts[1]
+              return fn.replace('.drv', '')
+
+          def is_key(name):
+              return any(k in name for k in KEY_PATTERNS)
+
+          fetch_list = []
+          build_list = []
+          mode = None
+
+          try:
+              with open('/tmp/nix-dry-run.log', 'r') as f:
+                  for line in f:
+                      line = line.strip()
+                      if 'will be fetched' in line:
+                          mode = 'fetch'
+                          continue
+                      elif 'will be built' in line:
+                          mode = 'build'
+                          continue
+                      elif line.startswith('evaluating') or line.startswith('warning:'):
+                          continue
+
+                      if mode == 'fetch' and line.startswith('/nix/store/'):
+                          fetch_list.append(line)
+                      elif mode == 'build' and line.startswith('/nix/store/'):
+                          build_list.append(line)
+          except Exception as e:
+              print(f"Failed to parse dry-run: {e}")
+              sys.exit(0)
+
+          print("\n========== BUILD PLAN ==========")
+          print(f"From cache (substituter): {len(fetch_list)} paths")
+          print(f"To build (local):        {len(build_list)} derivations")
+          print("Key derivations:")
+
+          seen_keys = set()
+          for p in fetch_list:
+              n = get_name(p)
+              if is_key(n) and n not in seen_keys:
+                  seen_keys.add(n)
+                  print(f"  [CACHE] {n}")
+
+          for p in build_list:
+              n = get_name(p)
+              if is_key(n) and n not in seen_keys:
+                  seen_keys.add(n)
+                  print(f"  [BUILD] {n}")
+
+          if not seen_keys:
+              print("  (No key derivations identified in dry-run)")
+          print("================================\n")
+          EOF
+          python3 /tmp/print_plan.py
+
+          # 3. Create live stream filter script
+          cat << 'EOF' > /tmp/filter_nix_logs.py
+          import sys, re, time
+
+          SKIP_PATTERNS = ('cargo-src-', 'cargo-package-')
+
+          def fmt_duration(sec):
+              sec = int(round(sec))
+              m, s = divmod(sec, 60)
+              h, m = divmod(m, 60)
+              if h > 0:
+                  return f"{h}h {m}m {s}s"
+              elif m > 0:
+                  return f"{m}m {s}s"
+              else:
+                  return f"{s}s"
+
+          current_drv = None
+          current_drv_start = None
+
+          for raw_line in sys.stdin:
+              line = raw_line.rstrip('\r\n')
+              now = time.time()
+
+              # Tagging S3 / Public substituter / Build
+              m_copy = re.search(r"copying path '([^']+)' from '([^']+)'", line)
+              if m_copy:
+                  if current_drv:
+                      dur = now - current_drv_start
+                      print(f"  └─ Finished {current_drv} in {fmt_duration(dur)}")
+                      current_drv = None
+                  path, src = m_copy.group(1), m_copy.group(2)
+                  name = path.split('/')[-1]
+                  if '-' in name and len(name.split('-', 1)[0]) == 32:
+                      name = name.split('-', 1)[1]
+                  if src.startswith('s3://'):
+                      tag = "[CACHE:S3]"
+                  else:
+                      tag = "[CACHE:PUBLIC]"
+                  print(f"{tag} {name}")
+                  sys.stdout.flush()
+                  continue
+
+              m_build = re.search(r"building '([^']+)'", line)
+              if m_build:
+                  if current_drv:
+                      dur = now - current_drv_start
+                      print(f"  └─ Finished {current_drv} in {fmt_duration(dur)}")
+                  drv = m_build.group(1)
+                  name = drv.split('/')[-1]
+                  if '-' in name and len(name.split('-', 1)[0]) == 32:
+                      name = name.split('-', 1)[1]
+                  name = name.replace('.drv', '')
+                  # Filter noisy unpack drvs
+                  if any(sp in name for sp in SKIP_PATTERNS):
+                      current_drv = None
+                      continue
+                  current_drv = name
+                  current_drv_start = now
+                  print(f"[BUILD] {name}")
+                  sys.stdout.flush()
+                  continue
+
+              # Filter unpacking / unpacker lines for individual crates
+              if any(sp in line for sp in SKIP_PATTERNS):
+                  continue
+              if 'unpacking source archive' in line:
+                  continue
+
+              # Print other logs (cargo compiler output, status, warnings)
+              print(line)
+              sys.stdout.flush()
+
+          if current_drv:
+              dur = time.time() - current_drv_start
+              print(f"  └─ Finished {current_drv} in {fmt_duration(dur)}")
+          EOF
+
           # Start background monitor for build observability (every 45s)
-          # Cleaned up reliably via trap on EXIT / INT / TERM and after build completion
+          # Cleaned up immediately without blocking exit
           MONITOR_PID=""
           cleanup_monitor() {
             if [ -n "$MONITOR_PID" ]; then
-              kill -TERM "$MONITOR_PID" 2>/dev/null || true
-              wait "$MONITOR_PID" 2>/dev/null || true
+              kill -9 "$MONITOR_PID" 2>/dev/null || true
               MONITOR_PID=""
             fi
           }
@@ -135,18 +304,378 @@ jobs:
           ) &
           MONITOR_PID=$!
 
-          BUILD_EXIT_CODE=0
-          if nix build --print-build-logs $NIX_JOBS_FLAG ".#self-host-email-binaries" --out-link result-bins; then
-            BUILD_EXIT_CODE=0
-          else
-            BUILD_EXIT_CODE=$?
+          # Start streaming cache uploader in background
+          UPLOADER_PID=""
+          if [ -n "${NIX_CACHE_URL:-}" ] && [ -n "${NIX_CACHE_SIGNING_KEY:-}" ]; then
+            echo "Starting background streaming Nix cache uploader..."
+            # Test if nix copy supports --no-recursive
+            NO_RECURSIVE_FLAG=""
+            if nix copy --help 2>&1 | grep -q -- '--no-recursive'; then
+              NO_RECURSIVE_FLAG="--no-recursive"
+              echo "[CACHE] nix copy --no-recursive is supported and enabled."
+            else
+              echo "[CACHE] nix copy --no-recursive not supported, falling back to standard copy."
+            fi
+
+            cat << 'EOF_UPLOADER' > /tmp/run_cache_uploader.sh
+          #!/bin/bash
+          set -u
+
+          BASE_DIR="/var/lib/nix-cache-upload"
+          SPOOL_DIR="$BASE_DIR/spool"
+          INFLIGHT_DIR="$BASE_DIR/inflight"
+          FAILED_DIR="$BASE_DIR/failed"
+          STOP_FILE="$BASE_DIR/stop"
+          DONE_FILE="$BASE_DIR/done"
+          STATS_FILE="$BASE_DIR/stats.txt"
+
+          mkdir -p "$SPOOL_DIR" "$INFLIGHT_DIR" "$FAILED_DIR"
+
+          BATCH_SIZE=48
+          FLUSH_INTERVAL=5
+          MAX_REQUEUES=3
+
+          TOTAL_UPLOADED=0
+          TOTAL_FAILED=0
+          BATCH_COUNT=0
+
+          # On startup, rescue any uncommitted inflight items back to spool
+          if [ -d "$INFLIGHT_DIR" ]; then
+            find "$INFLIGHT_DIR" -type f -name "*.path" -exec mv -f {} "$SPOOL_DIR/" \; 2>/dev/null || true
+            find "$INFLIGHT_DIR" -mindepth 1 -type d -empty -delete 2>/dev/null || true
           fi
+
+          # Prepare destination URI
+          if [ -n "${NIX_COPY_KEY:-}" ]; then
+            key_arg="secret-key=${NIX_COPY_KEY}"
+            sep='?'; [[ "$NIX_CACHE_URL" == *\?* ]] && sep='&'
+            dest="${NIX_CACHE_URL}${sep}${key_arg}"
+          else
+            dest="${NIX_CACHE_URL:-}"
+          fi
+
+          last_summary=$(date +%s)
+
+          while true; do
+            is_stopping=false
+            if [ -f "$STOP_FILE" ]; then
+              is_stopping=true
+            fi
+
+            # Atomic batch claim:
+            # 1. Create a unique batch directory in $INFLIGHT_DIR
+            batch_id="$(date +%s%N 2>/dev/null || date +%s)_$$"
+            batch_dir="$INFLIGHT_DIR/batch_$batch_id"
+            mkdir -p "$batch_dir"
+
+            # 2. Claim up to BATCH_SIZE files from SPOOL_DIR via atomic mv
+            claimed_count=0
+            for f in "$SPOOL_DIR"/*.path; do
+              [ -f "$f" ] || break
+              if mv "$f" "$batch_dir/" 2>/dev/null; then
+                claimed_count=$(( claimed_count + 1 ))
+                [ "$claimed_count" -ge "$BATCH_SIZE" ] && break
+              fi
+            done
+
+            if [ "$claimed_count" -gt 0 ]; then
+              BATCH_COUNT=$(( BATCH_COUNT + 1 ))
+
+              # Read and sanitize store paths from claimed batch
+              batch_paths=()
+              for cf in "$batch_dir"/*.path; do
+                [ -f "$cf" ] || continue
+                p=$(cat "$cf" 2>/dev/null || true)
+                if [ -n "$p" ] && [[ "$p" == /nix/store/* ]]; then
+                  batch_paths+=("$p")
+                fi
+              done
+
+              # Deduplicate store paths
+              unique_paths=()
+              if [ "${#batch_paths[@]}" -gt 0 ]; then
+                while IFS= read -r up; do
+                  [ -n "$up" ] && unique_paths+=("$up")
+                done < <(printf '%s\n' "${batch_paths[@]}" | sort -u)
+              fi
+
+              unique_count=${#unique_paths[@]}
+
+              if [ "$unique_count" -gt 0 ]; then
+                # Prepare destination URI with secret-key if provided
+                if [ -n "${NIX_COPY_KEY:-}" ]; then
+                  key_arg="secret-key=${NIX_COPY_KEY}"
+                  sep='?'; [[ "$NIX_CACHE_URL" == *\?* ]] && sep='&'
+                  dest="${NIX_CACHE_URL}${sep}${key_arg}"
+                else
+                  dest="$NIX_CACHE_URL"
+                fi
+
+                # Attempt upload with retry and exponential backoff
+                success=false
+                delay=2
+                for attempt in 1 2 3; do
+                  if nix copy $NO_RECURSIVE_FLAG --to "$dest" "${unique_paths[@]}" 2>/dev/null; then
+                    success=true
+                    break
+                  else
+                    sleep "$delay"
+                    delay=$(( delay * 2 ))
+                  fi
+                done
+
+                if [ "$success" = true ]; then
+                  # ACK: Successfully uploaded! Delete claimed files and batch directory
+                  rm -rf "$batch_dir"
+                  TOTAL_UPLOADED=$(( TOTAL_UPLOADED + unique_count ))
+                else
+                  # REQUEUE: Handle failures by inspecting retry counts in filename
+                  echo "[STREAMING CACHE WARNING] Failed to upload batch of $unique_count paths; evaluating requeue..." >&2
+                  for cf in "$batch_dir"/*.path; do
+                    [ -f "$cf" ] || continue
+                    base=$(basename "$cf" .path)
+                    retries=0
+                    if [[ "$base" =~ \.retry([0-9]+)$ ]]; then
+                      retries="${BASH_REMATCH[1]}"
+                      base="${base%.retry*}"
+                    fi
+                    retries=$(( retries + 1 ))
+
+                    if [ "$retries" -ge "$MAX_REQUEUES" ]; then
+                      mv "$cf" "$FAILED_DIR/${base}.failed" 2>/dev/null || rm -f "$cf"
+                      TOTAL_FAILED=$(( TOTAL_FAILED + 1 ))
+                    else
+                      mv "$cf" "$SPOOL_DIR/${base}.retry${retries}.path" 2>/dev/null || rm -f "$cf"
+                    fi
+                  done
+                  rmdir "$batch_dir" 2>/dev/null || true
+                  sleep 5
+                fi
+              else
+                # Empty/invalid paths in claimed batch, cleanup
+                rm -rf "$batch_dir"
+              fi
+            else
+              # No files claimed, cleanup empty batch_dir
+              rmdir "$batch_dir" 2>/dev/null || true
+            fi
+
+            # Periodic progress logging
+            now=$(date +%s)
+            if (( now - last_summary >= 45 )); then
+              spool_pending=$(find "$SPOOL_DIR" -maxdepth 1 -name "*.path" 2>/dev/null | wc -l || echo 0)
+              echo "--- Streaming Nix cache: uploaded=${TOTAL_UPLOADED} failed=${TOTAL_FAILED} pending=${spool_pending} batches=${BATCH_COUNT} (PID $$) ---"
+              last_summary=$now
+            fi
+
+            # Stop condition: STOP_FILE exists, spool is empty, and inflight is clean
+            if $is_stopping; then
+              spool_left=$(find "$SPOOL_DIR" -maxdepth 1 -name "*.path" 2>/dev/null | wc -l || echo 0)
+              inflight_left=$(find "$INFLIGHT_DIR" -type f -name "*.path" 2>/dev/null | wc -l || echo 0)
+              if [ "$spool_left" -eq 0 ] && [ "$inflight_left" -eq 0 ] && [ "$claimed_count" -eq 0 ]; then
+                # Perform one final upload sweep on any quarantined failed paths before terminating
+                failed_files=()
+                for ff in "$FAILED_DIR"/*.failed; do
+                  [ -f "$ff" ] && failed_files+=("$ff")
+                done
+
+                final_unrecovered=()
+                if [ "${#failed_files[@]}" -gt 0 ]; then
+                  echo "--- Finalizing Nix streaming cache: attempting one final upload sweep on ${#failed_files[@]} failed paths ---"
+                  failed_paths=()
+                  for ff in "${failed_files[@]}"; do
+                    p=$(cat "$ff" 2>/dev/null || true)
+                    [ -n "$p" ] && [[ "$p" == /nix/store/* ]] && failed_paths+=("$p")
+                  done
+
+                  unique_failed=()
+                  while IFS= read -r p; do
+                    [ -n "$p" ] && unique_failed+=("$p")
+                  done < <(printf '%s\n' "${failed_paths[@]}" | sort -u)
+
+                  if [ "${#unique_failed[@]}" -gt 0 ]; then
+                    if nix copy $NO_RECURSIVE_FLAG --to "$dest" "${unique_failed[@]}" 2>/dev/null; then
+                      echo "--- Recovered all ${#unique_failed[@]} previously failed paths in final sweep! ---"
+                      TOTAL_UPLOADED=$(( TOTAL_UPLOADED + ${#unique_failed[@]} ))
+                      rm -f "$FAILED_DIR"/*.failed
+                    else
+                      printf '%s\n' "${unique_failed[@]}" > "$BASE_DIR/unrecovered_failures.txt"
+                      final_unrecovered=("${unique_failed[@]}")
+                    fi
+                  fi
+                fi
+
+                TOTAL_FAILED=${#final_unrecovered[@]}
+                echo "--- Streaming Nix cache uploader completed: total_uploaded=${TOTAL_UPLOADED} total_failed=${TOTAL_FAILED} batches=${BATCH_COUNT} ---"
+                printf 'TOTAL_UPLOADED=%s\nTOTAL_FAILED=%s\nBATCH_COUNT=%s\n' "$TOTAL_UPLOADED" "$TOTAL_FAILED" "$BATCH_COUNT" > "$STATS_FILE"
+                touch "$DONE_FILE"
+                break
+              fi
+            fi
+
+            if [ "$claimed_count" -eq 0 ]; then
+              sleep "$FLUSH_INTERVAL"
+            fi
+          done
+          EOF_UPLOADER
+            chmod +x /tmp/run_cache_uploader.sh
+            key="$RUNNER_TEMP/nix-cache-signing-key"
+            printf '%s\n' "$NIX_CACHE_SIGNING_KEY" > "$key"
+            chmod 600 "$key"
+
+            export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-}"
+            export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-}"
+            export NIX_CACHE_URL="${NIX_CACHE_URL}"
+            export NIX_COPY_KEY="$key"
+            export NO_RECURSIVE_FLAG="${NO_RECURSIVE_FLAG}"
+            /tmp/run_cache_uploader.sh &
+            UPLOADER_PID=$!
+            echo "Streaming uploader running in background with PID $UPLOADER_PID"
+          fi
+
+          BUILD_NIX_START=$(date -u +%s)
+          set +e
+          nix build --print-build-logs $NIX_JOBS_FLAG ".#self-host-email-binaries" --out-link result-bins 2>&1 \
+            | tee /tmp/macro-nix-build.log \
+            | python3 /tmp/filter_nix_logs.py
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+          BUILD_NIX_END=$(date -u +%s)
+          BUILD_DURATION_SEC=$(( BUILD_NIX_END - BUILD_NIX_START ))
 
           cleanup_monitor
           trap - EXIT INT TERM
 
+          # 4. Generate and print build summary
+          cat << 'EOF' > /tmp/summarize_nix_build.py
+          import re, sys, os
+
+          raw_duration = sys.argv[1] if len(sys.argv) > 1 else "0"
+          try:
+              total_sec = int(raw_duration)
+          except ValueError:
+              total_sec = 0
+
+          def fmt_duration(sec):
+              if sec is None:
+                  return "-"
+              sec = int(round(sec))
+              m, s = divmod(sec, 60)
+              h, m = divmod(m, 60)
+              if h > 0:
+                  return f"{h}h {m}m {s}s"
+              elif m > 0:
+                  return f"{m}m {s}s"
+              else:
+                  return f"{s}s"
+
+          KEY_PATTERNS = [
+              'self-host-email-binaries',
+              'self-host-email-deps',
+              'cargo-vendor-dir',
+              'crane-utils',
+              'rustc',
+              'cargo',
+              'clippy',
+          ]
+
+          def get_name(path):
+              fn = path.split('/')[-1]
+              if '-' in fn:
+                  parts = fn.split('-', 1)
+                  if len(parts[0]) == 32:
+                      fn = parts[1]
+              return fn.replace('.drv', '')
+
+          def is_key(name):
+              return any(k in name for k in KEY_PATTERNS)
+
+          s3_copies = set()
+          pub_copies = set()
+          builds = set()
+          durations = {}
+
+          if os.path.exists('/tmp/macro-nix-build.log'):
+              with open('/tmp/macro-nix-build.log', 'r', errors='replace') as f:
+                  for line in f:
+                      m_copy = re.search(r"copying path '([^']+)' from '([^']+)'", line)
+                      if m_copy:
+                          p, src = m_copy.group(1), m_copy.group(2)
+                          name = get_name(p)
+                          if src.startswith('s3://'):
+                              s3_copies.add(name)
+                          else:
+                              pub_copies.add(name)
+                          continue
+                      m_build = re.search(r"building '([^']+)'", line)
+                      if m_build:
+                          drv = m_build.group(1)
+                          name = get_name(drv)
+                          builds.add(name)
+                          continue
+                      m_finish = re.search(r"Finished ([\w\-]+) in ([\dh\sm]+)", line)
+                      if m_finish:
+                          d_name, d_str = m_finish.group(1), m_finish.group(2).strip()
+                          durations[d_name] = d_str
+
+          # Parse dry run to find local items
+          dry_builds = set()
+          dry_fetches = set()
+          if os.path.exists('/tmp/nix-dry-run.log'):
+              mode = None
+              with open('/tmp/nix-dry-run.log', 'r', errors='replace') as f:
+                  for line in f:
+                      line = line.strip()
+                      if 'will be fetched' in line:
+                          mode = 'fetch'
+                      elif 'will be built' in line:
+                          mode = 'build'
+                      elif mode == 'fetch' and line.startswith('/nix/store/'):
+                          dry_fetches.add(get_name(line))
+                      elif mode == 'build' and line.startswith('/nix/store/'):
+                          dry_builds.add(get_name(line))
+
+          print("\n========== NIX BUILD SUMMARY ==========")
+          print(f"Total S3 cache hits:       {len(s3_copies)}")
+          print(f"Total public cache hits:   {len(pub_copies)}")
+          print(f"Total derivations built:   {len(builds)}")
+          print(f"Total build step duration: {fmt_duration(total_sec)} ({total_sec}s)")
+          print("\nKey derivations breakdown:")
+          print(f"  {'Status':<16} | {'Duration':<10} | Derivation")
+          print(f"  {'-'*16}-+-{'-'*10}-+-{'-'*40}")
+
+          key_names = set()
+          for n in list(s3_copies) + list(pub_copies) + list(builds) + list(dry_fetches) + list(dry_builds):
+              if is_key(n):
+                  key_names.add(n)
+
+          for k in sorted(key_names):
+              if any(k in b for b in builds):
+                  status = "[BUILD]"
+              elif any(k in s for s in s3_copies):
+                  status = "[CACHE:S3]"
+              elif any(k in p for p in pub_copies):
+                  status = "[CACHE:PUBLIC]"
+              else:
+                  status = "[LOCAL]"
+
+              dur_display = durations.get(k, "-")
+              # If single aggregate build took up the step, display total duration if not captured
+              if status == "[BUILD]" and dur_display == "-" and len(builds) <= 2:
+                  dur_display = fmt_duration(total_sec)
+
+              print(f"  {status:<16} | {dur_display:<10} | {k}")
+
+          if not key_names:
+              print("  (No key derivations recorded)")
+          print("=======================================\n")
+          EOF
+          python3 /tmp/summarize_nix_build.py "$BUILD_DURATION_SEC"
+
           if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
             echo "nix build failed with exit code $BUILD_EXIT_CODE"
+            echo "=== Last 300 lines of build log ==="
+            tail -n 300 /tmp/macro-nix-build.log || true
             exit "$BUILD_EXIT_CODE"
           fi
 
@@ -210,27 +739,63 @@ jobs:
           echo "Nix/Rust build duration: ${build_dur}s"
           echo "BUILD_DURATION=${build_dur}" >> "$GITHUB_ENV"
 
-      - name: Push to nix cache
-        if: success()
+      - name: Finalize Nix cache uploads
+        if: always()
         run: |
           set -uo pipefail
-          if [[ -z "${NIX_CACHE_URL:-}" || -z "${NIX_CACHE_SIGNING_KEY:-}" ]]; then
-            echo "nix cache not configured; skipping push"
+          QUEUE_DIR="/var/lib/nix-cache-upload"
+          STOP_FILE="$QUEUE_DIR/stop"
+          DONE_FILE="$QUEUE_DIR/done"
+          STATS_FILE="$QUEUE_DIR/stats.txt"
+
+          if [ ! -d "$QUEUE_DIR" ]; then
+            echo "Streaming nix cache not active; skipping finalize."
             exit 0
           fi
-          key="$RUNNER_TEMP/nix-cache-signing-key"
-          printf '%s\n' "$NIX_CACHE_SIGNING_KEY" > "$key"
-          sep='?'; [[ "$NIX_CACHE_URL" == *\?* ]] && sep='&'
-          echo "Pushing built email production binaries and dependencies to S3 nix cache..."
-          nix copy --to "${NIX_CACHE_URL}${sep}secret-key=${key}" ".#self-host-email-binaries" \
-            || echo "::warning::nix cache push failed (non-fatal)"
-          rm -f "$key"
-        shell: bash
-        env:
-          NIX_CACHE_URL: ${{ vars.NIX_CACHE_URL }}
-          NIX_CACHE_SIGNING_KEY: ${{ secrets.NIX_CACHE_SIGNING_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+          echo "Signaling background streaming cache uploader to finalize and flush remaining queue..."
+          touch "$STOP_FILE"
+
+          # Wait for uploader to drain and complete (timeout 600s / 10 minutes)
+          TIMEOUT=600
+          waited=0
+          while [ ! -f "$DONE_FILE" ] && [ "$waited" -lt "$TIMEOUT" ]; do
+            if ! pgrep -f "run_cache_uploader.sh" >/dev/null 2>&1 && [ ! -f "$DONE_FILE" ]; then
+              echo "Streaming cache uploader process exited."
+              break
+            fi
+            sleep 5
+            waited=$(( waited + 5 ))
+            if (( waited % 30 == 0 )); then
+              spool_c=$(find "$QUEUE_DIR/spool" -maxdepth 1 -name "*.path" 2>/dev/null | wc -l || echo 0)
+              inflight_c=$(find "$QUEUE_DIR/inflight" -type f -name "*.path" 2>/dev/null | wc -l || echo 0)
+              echo "Waiting for cache uploader to finalize... elapsed: ${waited}s / ${TIMEOUT}s (pending spool: ${spool_c}, inflight: ${inflight_c})"
+            fi
+          done
+
+          if [ -f "$DONE_FILE" ]; then
+            echo "Streaming cache uploader flushed successfully within ${waited}s."
+            if [ -f "$STATS_FILE" ]; then
+              # shellcheck disable=SC1090
+              source "$STATS_FILE" || true
+              echo "=== Streaming Cache Upload Summary ==="
+              echo "uploaded=${TOTAL_UPLOADED:-0} pending=0 failed=${TOTAL_FAILED:-0} batches=${BATCH_COUNT:-0}"
+              echo "======================================"
+              if [ "${TOTAL_FAILED:-0}" -gt 0 ]; then
+                echo "::warning::Nix streaming cache finished with ${TOTAL_FAILED} failed derivations. These store paths were not saved to S3."
+                if [ -f "$QUEUE_DIR/unrecovered_failures.txt" ]; then
+                  echo "=== Unrecovered Store Paths ==="
+                  cat "$QUEUE_DIR/unrecovered_failures.txt"
+                  echo "==============================="
+                fi
+              fi
+            fi
+          else
+            echo "::warning::Streaming cache uploader reached ${TIMEOUT}s timeout during finalization. Stopping uploader without failing production image build."
+            pkill -f "run_cache_uploader.sh" 2>/dev/null || true
+          fi
+
+          rm -f "$RUNNER_TEMP/nix-cache-signing-key"
 
       - name: Teardown Nix
         if: always()

@@ -30,6 +30,10 @@ inputs:
     description: AWS secret access key for reading the private cache bucket.
     required: false
     default: ''
+  nix-cache-signing-key:
+    description: Private signing key for signing locally built store paths before uploading to the private cache.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -41,6 +45,7 @@ runs:
         NIX_CACHE_PUBLIC_KEY: ${{ inputs.nix-cache-public-key }}
         NIX_CACHE_AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
         NIX_CACHE_AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        NIX_CACHE_SIGNING_KEY: ${{ inputs.nix-cache-signing-key }}
       run: |
         set -euo pipefail
 
@@ -58,9 +63,64 @@ runs:
           cache_enabled=true
         fi
 
+        # Streaming upload cache requires signing key in addition to substituter credentials
+        streaming_cache_enabled=false
+        if $cache_enabled && [[ -n "$NIX_CACHE_SIGNING_KEY" ]]; then
+          streaming_cache_enabled=true
+        fi
+
         write_conf() {
           sudo mkdir -p /etc/nix
           current_user="$(id -un 2>/dev/null || echo runner)"
+          current_group="$(id -gn 2>/dev/null || echo "$current_user")"
+
+          if $streaming_cache_enabled; then
+            # 1. Store private key securely
+            printf '%s\n' "$NIX_CACHE_SIGNING_KEY" | sudo tee /etc/nix/cache-private-key >/dev/null
+            sudo chmod 600 /etc/nix/cache-private-key
+            sudo chown root:root /etc/nix/cache-private-key
+
+            # 2. Setup upload queue directory structure with root:runner-group ownership and 0770 permissions
+            sudo mkdir -p /var/lib/nix-cache-upload/staging
+            sudo mkdir -p /var/lib/nix-cache-upload/spool
+            sudo mkdir -p /var/lib/nix-cache-upload/inflight
+            sudo mkdir -p /var/lib/nix-cache-upload/failed
+            sudo chown -R root:"$current_group" /var/lib/nix-cache-upload
+            sudo chmod 770 /var/lib/nix-cache-upload
+            sudo chmod 770 /var/lib/nix-cache-upload/staging \
+                           /var/lib/nix-cache-upload/spool \
+                           /var/lib/nix-cache-upload/inflight \
+                           /var/lib/nix-cache-upload/failed
+
+            # 3. Create post-build-hook script (instantaneous, staging -> sync -> atomic rename to spool)
+            cat << EOF_HOOK | sudo tee /etc/nix/cache-upload-hook.sh >/dev/null
+        #!/bin/sh
+        set -e
+        # Nix post-build-hook environment:
+        # \$OUT_PATHS - space-separated list of store paths output by the derivation
+        # \$DRV_PATH  - store path of the derivation
+        BASE_DIR="/var/lib/nix-cache-upload"
+        STAGING_DIR="\$BASE_DIR/staging"
+        SPOOL_DIR="\$BASE_DIR/spool"
+
+        if [ -n "\$OUT_PATHS" ] && [ -d "\$SPOOL_DIR" ]; then
+          for path in \$OUT_PATHS; do
+            ts=\$(date +%s%N 2>/dev/null || date +%s)
+            rnd=\$(head -c 4 /dev/urandom 2>/dev/null | od -An -tx1 | tr -d ' ' || echo "\$\$")
+            tmp_fname="\$STAGING_DIR/\${ts}_\${rnd}.tmp"
+            final_fname="\$SPOOL_DIR/\${ts}_\${rnd}.path"
+            printf '%s\n' "\$path" > "\$tmp_fname" 2>/dev/null || true
+            sync "\$tmp_fname" 2>/dev/null || true
+            chmod 660 "\$tmp_fname" 2>/dev/null || true
+            chown root:${current_group} "\$tmp_fname" 2>/dev/null || true
+            mv -f "\$tmp_fname" "\$final_fname" 2>/dev/null || true
+          done
+        fi
+        exit 0
+        EOF_HOOK
+            sudo chmod 755 /etc/nix/cache-upload-hook.sh
+          fi
+
           # The minimal config the Determinate installer would have written.
           {
             echo "experimental-features = nix-command flakes"
@@ -73,6 +133,10 @@ runs:
               # don't let its negative cache linger across a push from another
               # job in the same run.
               echo "narinfo-cache-negative-ttl = 30"
+            fi
+            if $streaming_cache_enabled; then
+              echo "secret-key-files = /etc/nix/cache-private-key"
+              echo "post-build-hook = /etc/nix/cache-upload-hook.sh"
             fi
           } | sudo tee /etc/nix/nix.conf >/dev/null
         }
@@ -94,13 +158,22 @@ runs:
               sudo cp /nix/var/nix/profiles/default/lib/systemd/system/nix-daemon.* /etc/systemd/system/ || true
               sudo systemctl daemon-reload || true
             fi
-            sudo systemctl enable --now nix-daemon.socket nix-daemon.service 2>/dev/null || true
+            # Restart systemd daemon so newly written nix.conf takes effect
+            sudo systemctl try-restart determinate-nixd.service 2>/dev/null \
+              || sudo systemctl restart nix-daemon.service 2>/dev/null \
+              || sudo systemctl enable --now nix-daemon.socket nix-daemon.service 2>/dev/null || true
+          else
+            # Non-systemd (Namespace or container runners): stop existing daemon if running so fresh config is reloaded
+            if pgrep -f 'nix-daemon|determinate-nixd' >/dev/null 2>&1; then
+              echo "Stopping existing nix-daemon to reload updated configuration..."
+              sudo pkill -f 'nix-daemon|determinate-nixd' || true
+              sleep 1
+            fi
           fi
+
           # Without systemd (or if the unit failed to come up), run the daemon
-          # directly: it is just a process listening on the daemon socket. The
-          # daemon is what talks to substituters, so the S3 credentials must be
-          # in *its* environment, not the client's.
-          if ! sudo test -S /nix/var/nix/daemon-socket/socket || ! pgrep -x nix-daemon >/dev/null 2>&1; then
+          # directly: it is just a process listening on the daemon socket.
+          if ! sudo test -S /nix/var/nix/daemon-socket/socket; then
             sudo mkdir -p /nix/var/nix/daemon-socket
             sudo rm -f /nix/var/nix/daemon-socket/socket
             daemon_env=()
