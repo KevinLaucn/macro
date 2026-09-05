@@ -209,25 +209,78 @@ if unknown_topics:
 
 # --- CI workflow & action regressions --------------------------------------
 # 1. YAML syntax and block scalar indentation regression check
+import shutil
 import subprocess
+yaml_files = [
+    str(ROOT / ".github/workflows/self-host-images.yml"),
+    str(ROOT / ".github/actions/setup-nix/action.yml"),
+]
+validated_yaml = False
 
-yaml_check_script = """
-const fs = require('fs');
-const yaml = require('js-yaml');
-for (const p of process.argv.slice(1)) {
-  const content = fs.readFileSync(p, 'utf8');
-  yaml.load(content);
-}
-"""
-res = subprocess.run(
-    ["bun", "-e", yaml_check_script,
-     str(ROOT / ".github/workflows/self-host-images.yml"),
-     str(ROOT / ".github/actions/setup-nix/action.yml")],
-    capture_output=True,
-    text=True
-)
-if res.returncode != 0:
-    fail(f"CI YAML syntax/indentation check failed:\n{res.stderr.strip()}")
+# Try python yaml (PyYAML) first if available
+try:
+    import yaml
+    for p in yaml_files:
+        with open(p, "r") as f:
+            yaml.safe_load(f)
+    validated_yaml = True
+except ImportError:
+    pass
+
+# Try bun with js-yaml if bun is present
+if not validated_yaml and shutil.which("bun"):
+    yaml_check_script = """
+    const fs = require('fs');
+    const yaml = require('js-yaml');
+    for (const p of process.argv.slice(1)) {
+      const content = fs.readFileSync(p, 'utf8');
+      yaml.load(content);
+    }
+    """
+    res = subprocess.run(
+        ["bun", "-e", yaml_check_script, *yaml_files],
+        capture_output=True,
+        text=True
+    )
+    if res.returncode == 0:
+        validated_yaml = True
+    else:
+        fail(f"CI YAML syntax/indentation check failed:\n{res.stderr.strip()}")
+
+# Try ruby if available
+if not validated_yaml and shutil.which("ruby"):
+    ruby_script = 'require "yaml"; ARGV.each { |f| YAML.load_file(f) }'
+    res = subprocess.run(
+        ["ruby", "-e", ruby_script, *yaml_files],
+        capture_output=True,
+        text=True
+    )
+    if res.returncode == 0:
+        validated_yaml = True
+    else:
+        fail(f"CI YAML syntax/indentation check failed:\n{res.stderr.strip()}")
+
+# Try node with js-yaml if node is present
+if not validated_yaml and shutil.which("node"):
+    node_script = """
+    try {
+      const fs = require('fs');
+      const yaml = require('js-yaml');
+      for (const p of process.argv.slice(1)) {
+        yaml.load(fs.readFileSync(p, 'utf8'));
+      }
+      process.exit(0);
+    } catch (e) {
+      process.exit(1);
+    }
+    """
+    res = subprocess.run(
+        ["node", "-e", node_script, *yaml_files],
+        capture_output=True,
+        text=True
+    )
+    if res.returncode == 0:
+        validated_yaml = True
 
 # 2. Daemon socket protection invariant check
 setup_nix_content = (ROOT / ".github/actions/setup-nix/action.yml").read_text()
