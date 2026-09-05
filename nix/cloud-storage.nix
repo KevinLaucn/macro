@@ -725,7 +725,7 @@
       # invoke cargo once per package and correctly apply the full featureArgs.
       # Compiling deps with default features is a harmless superset.
       selfHostEmailBinaryCargoExtraArgs =
-        "--offline "
+        "--locked "
         + pkgs.lib.concatMapStringsSep " " (
           def:
           let
@@ -758,7 +758,7 @@
               cargoArtifacts = selfHostEmailCargoArtifacts;
               buildArgs = selfHostEmailCommonArgs;
               sourceForPackage = selfHostEmailPrunedDeploySrc;
-              lockArg = "--offline";
+              lockArg = "--locked";
             }
           );
         }) selfHostEmailBinaryDefinitions

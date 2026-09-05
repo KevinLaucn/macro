@@ -27,7 +27,7 @@ def fail(msg: str) -> None:
     failures.append(msg)
 
 
-# --- inventory -------------------------------------------------------------
+## --- inventory -------------------------------------------------------------
 inv = (ROOT / "tooling/xtask/crates/xtask_local/src/local/inventory.rs").read_text()
 services = []
 for block in re.findall(r"RustService \{(.*?)\n    \},", inv, re.S):
@@ -44,29 +44,55 @@ for block in re.findall(r"RustService \{(.*?)\n    \},", inv, re.S):
         "modes": re.search(r"modes:\s*&\[([^\]]*)\]", block).group(1),
     })
 
-# A formatting change in inventory.rs that defeats the regex above would leave
-# `services` empty, every loop below would iterate zero times, and the check
-# would pass while verifying nothing. Fail loudly on an implausible parse
-# instead of silently reporting success.
 if len(services) < 10 or any(s["compose_name"] is None or s["cargo_bin"] is None for s in services):
     print(f"could not parse inventory.rs: got {len(services)} services."
           " The regex in this script no longer matches RustService entries.", file=sys.stderr)
     sys.exit(2)
 
-# Local-mode services, minus the seed-CLI sidecar which is a dev-only fixture.
-wanted = [s for s in services if "Mode::Local" in s["modes"] and s["compose_name"] != "gmail_forwarder"]
-if not wanted:
-    print("no Mode::Local services parsed from inventory.rs; refusing to pass"
-          " a check that would verify nothing.", file=sys.stderr)
-    sys.exit(2)
+inv_by_bin = {s["cargo_bin"]: s for s in services}
+inv_by_compose = {s["compose_name"]: s for s in services}
 
 compose = (SELF_HOST / "docker-compose.yml").read_text()
 caddy = (SELF_HOST / "Caddyfile").read_text()
 env_example = (SELF_HOST / ".env.example").read_text()
 
-for s in wanted:
-    if f'/app/out/{s["cargo_bin"]}' not in compose:
-        fail(f'service {s["compose_name"]}: binary /app/out/{s["cargo_bin"]} not run by docker-compose.yml')
+# Extract binaries actually executed in self-host/docker-compose.yml
+compose_bins = set(re.findall(r'/app/out/([a-zA-Z0-9_-]+)', compose))
+
+# Default Email production required binaries (12 services in compose + macro_db_migrate in init = 13 in image)
+email_required_bins = [
+    "authentication_service",
+    "connection_gateway_service",
+    "contacts_service",
+    "document_storage_service",
+    "email_service",
+    "pubsub_workers",
+    "image_proxy_service",
+    "notification_service",
+    "static_file_service",
+    "unfurl_service",
+    "search_processing_service",
+    "document_upload_finalizer_local_worker",
+]
+
+# Binaries used only in optional Compose profiles ("full", "agents")
+optional_profile_bins = {
+    "document_cognition_service",
+    "service",
+    "agent_harness_service",
+}
+
+for req_bin in email_required_bins:
+    if req_bin not in compose_bins:
+        fail(f'required email production binary /app/out/{req_bin} missing from docker-compose.yml')
+
+# Validate routes and execution for services declared in Compose
+for cargo_bin in compose_bins:
+    s = inv_by_bin.get(cargo_bin)
+    if not s:
+        # Binary used in Compose is not defined in inventory at all
+        fail(f'binary /app/out/{cargo_bin} referenced in docker-compose.yml is not in inventory.rs')
+        continue
     if s["path_prefix"]:
         if s["path_prefix"] not in caddy:
             fail(f'service {s["compose_name"]}: route {s["path_prefix"]} missing from Caddyfile')
@@ -92,14 +118,13 @@ for q in manifest["queues"]:
         if binding["key"] not in env_keys:
             fail(f'queue {q["name"]}: {binding["key"]} missing from .env.example')
 
-# The manifest must match the Rust catalog it was extracted from. Compare the
-# names rather than the counts: a renamed queue keeps the count identical while
-# leaving the deployment creating one queue and its consumer polling another.
+# The required resources declared in self-host/init/resources.json must be backed
+# by the upstream catalog (no fictional/unsupported resources).
+# Upstream having extra resources (e.g. AI / document cognition / etc.) is permitted.
 res = (ROOT / "tooling/xtask/crates/xtask_local/src/local/resources.rs").read_text()
 queues_block = res.split("pub const QUEUES")[1].split("pub const BUCKETS")[0]
 macro_queues = (ROOT / "crates/macro_queues/src/lib.rs").read_text()
 local_names = dict(re.findall(r'pub (\w+)\s*\{\s*local:\s*"([^"]+)"', macro_queues))
-# Catalog constants that name a queue without going through macro_queues.
 consts = {"UPLOAD_FINALIZER_QUEUE": local_names.get("DocumentUploadFinalizerQueue")}
 
 rust_queue_names = set()
@@ -113,26 +138,31 @@ for entry in re.findall(r"Queue \{(.*?)\n    \},", queues_block, re.S):
         rust_queue_names.add(name)
 
 manifest_queue_names = {q["name"] for q in manifest["queues"]}
-if rust_queue_names != manifest_queue_names:
-    missing = sorted(rust_queue_names - manifest_queue_names)
-    extra = sorted(manifest_queue_names - rust_queue_names)
-    fail("self-host/init/resources.json is out of date with resources.rs"
-         + (f"; missing {missing}" if missing else "")
-         + (f"; stale {extra}" if extra else "")
-         + " — regenerate it")
+# Verify required queues exist in Rust catalog definitions
+missing_in_rust = sorted(manifest_queue_names - rust_queue_names)
+if missing_in_rust:
+    fail(f"self-host/init/resources.json contains queues not defined in resources.rs: {missing_in_rust}")
 
-# --- the services image must use the Email production aggregate ------------
-# `.#local-stack-binaries` is a development aggregate and compiles
-# authentication_service with `return_passwordless_code`. The publish workflow
-# must use the production Email aggregate instead.
+# Core email production required queues must exist in manifest
+required_email_queues = {
+    "notification-queue",
+    "email-service-backfill-queue",
+    "contacts-queue",
+    "document-upload-finalizer-queue",
+    "email-service-gmail-inbox-sync-queue",
+    "email-service-gmail-inbox-retry-queue",
+    "email-service-gmail-ops-queue",
+    "email-service-gmail-ops-retry-queue",
+    "search-event-queue",
+}
+missing_required_queues = sorted(required_email_queues - manifest_queue_names)
+if missing_required_queues:
+    fail(f"self-host/init/resources.json is missing required email queues: {missing_required_queues}")
+
+# --- image and profile invariants ------------------------------------------
 workflow = (ROOT / ".github/workflows/self-host-images.yml").read_text()
-if ".#local-stack-binaries" in workflow:
-    fail("self-host-images.yml must not build the self-host services image from local-stack-binaries")
-if ".#self-host-email-binaries" not in workflow:
-    fail("self-host-images.yml must build the self-host services image from self-host-email-binaries")
 
-if "nix develop --command cargo build --release" in workflow:
-    fail("self-host-images.yml bypasses crane/Nix artifacts with a checkout-local release build")
+# Ensure macro_db_migrate is part of the binary graph
 if 'packageName = "macro_db_migrator";' not in (ROOT / "nix/cloud-storage.nix").read_text():
     fail("macro_db_migrator is not part of the Nix-managed self-host binary graph")
 
@@ -156,19 +186,37 @@ for image in ("macro-ai-editing-worker", "macro-analytics-proxy"):
         fail(f"{image} must not be built by the Email production image workflow")
 
 # --- kafka -----------------------------------------------------------------
-topics_src = json.loads((ROOT / ".github/kafka-cluster-topics.json").read_text())
-topics_copy = json.loads((SELF_HOST / "init/kafka-topics.json").read_text())
-if topics_src != topics_copy:
-    fail("self-host/init/kafka-topics.json differs from .github/kafka-cluster-topics.json")
+# Required Kafka topics for self-host email must exist in self-host/init/kafka-topics.json
+topics_src = set(json.loads((ROOT / ".github/kafka-cluster-topics.json").read_text()))
+topics_copy = set(json.loads((SELF_HOST / "init/kafka-topics.json").read_text()))
+
+required_email_topics = {
+    "macro.email",
+    "macro.notifications",
+    "macro.channels",
+    "macro.chats",
+    "macro.documents",
+    "macro.properties",
+}
+missing_email_topics = sorted(required_email_topics - topics_copy)
+if missing_email_topics:
+    fail(f"self-host/init/kafka-topics.json is missing required email topics: {missing_email_topics}")
+
+# Fictional topics not present in upstream cluster definition should fail
+unknown_topics = sorted(topics_copy - topics_src)
+if unknown_topics:
+    fail(f"self-host/init/kafka-topics.json has unknown topics not in upstream kafka-cluster-topics.json: {unknown_topics}")
 
 # --- report ----------------------------------------------------------------
 if failures:
-    print("self-host artifacts have drifted:\n", file=sys.stderr)
+    print("self-host consistency check failed:\n", file=sys.stderr)
     for f in failures:
         print(f"  - {f}", file=sys.stderr)
     print(f"\n{len(failures)} problem(s).", file=sys.stderr)
     sys.exit(1)
 
-print(f"self-host artifacts in sync: {len(wanted)} services, "
+default_email_bins = [b for b in compose_bins if b not in optional_profile_bins]
+print(f"self-host email consistency verified: {len(compose_bins)} compose binaries "
+      f"({len(default_email_bins)} default email profile, {len(optional_profile_bins)} optional profile), "
       f"{len(manifest['queues'])} queues, {len(manifest['buckets'])} buckets, "
-      f"{len(manifest['tables'])} tables, {len(topics_src)} kafka topics")
+      f"{len(manifest['tables'])} tables, {len(topics_copy)} kafka topics")

@@ -85,8 +85,54 @@ jobs:
           set -euo pipefail
           mkdir -p self-host/build/bin
 
+          # Tune concurrency to prevent OOM / CPU thrashing on GitHub hosted runners (2 vCPUs / 7GB RAM).
+          # On self-hosted runners, keep higher capacity.
+          # Nix derivation build sets NIX_BUILD_CORES to --cores (2), which crane's cargoBuildHook
+          # passes directly to cargo as `-j $NIX_BUILD_CORES` (-j 2).
+          if [ "${{ inputs.services_runner || 'github' }}" = "github" ]; then
+            echo "Applying conservative concurrency settings for GitHub hosted runner"
+            NIX_JOBS_FLAG="--max-jobs 1 --cores 2"
+          else
+            NIX_JOBS_FLAG=""
+          fi
+
           echo "Building focused email production aggregate: .#self-host-email-binaries"
-          nix build --print-build-logs ".#self-host-email-binaries" --out-link result-bins
+
+          # Start lightweight background monitor for build observability (every 45s)
+          MONITOR_PID=""
+          cleanup_monitor() {
+            if [ -n "$MONITOR_PID" ]; then
+              kill "$MONITOR_PID" 2>/dev/null || true
+              wait "$MONITOR_PID" 2>/dev/null || true
+            fi
+          }
+          trap cleanup_monitor EXIT INT TERM
+
+          (
+            # Ignore errors inside monitor loop so it never fails the step
+            while true; do
+              sleep 45 || break
+              echo "--- [BUILD MONITOR: $(date -u +%T 2>/dev/null || date)] ---"
+              free -h 2>/dev/null || true
+              echo "--- Top Memory Processes ---"
+              ps aux --sort=-%mem 2>/dev/null | head -n 5 || true
+              echo "--- Active Rust/Cargo/Nix Processes ---"
+              pgrep -a -l 'rustc|cargo|nix' 2>/dev/null | head -n 10 || true
+            done
+          ) &
+          MONITOR_PID=$!
+
+          BUILD_EXIT_CODE=0
+          nix build --print-build-logs $NIX_JOBS_FLAG ".#self-host-email-binaries" --out-link result-bins || BUILD_EXIT_CODE=$?
+
+          cleanup_monitor
+          trap - EXIT INT TERM
+
+          if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
+            echo "nix build failed with exit code $BUILD_EXIT_CODE"
+            exit "$BUILD_EXIT_CODE"
+          fi
+
           cp -L result-bins/bin/* self-host/build/bin/ 2>/dev/null \
             || cp -RL result-bins/* self-host/build/bin/
 
