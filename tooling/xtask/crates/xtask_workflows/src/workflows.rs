@@ -21,6 +21,7 @@ mod code_check_conventions;
 mod code_check_infra;
 mod docs_check;
 mod path_validation;
+mod release;
 mod runners;
 mod sdk_check;
 mod steps;
@@ -119,6 +120,11 @@ const WORKFLOWS: &[WorkflowFile] = &[
         slug: "docs_check",
         file_name: "docs-check.yml",
         render_yaml: || render_gh_workflow(docs_check::docs_check)(),
+    },
+    WorkflowFile {
+        slug: "release",
+        file_name: "release.yml",
+        render_yaml: || render_gh_workflow(release::release)(),
     },
 ];
 

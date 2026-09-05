@@ -118,6 +118,12 @@ pub fn setup_dev_shell() -> Step<Use> {
     )
 }
 
+/// [`setup_dev_shell`] for a named `devShells.<name>` flake output.
+#[allow(dead_code)]
+pub fn setup_dev_shell_named(name: &str) -> Step<Use> {
+    setup_dev_shell().add_with(("shell", name))
+}
+
 /// Mount the Namespace profile's persisted cache volume: `cache: rust` persists
 /// the cargo registry/git, and `path:` persists the Nix store. Compiled objects
 /// deliberately use Namespace's official remote sccache instead of this volume.
