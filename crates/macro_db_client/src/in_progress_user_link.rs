@@ -136,7 +136,7 @@ pub async fn delete_expired_uncompleted_in_progress_user_links_for_user(
     let macro_user_id = macro_uuid::string_to_uuid(macro_user_id)?;
     let cutoff = (chrono::Utc::now() - IN_PROGRESS_USER_LINK_MAX_AGE).naive_utc();
 
-    sqlx::query!(
+    sqlx::query(
         r#"
             DELETE FROM
                 in_progress_user_link
@@ -145,9 +145,9 @@ pub async fn delete_expired_uncompleted_in_progress_user_links_for_user(
                 AND linked_email IS NULL
                 AND created_at < $2
         "#,
-        &macro_user_id,
-        cutoff
     )
+    .bind(&macro_user_id)
+    .bind(cutoff)
     .execute(db)
     .await?;
 
