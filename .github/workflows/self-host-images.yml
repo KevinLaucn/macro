@@ -37,8 +37,8 @@ on:
         default: false
 
 concurrency:
-  group: self-host-images
-  cancel-in-progress: true
+  group: self-host-images-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -64,6 +64,20 @@ jobs:
           fetch-depth: 0
       - name: Check for drift from the service inventory
         run: python3 self-host/scripts/check-drift.py
+      - name: Check for SQLx compile-time query drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.before }}"
+          head="${{ github.sha }}"
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            if git rev-parse --verify "${head}~1" >/dev/null 2>&1; then
+              base="${head}~1"
+            else
+              base="$(git rev-list --max-parents=0 "$head" | tail -n 1)"
+            fi
+          fi
+          python3 self-host/scripts/check-sqlx-drift.py --base "$base" --head "$head"
       - name: Filter changed paths
         id: filter
         shell: bash
@@ -147,6 +161,61 @@ jobs:
           persist-credentials: 'false'
       - id: version
         run: echo "value=${{ inputs.version || (github.ref_type == 'branch' && 'latest') || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine Nix cache policy
+        id: cache_policy
+        env:
+          NIX_CACHE_SIGNING_KEY_SECRET: ${{ secrets.NIX_CACHE_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          upload=false
+          reason="read-only"
+
+          event_name="${{ github.event_name }}"
+          ref="${{ github.ref }}"
+          dispatch_upload="${{ inputs.upload_nix_cache || 'false' }}"
+
+          if [[ "$event_name" == "push" && "$ref" == "refs/heads/main" ]]; then
+            upload=true
+            reason="trusted main push"
+          elif [[ "$event_name" == "workflow_dispatch" && "$dispatch_upload" == "true" ]]; then
+            upload=true
+            reason="trusted manual upload requested"
+          elif [[ "$event_name" == "pull_request" ]]; then
+            upload=false
+            reason="pull_request is untrusted (read-only)"
+          else
+            upload=false
+            reason="untrusted branch/ref ($ref)"
+          fi
+
+          if [[ "$upload" == "true" ]]; then
+            if [[ -z "${NIX_CACHE_SIGNING_KEY_SECRET:-}" ]]; then
+              echo "::warning::Nix cache upload requested but NIX_CACHE_SIGNING_KEY is not configured; falling back to read-only cache."
+              upload=false
+              reason="missing NIX_CACHE_SIGNING_KEY secret"
+            fi
+          fi
+
+          echo "upload=$upload" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+
+          echo "================ NIX CACHE POLICY ================"
+          if [[ "$upload" == "true" ]]; then
+            echo "Mode: READ+WRITE"
+            echo "Streaming upload: enabled"
+          else
+            echo "Mode: READ-ONLY"
+            echo "Streaming upload: disabled"
+          fi
+          echo "Reason: $reason"
+          if [[ -n "${{ vars.NIX_CACHE_URL }}" ]]; then
+            echo "Substituter: configured"
+          else
+            echo "Substituter: not configured"
+          fi
+          echo "=================================================="
+
       - name: Setup Nix
         id: setup_nix
         uses: './.github/actions/setup-nix'
@@ -156,7 +225,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          nix-cache-signing-key: ${{ inputs.upload_nix_cache && secrets.NIX_CACHE_SIGNING_KEY || '' }}
+          nix-cache-signing-key: ${{ steps.cache_policy.outputs.upload == 'true' && secrets.NIX_CACHE_SIGNING_KEY || '' }}
           fail-on-cache-error: 'true'
 
       - name: Build diagnostics before build
@@ -170,20 +239,10 @@ jobs:
           echo "Runner: ${{ inputs.services_runner || 'github' }}"
           echo "BUILD_START_TIME=$(date -u +%s)" >> "$GITHUB_ENV"
 
-      - name: Fast preflight check (fail early on SQLx / Rust errors)
-        run: |
-          set -euo pipefail
-          echo "Running fast preflight check on core email crates with SQLX_OFFLINE=true..."
-          nix develop --command bash -c '
-            set -euo pipefail
-            SQLX_OFFLINE=true cargo check --locked -p macro_db_client -p email_service
-          '
-          echo "Preflight check passed successfully."
-
       - name: Build service binaries
         env:
           NIX_CACHE_URL: ${{ vars.NIX_CACHE_URL }}
-          NIX_CACHE_SIGNING_KEY: ${{ inputs.upload_nix_cache && secrets.NIX_CACHE_SIGNING_KEY || '' }}
+          NIX_CACHE_SIGNING_KEY: ${{ steps.cache_policy.outputs.upload == 'true' && secrets.NIX_CACHE_SIGNING_KEY || '' }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
@@ -192,12 +251,12 @@ jobs:
           mkdir -p self-host/build/bin
 
           # Concurrency policy:
-          # Use conservative concurrency on ephemeral GitHub-hosted runners (--max-jobs 2 --cores 2).
-          # Keeping max-jobs=2 still limits blast radius while allowing one extra parallel derivation.
-          # cargoBuildHook passes -j $NIX_BUILD_CORES (-j 2) to cargo inside the derivation.
+          # Use conservative concurrency on ephemeral GitHub-hosted runners (--max-jobs 2 --cores 4).
+          # Keeping max-jobs=2 limits blast radius while allowing one extra parallel derivation.
+          # cargoBuildHook passes -j $NIX_BUILD_CORES (-j 4) to cargo inside the derivation.
           if [ "${{ inputs.services_runner || 'github' }}" = "github" ]; then
-            echo "Applying conservative concurrency settings for GitHub hosted runner (--max-jobs 2 --cores 2)"
-            NIX_JOBS_FLAG="--max-jobs 2 --cores 2"
+            echo "Applying conservative concurrency settings for GitHub hosted runner (--max-jobs 2 --cores 4)"
+            NIX_JOBS_FLAG="--max-jobs 2 --cores 4"
           else
             NIX_JOBS_FLAG=""
           fi
@@ -382,19 +441,14 @@ jobs:
           (
             step_start=$(date -u +%s)
             while true; do
-              sleep 45 || break
+              sleep 120 || break
               now=$(date -u +%s)
               elapsed=$(( now - step_start ))
-              echo "--- [BUILD MONITOR: $(date -u +%T 2>/dev/null || date) | Elapsed: ${elapsed}s] ---"
-              echo "Load Average: $(uptime 2>/dev/null | awk -F'load average:' '{print $2}' || true)"
-              free -h 2>/dev/null || true
+              mins=$(( elapsed / 60 ))
+              echo "--- [BUILD MONITOR: ${mins}m elapsed] ---"
+              echo "Load: $(uptime 2>/dev/null | awk -F'load average:' '{print $2}' || true) | $(free -h 2>/dev/null | awk '/Mem:/{print "Mem: "$3"/"$2}' || true)"
               df -h / 2>/dev/null | tail -n 1 || true
-              echo "--- Top CPU Processes ---"
-              ps -eo pid,user,pcpu,pmem,comm --sort=-pcpu 2>/dev/null | head -n 8 || true
-              echo "--- Top Memory Processes ---"
-              ps -eo pid,user,pcpu,pmem,comm --sort=-pmem 2>/dev/null | head -n 8 || true
-              echo "--- Active Rust/Cargo/Nix/Curl Processes ---"
-              pgrep -l 'rustc|cargo|nix|curl' 2>/dev/null | head -n 20 || true
+              pgrep -la 'rustc|cargo' 2>/dev/null | wc -l | xargs -I{} echo "Active rustc/cargo processes: {}"
             done
           ) &
           MONITOR_PID=$!
@@ -497,15 +551,6 @@ jobs:
               unique_count=${#unique_paths[@]}
 
               if [ "$unique_count" -gt 0 ]; then
-                # Prepare destination URI with secret-key if provided
-                if [ -n "${NIX_COPY_KEY:-}" ]; then
-                  key_arg="secret-key=${NIX_COPY_KEY}"
-                  sep='?'; [[ "$NIX_CACHE_URL" == *\?* ]] && sep='&'
-                  dest="${NIX_CACHE_URL}${sep}${key_arg}"
-                else
-                  dest="$NIX_CACHE_URL"
-                fi
-
                 # Attempt upload with retry and exponential backoff
                 success=false
                 delay=2
@@ -557,7 +602,7 @@ jobs:
 
             # Periodic progress logging
             now=$(date +%s)
-            if (( now - last_summary >= 45 )); then
+            if (( now - last_summary >= 120 )); then
               spool_pending=$(find "$SPOOL_DIR" -maxdepth 1 -name "*.path" 2>/dev/null | wc -l || echo 0)
               echo "--- Streaming Nix cache: uploaded=${TOTAL_UPLOADED} failed=${TOTAL_FAILED} pending=${spool_pending} batches=${BATCH_COUNT} (PID $$) ---"
               last_summary=$now
@@ -643,7 +688,12 @@ jobs:
           cleanup_monitor
           trap - EXIT INT TERM
 
-          # 4. Generate and print build summary
+          if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
+            echo "::error::nix build failed with exit code $BUILD_EXIT_CODE"
+            exit "$BUILD_EXIT_CODE"
+          fi
+
+          # 4. Generate and print build summary on success
           cat << 'EOF' > /tmp/summarize_nix_build.py
           import re, sys, os
 
@@ -769,13 +819,6 @@ jobs:
           EOF
           python3 /tmp/summarize_nix_build.py "$BUILD_DURATION_SEC"
 
-          if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
-            echo "nix build failed with exit code $BUILD_EXIT_CODE"
-            echo "=== Last 300 lines of build log ==="
-            tail -n 300 /tmp/macro-nix-build.log || true
-            exit "$BUILD_EXIT_CODE"
-          fi
-
           cp -L result-bins/bin/* self-host/build/bin/ 2>/dev/null \
             || cp -RL result-bins/* self-host/build/bin/
 
@@ -783,6 +826,39 @@ jobs:
           # deployment image.
           rm -f self-host/build/bin/seed_cli
           ls -la self-host/build/bin
+
+      - name: Failure diagnostics
+        if: failure()
+        continue-on-error: true
+        run: |
+          echo "=== Nix build failure diagnostics ==="
+          if [ -f /tmp/macro-nix-build.log ]; then
+            # Try to extract and show the failed derivation builder log
+            FAILED_DRV=$(grep -oP '/nix/store/[^ ]+\.drv' /tmp/macro-nix-build.log | tail -1 || true)
+            if [ -n "$FAILED_DRV" ]; then
+              echo "=== Failed derivation: $FAILED_DRV ==="
+              nix log "$FAILED_DRV" 2>/dev/null | tail -n 200 || echo "(nix log unavailable)"
+              echo ""
+            fi
+
+            echo "=== Error summary ==="
+            grep -nE 'error\[E|could not compile|SQLX_OFFLINE|Caused by:|failed to build|cargo:warning' /tmp/macro-nix-build.log | head -50 || true
+            echo ""
+            echo "=== Last 500 lines of raw build log ==="
+            tail -n 500 /tmp/macro-nix-build.log || true
+          else
+            echo "No build log found at /tmp/macro-nix-build.log"
+          fi
+
+      - name: Upload failure log artifact
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: macro-services-nix-failure-${{ github.run_id }}
+          path: /tmp/macro-nix-build.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Verify production image contents
         run: |
@@ -838,6 +914,8 @@ jobs:
 
       - name: Finalize Nix cache uploads
         if: success() && steps.setup_nix.outcome == 'success'
+        env:
+          CACHE_UPLOAD_ENABLED: ${{ steps.cache_policy.outputs.upload }}
         run: |
           set -uo pipefail
           QUEUE_DIR="/var/lib/nix-cache-upload"
@@ -856,7 +934,7 @@ jobs:
           # Wait briefly on successful builds only. Failed builds skip this step
           # and use the cleanup step below so CI does not spend minutes flushing
           # partial cache uploads after a broken production artifact.
-          TIMEOUT=120
+          TIMEOUT=30
           waited=0
           while [ ! -f "$DONE_FILE" ] && [ "$waited" -lt "$TIMEOUT" ]; do
             if ! pgrep -f "run_cache_uploader.sh" >/dev/null 2>&1 && [ ! -f "$DONE_FILE" ]; then
@@ -865,7 +943,7 @@ jobs:
             fi
             sleep 5
             waited=$(( waited + 5 ))
-            if (( waited % 30 == 0 )); then
+            if (( waited % 15 == 0 )); then
               spool_c=$(find "$QUEUE_DIR/spool" -maxdepth 1 -name "*.path" 2>/dev/null | wc -l || echo 0)
               inflight_c=$(find "$QUEUE_DIR/inflight" -type f -name "*.path" 2>/dev/null | wc -l || echo 0)
               echo "Waiting for cache uploader to finalize... elapsed: ${waited}s / ${TIMEOUT}s (pending spool: ${spool_c}, inflight: ${inflight_c})"
@@ -877,9 +955,16 @@ jobs:
             if [ -f "$STATS_FILE" ]; then
               # shellcheck disable=SC1090
               source "$STATS_FILE" || true
+              echo "Streaming Nix cache uploader completed"
+              echo "TOTAL_UPLOADED=${TOTAL_UPLOADED:-0}"
+              echo "TOTAL_FAILED=${TOTAL_FAILED:-0}"
+              echo "BATCH_COUNT=${BATCH_COUNT:-0}"
               echo "=== Streaming Cache Upload Summary ==="
               echo "uploaded=${TOTAL_UPLOADED:-0} pending=0 failed=${TOTAL_FAILED:-0} batches=${BATCH_COUNT:-0}"
               echo "======================================"
+              if [ "${CACHE_UPLOAD_ENABLED:-false}" = "true" ] && [ "${TOTAL_UPLOADED:-0}" -eq 0 ]; then
+                echo "::warning::Main build was configured for cache upload, but no new Nix store paths were uploaded. Confirm whether this was a full cache hit or an uploader configuration problem."
+              fi
               if [ "${TOTAL_FAILED:-0}" -gt 0 ]; then
                 echo "::warning::Nix streaming cache finished with ${TOTAL_FAILED} failed derivations. These store paths were not saved to S3."
                 if [ -f "$QUEUE_DIR/unrecovered_failures.txt" ]; then
@@ -913,8 +998,11 @@ jobs:
           pkill -f "run_cache_uploader.sh" 2>/dev/null || true
           rm -f "$RUNNER_TEMP/nix-cache-signing-key"
 
-      - name: Teardown Nix
-        if: always() && steps.setup_nix.outcome == 'success'
+      - name: Teardown persistent Nix
+        if: >-
+          always() &&
+          steps.setup_nix.outcome == 'success' &&
+          steps.setup_nix.outputs.teardown-required == 'true'
         uses: './.github/actions/teardown-nix'
 
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
@@ -1052,7 +1140,7 @@ jobs:
     if: needs.check-drift.outputs.run_workers == 'true'
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - image: macro-websocket-service

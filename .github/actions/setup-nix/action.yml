@@ -44,10 +44,16 @@ inputs:
     required: false
     default: 'false'
 
+outputs:
+  teardown-required:
+    description: Whether a persistent /nix volume was detected that requires unmount/commit teardown.
+    value: ${{ steps.install_nix.outputs.teardown-required }}
+
 runs:
   using: composite
   steps:
     - name: Install or re-initialise Nix
+      id: install_nix
       shell: bash
       env:
         NIX_CACHE_URL: ${{ inputs.nix-cache-url }}
@@ -188,32 +194,6 @@ runs:
 
         start_daemon() {
           if $have_systemd; then
-            if $cache_enabled; then
-              # Securely store AWS credentials in a dedicated root-only shared credentials file (mode 0600)
-              sudo mkdir -p /etc/nix
-              {
-                echo "[default]"
-                echo "aws_access_key_id = $NIX_CACHE_AWS_ACCESS_KEY_ID"
-                echo "aws_secret_access_key = $NIX_CACHE_AWS_SECRET_ACCESS_KEY"
-              } | sudo tee /etc/nix/s3-cache-credentials >/dev/null
-              sudo chmod 600 /etc/nix/s3-cache-credentials
-              sudo chown root:root /etc/nix/s3-cache-credentials
-
-              # Using cache_region determined above
-
-              # Configure systemd drop-in for both determinate-nixd and nix-daemon pointing to the credentials file
-              for unit in determinate-nixd nix-daemon; do
-                dropin_dir="/etc/systemd/system/${unit}.service.d"
-                sudo mkdir -p "$dropin_dir"
-                {
-                  echo "[Service]"
-                  echo "Environment=\"AWS_SHARED_CREDENTIALS_FILE=/etc/nix/s3-cache-credentials\""
-                  echo "Environment=\"AWS_REGION=$cache_region\""
-                } | sudo tee "$dropin_dir/s3-cache-credentials.conf" >/dev/null
-                sudo chmod 644 "$dropin_dir/s3-cache-credentials.conf"
-              done
-              sudo systemctl daemon-reload
-            fi
 
             if [[ -e /nix/var/nix/profiles/default/lib/systemd/system/nix-daemon.service ]]; then
               sudo cp /nix/var/nix/profiles/default/lib/systemd/system/nix-daemon.* /etc/systemd/system/ || true
@@ -379,6 +359,16 @@ runs:
         echo "/nix/var/nix/profiles/default/bin" >> "$GITHUB_PATH"
         export PATH="/nix/var/nix/profiles/default/bin:$PATH"
         export NIX_REMOTE=daemon
-        echo "NIX_REMOTE=daemon" >> "$GITHUB_ENV"
+        # Determine whether /nix is a separate mounted persistent cache volume requiring teardown
+        teardown_required="false"
+        if mountpoint -q /nix 2>/dev/null; then
+          root_dev="$(df -P / 2>/dev/null | awk 'NR==2 {print $1}')"
+          nix_dev="$(df -P /nix 2>/dev/null | awk 'NR==2 {print $1}')"
+          if [[ -n "$nix_dev" && "$root_dev" != "$nix_dev" ]]; then
+            teardown_required="true"
+            echo "Persistent /nix volume mount detected ($nix_dev != $root_dev); teardown-required=true"
+          fi
+        fi
+        echo "teardown-required=$teardown_required" >> "$GITHUB_OUTPUT"
 
         "$nix_bin" --version || nix --version
