@@ -195,17 +195,16 @@ runs:
               sudo systemctl daemon-reload || true
             fi
 
-            # Determine which daemon unit is active or installed
-            target_unit=""
-            if systemctl is-active --quiet determinate-nixd.service 2>/dev/null || systemctl list-unit-files determinate-nixd.service 2>/dev/null | grep -q determinate-nixd.service; then
-              target_unit="determinate-nixd.service"
-            elif systemctl is-active --quiet nix-daemon.service 2>/dev/null || systemctl list-unit-files nix-daemon.service 2>/dev/null | grep -q nix-daemon.service; then
-              target_unit="nix-daemon.service"
-            fi
-
-            if [ -n "$target_unit" ]; then
-              echo "Restarting active systemd daemon unit: $target_unit"
-              sudo systemctl restart "$target_unit"
+            # Restart systemd daemon so newly written nix.conf and drop-ins take effect
+            if systemctl is-active --quiet determinate-nixd.service 2>/dev/null; then
+              echo "Restarting determinate-nixd.service..."
+              sudo systemctl restart determinate-nixd.service
+            elif systemctl is-active --quiet nix-daemon.service 2>/dev/null; then
+              echo "Restarting nix-daemon.service..."
+              sudo systemctl restart nix-daemon.service
+            elif systemctl is-active --quiet nix-daemon.socket 2>/dev/null; then
+              echo "Restarting nix-daemon.socket..."
+              sudo systemctl restart nix-daemon.socket nix-daemon.service 2>/dev/null || true
             else
               sudo systemctl try-restart determinate-nixd.service 2>/dev/null \
                 || sudo systemctl restart nix-daemon.service 2>/dev/null \
@@ -318,10 +317,11 @@ runs:
 
           # Healthcheck A: Direct S3 validation using current environment
           echo "Running Healthcheck A (Direct S3 verification)..."
+          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
           export AWS_ACCESS_KEY_ID="$NIX_CACHE_AWS_ACCESS_KEY_ID"
           export AWS_SECRET_ACCESS_KEY="$NIX_CACHE_AWS_SECRET_ACCESS_KEY"
           export AWS_REGION="$cache_region"
-          if nix store ping --store "$NIX_CACHE_URL" 2>/tmp/direct-s3-ping.err; then
+          if "$nix_bin" store ping --store "$NIX_CACHE_URL" 2>/tmp/direct-s3-ping.err; then
             echo "[HEALTHCHECK A: Direct S3] PASS"
           else
             echo "::warning::[HEALTHCHECK A: Direct S3] FAILED"

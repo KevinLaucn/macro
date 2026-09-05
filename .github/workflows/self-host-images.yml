@@ -801,7 +801,7 @@ jobs:
           rm -f "$RUNNER_TEMP/nix-cache-signing-key"
 
       - name: Teardown Nix
-        if: always()
+        if: always() && steps.setup_nix.outcome == 'success'
         uses: './.github/actions/teardown-nix'
 
       - uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
