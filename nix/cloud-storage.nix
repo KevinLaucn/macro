@@ -749,26 +749,64 @@
         }
       );
 
-      selfHostEmailBinaryPackages = pkgs.lib.listToAttrs (
-        map (def: {
-          name = "self-host-email-binaries-${def.serviceName}";
-          value = deployServiceBinaryPackage (
-            def
-            // {
-              cargoArtifacts = selfHostEmailCargoArtifacts;
-              buildArgs = selfHostEmailCommonArgs;
-              sourceForPackage = selfHostEmailPrunedDeploySrc;
-              lockArg = "--offline";
-            }
-          );
-        }) selfHostEmailBinaryDefinitions
+      # Aggregate single derivation for Self-host Email Production:
+      # Restores selfHostEmailCargoArtifacts once, shares a single target/release directory,
+      # sequentially invokes cargo build for each package with its exact featureArgs,
+      # and installs all 13 verified binaries directly into $out/bin.
+      selfHostEmailAllBinaries = pkgs.lib.unique (
+        pkgs.lib.concatMap (def: def.binaries) selfHostEmailBinaryDefinitions
       );
 
-      selfHostEmailBinaries = pkgs.buildEnv {
-        name = "self-host-email-binaries";
-        pathsToLink = [ "/bin" ];
-        paths = pkgs.lib.attrValues selfHostEmailBinaryPackages;
-      };
+      selfHostEmailBinaries = craneLib.mkCargoDerivation (
+        selfHostEmailCommonArgs
+        // {
+          inherit (selfHostEmailCommonArgs) src;
+          cargoArtifacts = selfHostEmailCargoArtifacts;
+          pname = "cloud-storage-self-host-email-binaries";
+          doCheck = false;
+          CARGO_PROFILE = "release";
+
+          buildPhaseCargoCommand = ''
+            set -euo pipefail
+
+            ${pkgs.lib.concatMapStringsSep "\n" (def: ''
+              echo "=== [EMAIL BUILD: ${def.packageName}] START: $(date -u +%T) ==="
+              cargo build --release --offline \
+                --package ${def.packageName} \
+                ${pkgs.lib.concatMapStringsSep " " (binary: "--bin ${binary}") def.binaries} \
+                ${def.featureArgs or ""}
+              echo "=== [EMAIL BUILD: ${def.packageName}] DONE: $(date -u +%T) ==="
+            '') selfHostEmailBinaryDefinitions}
+          '';
+
+          installPhaseCommand = ''
+            set -euo pipefail
+            mkdir -p $out/bin
+
+            ${pkgs.lib.concatMapStringsSep "\n" (bin: ''
+              if [ ! -f "target/release/${bin}" ]; then
+                echo "ERROR: Expected production binary target/release/${bin} was not produced!" >&2
+                exit 1
+              fi
+              cp "target/release/${bin}" "$out/bin/${bin}"
+              ${pkgs.binutils}/bin/strip "$out/bin/${bin}" || true
+              test -x "$out/bin/${bin}"
+            '') selfHostEmailAllBinaries}
+
+            # Verify that exact expected count of executables (13) is present in $out/bin
+            actual_count=$(find "$out/bin" -maxdepth 1 -type f -perm -111 | wc -l | tr -d ' ')
+            expected_count="${toString (builtins.length (pkgs.lib.unique (pkgs.lib.concatMap (def: def.binaries) selfHostEmailBinaryDefinitions)))}"
+            if [ "$actual_count" -ne "$expected_count" ]; then
+              echo "ERROR: Expected $expected_count binaries in $out/bin, found $actual_count" >&2
+              ls -la "$out/bin" >&2
+              exit 1
+            fi
+
+            echo "Successfully built and installed all $actual_count email production binaries:"
+            ls -la "$out/bin"
+          '';
+        }
+      );
 
       # ── Lambda builds (crane + cargo-zigbuild) ─────────────────────
       # SPIKE: build a Rust Lambda handler reproducibly under nix/crane so
