@@ -39,6 +39,10 @@ inputs:
     description: Private signing key for signing locally built store paths before uploading to the private cache.
     required: false
     default: ''
+  fail-on-cache-error:
+    description: Whether to fail the step if the S3 cache substituter cannot be verified. Default false.
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -52,6 +56,7 @@ runs:
         NIX_CACHE_AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
         NIX_CACHE_AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
         NIX_CACHE_SIGNING_KEY: ${{ inputs.nix-cache-signing-key }}
+        FAIL_ON_CACHE_ERROR: ${{ inputs.fail-on-cache-error }}
       run: |
         set -euo pipefail
 
@@ -65,9 +70,13 @@ runs:
         # The private-bucket substituter needs all four pieces: URL, a key to
         # verify signatures, and AWS credentials for the daemon to read S3.
         cache_enabled=false
+        cache_region="us-east-1"
         if [[ -n "$NIX_CACHE_URL" && -n "$NIX_CACHE_PUBLIC_KEY" \
               && -n "$NIX_CACHE_AWS_ACCESS_KEY_ID" && -n "$NIX_CACHE_AWS_SECRET_ACCESS_KEY" ]]; then
           cache_enabled=true
+          if [[ "$NIX_CACHE_URL" =~ region=([a-zA-Z0-9-]+) ]]; then
+            cache_region="${BASH_REMATCH[1]}"
+          fi
         fi
 
         cache_region="us-east-1"
@@ -179,6 +188,33 @@ runs:
 
         start_daemon() {
           if $have_systemd; then
+            if $cache_enabled; then
+              # Securely store AWS credentials in a dedicated root-only shared credentials file (mode 0600)
+              sudo mkdir -p /etc/nix
+              {
+                echo "[default]"
+                echo "aws_access_key_id = $NIX_CACHE_AWS_ACCESS_KEY_ID"
+                echo "aws_secret_access_key = $NIX_CACHE_AWS_SECRET_ACCESS_KEY"
+              } | sudo tee /etc/nix/s3-cache-credentials >/dev/null
+              sudo chmod 600 /etc/nix/s3-cache-credentials
+              sudo chown root:root /etc/nix/s3-cache-credentials
+
+              # Using cache_region determined above
+
+              # Configure systemd drop-in for both determinate-nixd and nix-daemon pointing to the credentials file
+              for unit in determinate-nixd nix-daemon; do
+                dropin_dir="/etc/systemd/system/${unit}.service.d"
+                sudo mkdir -p "$dropin_dir"
+                {
+                  echo "[Service]"
+                  echo "Environment=\"AWS_SHARED_CREDENTIALS_FILE=/etc/nix/s3-cache-credentials\""
+                  echo "Environment=\"AWS_REGION=$cache_region\""
+                } | sudo tee "$dropin_dir/s3-cache-credentials.conf" >/dev/null
+                sudo chmod 644 "$dropin_dir/s3-cache-credentials.conf"
+              done
+              sudo systemctl daemon-reload
+            fi
+
             if [[ -e /nix/var/nix/profiles/default/lib/systemd/system/nix-daemon.service ]]; then
               sudo cp /nix/var/nix/profiles/default/lib/systemd/system/nix-daemon.* /etc/systemd/system/ || true
             fi
@@ -274,6 +310,67 @@ runs:
 
         if $cache_enabled; then
           echo "S3 nix cache substituter configured: $NIX_CACHE_URL"
+
+          # Report daemon and credential status safely (no secrets logged)
+          if [ -f /etc/nix/s3-cache-credentials ]; then
+            echo "AWS credential file: PRESENT"
+          else
+            echo "AWS credential file: NOT FOUND"
+          fi
+          if [ -n "${NIX_CACHE_AWS_ACCESS_KEY_ID:-}" ]; then
+            echo "AWS_ACCESS_KEY_ID: SET"
+          else
+            echo "AWS_ACCESS_KEY_ID: UNSET"
+          fi
+          if [ -n "${AWS_SESSION_TOKEN:-}" ]; then
+            echo "AWS_SESSION_TOKEN: SET"
+          else
+            echo "AWS_SESSION_TOKEN: UNSET"
+          fi
+
+          if $have_systemd; then
+            active_unit=""
+            if systemctl is-active --quiet determinate-nixd.service 2>/dev/null; then
+              active_unit="determinate-nixd.service"
+            elif systemctl is-active --quiet nix-daemon.service 2>/dev/null; then
+              active_unit="nix-daemon.service"
+            fi
+
+            if [ -n "$active_unit" ]; then
+              main_pid=$(systemctl show -p MainPID --value "$active_unit" 2>/dev/null || true)
+              echo "Active daemon unit: $active_unit (MainPID: $main_pid)"
+              if [ -n "$main_pid" ] && [ "$main_pid" != "0" ]; then
+                if sudo grep -q "AWS_SHARED_CREDENTIALS_FILE" "/proc/$main_pid/environ" 2>/dev/null; then
+                  echo "Daemon credential provider: CONFIGURED"
+                elif sudo grep -q "AWS_ACCESS_KEY_ID" "/proc/$main_pid/environ" 2>/dev/null; then
+                  echo "Daemon credential provider: CONFIGURED (direct env)"
+                else
+                  echo "::warning::Daemon credential provider: NOT FOUND in /proc/$main_pid/environ"
+                fi
+              fi
+            else
+              echo "::warning::No active systemd nix daemon unit detected"
+            fi
+          else
+            echo "Daemon credential provider: CONFIGURED (process env)"
+          fi
+
+          # Healthcheck A: Direct S3 validation using current environment
+          echo "Running Healthcheck A (Direct S3 verification)..."
+          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+          export AWS_ACCESS_KEY_ID="$NIX_CACHE_AWS_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$NIX_CACHE_AWS_SECRET_ACCESS_KEY"
+          export AWS_REGION="$cache_region"
+          if "$nix_bin" store ping --store "$NIX_CACHE_URL" 2>/tmp/direct-s3-ping.err; then
+            echo "[HEALTHCHECK A: Direct S3] PASS"
+          else
+            echo "::warning::[HEALTHCHECK A: Direct S3] FAILED"
+            cat /tmp/direct-s3-ping.err >&2 || true
+            if [ "${FAIL_ON_CACHE_ERROR:-false}" = "true" ]; then
+              echo "::error::Failing job because fail-on-cache-error is true"
+              exit 1
+            fi
+          fi
         else
           echo "S3 nix cache substituter not configured (inputs unset); volume-only caching."
         fi
