@@ -108,9 +108,7 @@ jobs:
             '^tooling/' \
             '^nix/' \
             '^docker/' \
-            '^self-host/images/Dockerfile\.services$' \
-            '^self-host/init/' \
-            '^self-host/macroctl$' \
+            '^self-host/' \
             '^\.github/workflows/self-host-images\.yml$' \
             '^\.github/actions/setup-nix/action\.yml$'; then
             run_services=true
