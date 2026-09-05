@@ -5,7 +5,21 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 
 # Macro Private Maintainer (总控 / Router / Policy Entry)
 
-> ⚡ **代码关系链首要准则**：本项目已全量构建 Tree-sitter 语法树级别的本地代码知识图谱（`.codegraph/`，绝对路径 `/Volumes/开发/macro/.codegraph`，包含 1.1 万文件、15.6 万节点、51.5 万依赖边）。**在分析代码符号、查找调用链与被调用关系（Callers / Callees）、跨 crate 依赖流与修改影响面（Impact）时，必须优先使用 CodeGraph CLI（`codegraph callers/callees/impact/node/explore`）或 MCP 工具，严禁盲目大范围递归 grep**。必要时主动执行 `codegraph sync` 增量同步最新索引，或使用 `codegraph upgrade` 更新工具版本。
+## ⚡ 核心准则：代码关系链与 Bug 定位优先使用 CodeGraph 索引
+
+> ⚠️ **最高优先级执行铁律**：本项目已全量构建 Tree-sitter 语法树级别的本地代码知识图谱（`.codegraph/`，绝对路径 `/Volumes/开发/macro/.codegraph`，包含 1.1 万文件、15.6 万节点、51.5 万依赖边）。
+>
+> **无论何时遇到排查 Bug、报错定位、调用链与被调用关系（Callers / Callees）、跨 crate 依赖流与修改影响面（Impact），还是前端 i18n 快速定位组件，必须优先使用 CodeGraph CLI 秒级直达目标文件，严禁盲目大范围递归 grep！**
+>
+> 常用秒级定位命令速查：
+> - **排查 Bug / 符号调用源头（谁调用的）**：`codegraph callers <symbol>`
+> - **排查函数依赖下游（调用了谁）**：`codegraph callees <symbol>`
+> - **排查修改影响面与关联单测**：`codegraph impact <symbol>`
+> - **领域/模块全景探查**：`codegraph explore "<query>"`
+> - **查看符号定义与实现**：`codegraph node <symbol_or_path>`
+> - **增量同步索引**：修改代码或重构后，执行 `codegraph sync /Volumes/开发/macro`。
+
+---
 
 ## 一、Skill 定位与核心职责
 
@@ -20,9 +34,12 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 2. **私有化零官方云依赖**：`Zero Macro Cloud Dependency`，切断一切无感知 `macro.com` fallback；
 3. **保护四大核心支柱**：**Email**（Gmail 同步/写信）、**Contacts**（联系人）、**CRM**（客户时间线）、**Search**（检索）；
 4. **保留上游源码，解除生产依赖**：`Preserve upstream source; remove production dependency.`；
-5. **Profile 驱动可达性隔离**：目标 Domain 源码可以继续保留，但在指定 Product Profile 下必须不可进入编译闭包、生产制品、Docker 镜像与运行时图。
+5. **Profile 驱动可达性隔离**：目标 Domain 源码可以继续保留，但在指定 Product Profile 下必须不可进入编译闭包、生产制品、Docker 镜像与运行时图；
+6. **本地开发默认热更新原则**：本地日常界面二开与联调默认采用**热更新开发模式**（`just run_local` 或 `just frontend`，端口 `3000`），避免使用静态产物挂载模式导致源码修改不生效；`just stack` 仅限 CI/自动化或发布验收使用；
+7. **本地数据持久化与防丢原则**：本分叉的本地开发命令不得默认删除 Docker 数据卷。`run_local`、`stop_local`、`destroy_local` 与无参 `just stack down` 都必须保留本地数据库、Redis、OpenSearch、Kafka 与 FusionAuth 数据卷；只有显式数据库重置命令可清空对应数据。
 
 ---
+
 
 ## 二、意图自动分发与路由表 (Intent Dispatcher)
 
@@ -37,7 +54,7 @@ description: Master orchestration skill for maintaining, auditing, developing, a
 | **📊 数据库 Schema / 迁移** | Migration、PostgreSQL 表字段、Email/Gmail 数据表、Dump | **`../dump-schema/SKILL.md`** |
 | **🛡️ 发布前质检 / 审查门禁** | PR 审查、发布前验证、QC、精简度评估、稳定性检查 | **`../qc/SKILL.md`** |
 | **📦 依赖治理 / 漏洞升级** | Dependabot、Cargo/Bun/NPM 依赖冲突、CVE 修复 | **`../dependabot/skill.md`** |
-| **🌐 i18n 国际化 / 显式化二开** | 多语言、i18n、翻译、显式 t()、excludePatterns、audit、词条提取 | **`references/i18n-workflow.md`** |
+| **🌐 i18n 国际化 / 显式化二开** | 多语言、i18n、翻译、显式 t()、excludePatterns、audit、词条提取 | **`references/i18n-workflow.md`**（**优先通过 CodeGraph 快速定位组件**，索引缺失时执行 `codegraph sync`） |
 | **🤖 AI 工具与模型扩展** | AI Tool 开发、Agent 工具注入、模型升级切换 | **`../create-ai-tool/SKILL.md`** / **`../upgrade-model/SKILL.md`** |
 | **🚀 VPS 生产运维 / 部署** | 部署、SSH、Docker Compose、生产更新、运维排障 | **`references/production-deployment.md`**（凭据见 `.local-production.md`） |
 

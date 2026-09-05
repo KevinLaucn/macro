@@ -101,6 +101,24 @@ fn emits_required_keys() {
     }
 }
 
+#[test]
+fn emits_parseable_macro_api_token_pem_keys() {
+    let env = local_env();
+    let public_key = env
+        .get("MACRO_API_TOKEN_PUBLIC_KEY")
+        .expect("public key is emitted");
+    let private_key = env
+        .get("MACRO_API_TOKEN_PRIVATE_SECRET_KEY")
+        .expect("private key is emitted");
+
+    assert!(public_key.starts_with("-----BEGIN PUBLIC KEY-----"));
+    assert!(public_key.ends_with("-----END PUBLIC KEY-----"));
+    assert!(private_key.starts_with("-----BEGIN RSA PRIVATE KEY-----"));
+    assert!(private_key.ends_with("-----END RSA PRIVATE KEY-----"));
+    assert_ne!(public_key, "local-macro-api-token-public-key");
+    assert_ne!(private_key, "local-macro-api-token-private-key");
+}
+
 /// Boot stubs are a fallback layer BELOW Doppler; `to_env` is authoritative
 /// ABOVE Doppler. A key present in both would make its precedence ambiguous —
 /// whichever map wrote last would silently win.

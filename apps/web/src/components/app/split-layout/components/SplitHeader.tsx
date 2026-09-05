@@ -20,6 +20,7 @@ import { type EntityDragEvent, isEntityDragEvent } from '@entity';
 import { AnimatedSquareSidebarIcon } from '@icon/square-sidebar';
 import SplitIcon from '@icon/wide-newSplit.svg';
 import { ContextMenu } from '@kobalte/core/context-menu';
+import { t } from '@macro/i18n';
 import ArrowClockwise from '@phosphor/arrow-clockwise.svg';
 import ArrowLeft from '@phosphor/arrow-left.svg';
 import ArrowRight from '@phosphor/arrow-right.svg';
@@ -99,7 +100,7 @@ function SplitBackButton() {
       square
       size="sm"
       class="p-1 rounded-lg touch:active:bg-transparent"
-      label="Go Back"
+      label={() => t('Go Back')}
       hotkey={TOKENS.split.go.back}
       disabled={!context.handle.canGoBack()}
       onClick={() => {
@@ -120,7 +121,7 @@ function SplitForwardButton() {
       square
       size="sm"
       class="p-1 rounded-lg touch:active:bg-transparent"
-      label="Go Forward"
+      label={() => t('Go Forward')}
       hotkey={TOKENS.split.go.forward}
       disabled={!context.handle.canGoForward()}
       onClick={context.handle.goForward}
@@ -203,7 +204,7 @@ function SplitCloseButton() {
   const label = createMemo(() => {
     const isOnlySplit = layout.manager.splits().length === 1;
     const isNotUnifiedList = !isListViewID(context.handle.content().id);
-    return isOnlySplit && isNotUnifiedList ? 'Return to list' : 'Close';
+    return isOnlySplit && isNotUnifiedList ? t('Return to list') : t('Close');
   });
 
   return (
@@ -277,7 +278,7 @@ function SoupNavigationButtons() {
       <div class="flex items-center gap-0.5">
         <Button
           class="p-1 rounded-lg"
-          label="Previous item"
+          label={() => t('Previous item')}
           hotkey={TOKENS.entity.step.start}
           disabled={!canNavigateUp()}
           onClick={() => navigate(-1)}
@@ -286,7 +287,7 @@ function SoupNavigationButtons() {
         </Button>
         <Button
           class="p-1 rounded-lg"
-          label="Next item"
+          label={() => t('Next item')}
           hotkey={TOKENS.entity.step.end}
           disabled={!canNavigateDown()}
           onClick={() => navigate(1)}
@@ -308,7 +309,7 @@ function SplitHeaderContextMenu(props: ParentProps) {
   );
   const hasOtherSplits = createMemo(() => layout.manager.splits().length > 1);
   const canDuplicateSplit = createMemo(
-    () => panel.handle.content().type === 'component'
+    () => panel.handle.content()?.type === 'component'
   );
   const canToggleSpotlight = createMemo(() => canSpotlight(layout.manager));
   const canSwapWith = (direction: 'left' | 'right') =>
@@ -319,7 +320,9 @@ function SplitHeaderContextMenu(props: ParentProps) {
     id: LIST_VIEW_ID.inbox,
   });
 
-  const duplicateContent = (): SplitContent => ({ ...panel.handle.content() });
+  const duplicateContent = (): SplitContent => ({
+    ...(panel.handle.content() ?? newSplitContent()),
+  });
 
   const insertSplitBeside = (side: 'left' | 'right', content: SplitContent) => {
     const index = splitIndex();
@@ -564,11 +567,11 @@ export function SplitHeader(props: {
               class={cn(
                 'relative gap-0 px-1',
                 (!panel.handle.canGoBack() ||
-                  isListViewID(panel.handle.content().id)) &&
+                  isListViewID(panel.handle.content()?.id ?? '')) &&
                   'hidden'
               )}
             >
-              <Show when={!isListViewID(panel.handle.content().id)}>
+              <Show when={!isListViewID(panel.handle.content()?.id ?? '')}>
                 <SplitBackButton />
               </Show>
             </HeaderIsland>

@@ -22,6 +22,7 @@ import {
 import type { UserMentionRecord } from '@core/component/LexicalMarkdown/utils/mentionsUtils';
 import { RecipientSelector } from '@core/component/RecipientSelector';
 import { toast } from '@core/component/Toast/Toast';
+import { t } from '@macro/i18n';
 import {
   ENABLE_EMAIL_SCHEDULED_SEND,
   enableEmailSignatures,
@@ -1594,7 +1595,9 @@ export function BaseInput(props: {
     ];
     const firstRecipient = recipients[0];
     const action =
-      effectiveReplyType() === 'forward' ? 'Forwarding' : 'Replying to';
+      effectiveReplyType() === 'forward'
+        ? t('Forwarding')
+        : t('Replying to');
     if (!firstRecipient) return action;
 
     const remainingCount = recipients.length - 1;
@@ -2175,8 +2178,8 @@ export function BaseInput(props: {
             initialValue={initialHtml() ? undefined : props.preloadedBody}
             placeholder={
               isMobileDrawer()
-                ? 'Use `@` to reference files'
-                : 'Reply — @mention to share or cc people'
+                ? t('Use `@` to reference files')
+                : t('Reply — @mention to share or cc people')
             }
             portalScope={isMobileDrawer() ? 'local' : 'split'}
             refFn={(el) => props.markdownDomRef?.(el)}
@@ -2213,7 +2216,7 @@ export function BaseInput(props: {
               variant="ghost"
               size="icon-sm"
               class="rounded-md text-ink-extra-muted hover:text-ink-muted hover:bg-active"
-              tooltip="Show quoted text"
+              tooltip={t('Show quoted text')}
               onclick={(e: MouseEvent) => {
                 e.stopPropagation();
                 setQuoteCollapsed(false);
@@ -2238,7 +2241,9 @@ export function BaseInput(props: {
           >
             <Tooltip
               label={
-                form().replyAppended() ? 'Hide quoted text' : 'Show quoted text'
+                form().replyAppended()
+                  ? t('Hide quoted text')
+                  : t('Show quoted text')
               }
             >
               <KToggleButton

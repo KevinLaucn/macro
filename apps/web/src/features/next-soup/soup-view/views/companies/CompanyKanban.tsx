@@ -64,7 +64,7 @@ export function CompanyKanban() {
   const panel = useSplitPanelOrThrow();
   const entityActionViewContext = () =>
     resolveEntityActionViewContext({
-      activeListView: panel.handle.content().id,
+      activeListView: panel.handle.content()?.id ?? '',
       activeTab: activeTab(),
     });
 

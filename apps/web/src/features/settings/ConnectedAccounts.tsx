@@ -1,4 +1,5 @@
 import { ENABLE_EMAIL } from '@core/constant/featureFlags';
+import { t } from '@macro/i18n';
 import { Show, Suspense } from 'solid-js';
 import { EmailCard } from './Email';
 import { GitHubCard } from './GitHub';
@@ -11,10 +12,12 @@ import { SettingsPage, SettingsSection } from './primitives';
 export function ConnectedAccounts() {
   return (
     <SettingsPage
-      title="Connections"
-      description="Connect your accounts so Macro can work across the tools you already use."
+      title={t('Connections')}
+      description={t(
+        'Connect your accounts so Macro can work across the tools you already use.'
+      )}
     >
-      <SettingsSection title="Accounts">
+      <SettingsSection title={t('Accounts')}>
         <div class="flex flex-col gap-3">
           <Show when={ENABLE_EMAIL}>
             <Suspense>

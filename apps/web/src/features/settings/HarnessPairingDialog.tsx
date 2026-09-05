@@ -1,5 +1,6 @@
 import { toast } from '@core/component/Toast/Toast';
 import { ThrownResultError } from '@core/util/result';
+import { t } from '@macro/i18n';
 import {
   useApproveHarnessPairingMutation,
   useHarnessPairingQuery,
@@ -9,8 +10,9 @@ import { Button, Dialog, Panel } from '@ui';
 import { createEffect, createSignal, Match, Show, Switch } from 'solid-js';
 import { ChoiceRow } from './primitives';
 
-const PAIRING_ERROR_FALLBACK =
-  'This pairing code is invalid, expired, or already claimed.';
+function getPairingErrorFallback(): string {
+  return t('This pairing code is invalid, expired, or already claimed.');
+}
 
 type HarnessShare = 'Private' | 'Team';
 
@@ -68,7 +70,7 @@ export function HarnessPairingDialog(props: {
 
   const lookupError = () =>
     committedCode() !== undefined && pairingQuery.isError
-      ? failureMessage(pairingQuery.error, PAIRING_ERROR_FALLBACK)
+      ? failureMessage(pairingQuery.error, getPairingErrorFallback())
       : undefined;
   const errorMessage = () => approveError() ?? lookupError();
 
@@ -105,9 +107,9 @@ export function HarnessPairingDialog(props: {
         teamId: share() === 'Team' ? currentTeamId() : undefined,
       });
       setApproved(true);
-      toast.success('Harness connected');
+      toast.success(t('Harness connected'));
     } catch (error) {
-      setApproveError(failureMessage(error, PAIRING_ERROR_FALLBACK));
+      setApproveError(failureMessage(error, getPairingErrorFallback()));
     }
   };
 
@@ -124,14 +126,16 @@ export function HarnessPairingDialog(props: {
       <Panel depth={2} class="rounded-xl text-ink">
         <Panel.Header class="px-5 py-3">
           <Dialog.Title class="text-sm font-semibold">
-            {approved() ? 'Harness connected' : 'Connect a harness'}
+            {approved() ? t('Harness connected') : t('Connect a harness')}
           </Dialog.Title>
         </Panel.Header>
         <Panel.Body class="p-5">
           <Switch>
             <Match when={approved()}>
               <p class="text-sm leading-5 text-ink-muted">
-                Harness connected. macrod will finish pairing automatically.
+                {t(
+                  'Harness connected. macrod will finish pairing automatically.'
+                )}
               </p>
             </Match>
 
@@ -146,7 +150,7 @@ export function HarnessPairingDialog(props: {
                       size="sm"
                       onClick={tryAnotherCode}
                     >
-                      Try another code
+                      {t('Try another code')}
                     </Button>
                   </div>
                 </div>
@@ -161,30 +165,31 @@ export function HarnessPairingDialog(props: {
                       {pairing().code}
                     </div>
                     <p class="text-xs text-ink-muted">
-                      Confirm this matches the code macrod printed.
+                      {t('Confirm this matches the code macrod printed.')}
                     </p>
                   </div>
 
                   <div class="flex flex-col gap-0.5 text-xs text-ink-muted">
                     <span>
-                      Requested name:{' '}
+                      {t('Requested name:')}{' '}
                       <span class="text-ink">{pairing().requested_name}</span>
                     </span>
                     <Show when={pairing().host}>
                       {(host) => (
                         <span>
-                          Host: <span class="text-ink">{host()}</span>
+                          {t('Host:')} <span class="text-ink">{host()}</span>
                         </span>
                       )}
                     </Show>
                     <span>
-                      Expires in {expiresInMinutes(pairing().expires_at)}{' '}
-                      minutes
+                      {t('Expires in {count} minutes', {
+                        count: expiresInMinutes(pairing().expires_at),
+                      })}
                     </span>
                   </div>
 
                   <label class="flex flex-col gap-1.5">
-                    <span class="text-xs font-medium text-ink">Name</span>
+                    <span class="text-xs font-medium text-ink">{t('Name')}</span>
                     <input
                       class="settings-input w-full"
                       value={name()}
@@ -196,13 +201,15 @@ export function HarnessPairingDialog(props: {
                   </label>
 
                   <fieldset class="grid grid-cols-2 gap-2 mobile:grid-cols-1">
-                    <legend class="sr-only">Share</legend>
+                    <legend class="sr-only">{t('Share')}</legend>
                     <ChoiceRow
                       name="harness-share"
                       value="private"
                       checked={share() === 'Private'}
-                      title="Private"
-                      description="Only you can run agents on this harness."
+                      title={t('Private')}
+                      description={t(
+                        'Only you can run agents on this harness.'
+                      )}
                       onChange={() => {
                         setShareEdited(true);
                         setShare('Private');
@@ -212,11 +219,11 @@ export function HarnessPairingDialog(props: {
                       name="harness-share"
                       value="team"
                       checked={share() === 'Team'}
-                      title="Team"
+                      title={t('Team')}
                       description={
                         canShareWithTeam()
-                          ? 'Your team can run agents on this harness.'
-                          : 'Create or join a team before sharing harnesses.'
+                          ? t('Your team can run agents on this harness.')
+                          : t('Create or join a team before sharing harnesses.')
                       }
                       disabled={!canShareWithTeam()}
                       onChange={() => {
@@ -230,7 +237,7 @@ export function HarnessPairingDialog(props: {
             </Match>
 
             <Match when={committedCode()}>
-              <p class="text-sm text-ink-muted">Looking up pairing code…</p>
+              <p class="text-sm text-ink-muted">{t('Looking up pairing code…')}</p>
             </Match>
 
             <Match when>
@@ -239,7 +246,7 @@ export function HarnessPairingDialog(props: {
                   for="harness-pairing-code"
                   class="text-xs font-medium text-ink"
                 >
-                  Pairing code
+                  {t('Pairing code')}
                 </label>
                 <div class="flex min-w-0 items-center gap-2 rounded-lg border border-edge-muted bg-ink/[0.025] px-3 py-2">
                   <input
@@ -259,7 +266,7 @@ export function HarnessPairingDialog(props: {
                   />
                 </div>
                 <p class="text-xs text-ink-extra-muted">
-                  Run macrod on your computer and enter the code it prints.
+                  {t('Run macrod on your computer and enter the code it prints.')}
                 </p>
               </div>
             </Match>
@@ -274,7 +281,7 @@ export function HarnessPairingDialog(props: {
                 size="sm"
                 onClick={props.onClose}
               >
-                Done
+                {t('Done')}
               </Button>
             </Match>
             <Match when={errorMessage()}>
@@ -284,7 +291,7 @@ export function HarnessPairingDialog(props: {
                 size="sm"
                 onClick={props.onClose}
               >
-                Close
+                {t('Close')}
               </Button>
             </Match>
             <Match when={pairingQuery.data}>
@@ -295,7 +302,7 @@ export function HarnessPairingDialog(props: {
                 disabled={approveMutation.isPending}
                 onClick={props.onClose}
               >
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 type="button"
@@ -304,7 +311,7 @@ export function HarnessPairingDialog(props: {
                 disabled={!canApprove()}
                 onClick={() => void approve()}
               >
-                {approveMutation.isPending ? 'Approving…' : 'Approve'}
+                {approveMutation.isPending ? t('Approving…') : t('Approve')}
               </Button>
             </Match>
             <Match when={committedCode()}>
@@ -314,7 +321,7 @@ export function HarnessPairingDialog(props: {
                 size="sm"
                 onClick={props.onClose}
               >
-                Cancel
+                {t('Cancel')}
               </Button>
             </Match>
             <Match when>
@@ -324,7 +331,7 @@ export function HarnessPairingDialog(props: {
                 size="sm"
                 onClick={props.onClose}
               >
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 type="button"
@@ -333,7 +340,7 @@ export function HarnessPairingDialog(props: {
                 disabled={codeInput().trim().length === 0}
                 onClick={lookUp}
               >
-                Look up
+                {t('Look up')}
               </Button>
             </Match>
           </Switch>

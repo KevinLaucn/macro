@@ -77,10 +77,6 @@ pub struct StatusArgs {
 pub struct DownArgs {
     #[command(flatten)]
     pub instance: InstanceArgs,
-    /// Stop containers but keep volumes (data survives the next `stack up`...
-    /// which wipes them anyway — use `just run_local`/`stop_local` semantics).
-    #[arg(long)]
-    pub keep_data: bool,
 }
 
 /// Durable per-instance record of what `up` brought up, so `update`/`status`
@@ -541,13 +537,10 @@ pub fn status(args: &StatusArgs) -> Result<()> {
     Ok(())
 }
 
-/// `cargo x stack down` — reclaim the instance: containers, volumes, networks,
-/// and state. `--keep-data` only stops containers.
+/// `cargo x stack down` — reclaim the instance: containers, networks, and
+/// state. Data volumes are preserved.
 pub fn down(args: &DownArgs) -> Result<()> {
     let instance = Instance::derive(args.instance.instance.as_deref(), args.instance.port_base)?;
-    if args.keep_data {
-        return super::stop(&args.instance);
-    }
     super::destroy(&args.instance)?;
     clear_state(&instance)?;
     Ok(())

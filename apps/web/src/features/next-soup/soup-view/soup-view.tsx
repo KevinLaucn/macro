@@ -325,7 +325,7 @@ export const SoupView = (props: SoupViewProps) => {
   });
 
   const entryState = panel.handle.currentEntryState();
-  const contentId = panel.handle.content().id;
+  const contentId = panel.handle.content()?.id ?? '';
 
   const persistedFilters = entryState?.['search.filters'] as Query | undefined;
 
@@ -835,9 +835,9 @@ const SoupViewListContent = (props: SoupViewListProps) => {
   const [soupViewRef, setSoupViewRef] = createSignal<HTMLElement | undefined>();
 
   const currentView = createMemo(() => {
-    const { type, id } = panel.handle.content();
-    if (type !== 'component') return;
-    return isListViewID(id) ? id : undefined;
+    const content = panel.handle.content();
+    if (!content || content.type !== 'component') return;
+    return isListViewID(content.id) ? content.id : undefined;
   });
 
   const narrowLayout = createMemo<NarrowLayoutVariant>(() => {
@@ -929,7 +929,7 @@ const SoupViewListContent = (props: SoupViewListProps) => {
   const scopeId = createMemo(() => props.scopeId ?? panel.splitHotkeyScope);
   const entityActionViewContext = () =>
     resolveEntityActionViewContext({
-      activeListView: panel.handle.content().id,
+      activeListView: panel.handle.content()?.id ?? '',
       activeTab: activeTab(),
     });
 
@@ -1225,7 +1225,7 @@ const SoupViewListContent = (props: SoupViewListProps) => {
     }
   );
 
-  const isProjectList = panel.handle.content().type === 'project';
+  const isProjectList = panel.handle.content()?.type === 'project';
 
   const readListEntryState = () =>
     panel.handle.currentEntryState()?.[SOUP_LIST_STATE_ENTRY_KEY] as

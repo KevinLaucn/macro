@@ -1,13 +1,15 @@
 //! Ensure the local agent-harness sandbox image exists before compose starts
 //! the harness.
 //!
-//! When local sandboxes are on, `run_local` / `stack up` always `docker build`
-//! the tag with no `--platform`, so the daemon's native arch wins. The sandbox
-//! flake exposes `x86_64-linux` and `aarch64-linux`; Apple Silicon and ARM
-//! Linux therefore bake natively instead of qemu. BuildKit cache is the
-//! freshness check: unchanged `container/` is a no-op rebuild, a Dockerfile or
-//! flake change pays the two nix shells. `--no-build` (CI snapshot bake)
-//! skips that: the image is already on the daemon from preload.
+//! When local sandboxes are on, `run_local` / `stack up` can invoke `docker build`
+//! for `crates/agent_harness/container/Dockerfile.local`. Before changing local
+//! stack build behavior or running a rebuild on a developer machine, inspect
+//! this file and `local.rs::prepare`: pass `--no-build` when the existing
+//! `macro-agent-harness:latest` image and target-dir binaries are acceptable.
+//! The agent harness image build can be slow or hang in Docker BuildKit; skipping
+//! it keeps CRM/auth/frontend debugging from paying for unrelated sandbox work.
+//! A real rebuild is only needed after changing `crates/agent_harness/container/`,
+//! the sandbox flake/runtime inputs, or the binaries mounted into `/app/out`.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -23,8 +25,8 @@ mod test;
 /// Local Docker tag `just run_local` loads.
 pub const DEFAULT_LOCAL_TAG: &str = "macro-agent-harness:latest";
 
-/// Build context matching `just -f crates/agent_harness/justfile build-local`.
-pub const CONTEXT_REL: &str = "crates/agent_harness/container";
+/// Build context for the repo-root Docker build.
+pub const CONTEXT_REL: &str = ".";
 
 /// What [`ensure`] will do for a resolved env, before talking to Docker.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,6 +61,8 @@ pub(crate) fn build_args(tag: &str, context: &Path) -> Vec<String> {
         "build".to_owned(),
         "--tag".to_owned(),
         tag.to_owned(),
+        "-f".to_owned(),
+        "crates/agent_harness/container/Dockerfile.local".to_owned(),
         context.display().to_string(),
     ]
 }

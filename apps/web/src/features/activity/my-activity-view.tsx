@@ -2,6 +2,7 @@ import { dateBucket } from '@app/features/next-soup/soup-view/group-by-date';
 import { SoupSectionHeader } from '@app/features/next-soup/soup-view/section-header';
 import { SplitHeaderLeft } from '@components/app/split-layout/components/SplitHeader';
 import { StaticMarkdownContext } from '@core/component/LexicalMarkdown/component/core/StaticMarkdown';
+import { t } from '@macro/i18n';
 import type { ActivityEvent } from '@queries/activity/graphql/entity';
 import { createMyActivityQuery } from '@queries/activity/graphql/feed';
 import { createMyActivityOverviewQuery } from '@queries/activity/graphql/overview';
@@ -37,7 +38,7 @@ export function MyActivityView() {
   return (
     <div class="@container/u-list flex size-full flex-col">
       <SplitHeaderLeft>
-        <span class="font-semibold text-sm">Activity</span>
+        <span class="font-semibold text-sm">{t('Activity')}</span>
       </SplitHeaderLeft>
       <StaticMarkdownContext>
         <div class="min-h-0 flex-1 overflow-y-auto py-1">
@@ -48,8 +49,8 @@ export function MyActivityView() {
                 fallback={
                   <p class="px-2 py-1 text-ink-extra-muted text-xs">
                     {overview.isError
-                      ? 'Activity overview is unavailable right now.'
-                      : 'Loading activity overview…'}
+                      ? t('Activity overview is unavailable right now.')
+                      : t('Loading activity overview…')}
                   </p>
                 }
               >
@@ -64,10 +65,10 @@ export function MyActivityView() {
               fallback={
                 <p class={`${INSET_CLASS} px-2 py-2 text-ink-muted text-sm`}>
                   {feed.isLoading
-                    ? 'Loading…'
+                    ? t('Loading…')
                     : feed.isError
-                      ? 'Activity is unavailable right now. Try again in a moment.'
-                      : 'No activity yet.'}
+                      ? t('Activity is unavailable right now. Try again in a moment.')
+                      : t('No activity yet.')}
                 </p>
               }
             >
@@ -79,7 +80,7 @@ export function MyActivityView() {
                     onClick={() => void feed.fetchNextPage()}
                     disabled={feed.isFetchingNextPage}
                   >
-                    {feed.isFetchingNextPage ? 'Loading…' : 'Show more'}
+                    {feed.isFetchingNextPage ? t('Loading…') : t('Show more')}
                   </Button>
                 </div>
               </Show>

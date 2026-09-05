@@ -68,3 +68,26 @@ fn durable_bake_covers_every_repository_built_local_image() {
         ["proxy", "mailpit", "static_file_cdn"]
     );
 }
+
+#[test]
+fn stack_teardown_keeps_volumes() {
+    // User-data contract: local dev shutdown/destruction must never delete
+    // Docker volumes by default. Those volumes hold linked inboxes, synced
+    // email, FusionAuth users, Redis/OpenSearch/Kafka state, and other local
+    // work. Do not reintroduce `docker compose down -v` here unless there is a
+    // clearly documented destructive-reset path and this default remains safe.
+    let args = teardown_compose_args("macro");
+    assert_eq!(
+        args,
+        [
+            "compose",
+            "-p",
+            "macro",
+            "down",
+            "--remove-orphans",
+            "-t",
+            "0",
+        ]
+    );
+    assert!(!args.iter().any(|arg| arg == "-v"));
+}

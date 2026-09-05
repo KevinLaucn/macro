@@ -15,6 +15,7 @@ import { AnimatedStarIcon } from '@icon/wide-star';
 import type { ChannelType } from '@service-cognition/generated/schemas/channelType';
 import { Button } from '@ui';
 import { createSignal } from 'solid-js';
+import { t } from '@macro/i18n';
 
 export { AnimatedStarIcon as ChatWithAgentIcon };
 
@@ -133,7 +134,7 @@ export function ChatWithAgentButton(props: { entity: ChatWithAgentEntity }) {
 
   return (
     <Button
-      tooltip="Chat with Agent"
+      tooltip={t('Chat with Agent')}
       variant="outline"
       size="sm"
       onMouseEnter={() => setHovering(true)}
@@ -143,7 +144,7 @@ export function ChatWithAgentButton(props: { entity: ChatWithAgentEntity }) {
       class="bg-surface"
     >
       <AnimatedStarIcon triggerAnimation={hovering()} />
-      <span class="text-xs">Chat</span>
+      <span class="text-xs">{t('Chat')}</span>
     </Button>
   );
 }
@@ -162,7 +163,7 @@ export function AskMacroButton(props: { entity: ChatWithAgentEntity }) {
       class="gap-1.5 rounded-full border border-edge-muted px-2"
     >
       <AnimatedStarIcon triggerAnimation={hovering()} />
-      <span class="text-xs font-medium">Ask Macro</span>
+      <span class="text-xs font-medium">{t('Ask Macro')}</span>
     </Button>
   );
 }

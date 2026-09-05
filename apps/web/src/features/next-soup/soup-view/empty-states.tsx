@@ -164,13 +164,21 @@ export function EmptyState(props: {
       >
         <EmptyStatePanel
           graphic={EmptyStateInboxTrayGraphic}
-          title="No scheduled reminders"
+          title={t('No scheduled reminders')}
           description={
             <>
-              Reminders you schedule wait here until they fire into Signal. Set
-              one on anything in Macro by selecting it and pressing{' '}
-              <HotkeyCap>h</HotkeyCap>, or write one about nothing in
-              particular.
+              {t(
+                'Reminders you schedule wait here until they fire into Signal. Set one on anything in Macro by selecting it and pressing {key}, or write one about nothing in particular.',
+                { key: '__KEY__' }
+              )
+                .split('__KEY__')
+                .reduce<JSXElement[]>(
+                  (acc, part, idx) =>
+                    idx === 0
+                      ? [part]
+                      : [...acc, <HotkeyCap>h</HotkeyCap>, part],
+                  []
+                )}
             </>
           }
           // Gated like every other reminder affordance. The tab itself is
@@ -179,7 +187,7 @@ export function EmptyState(props: {
           primaryAction={
             isCreatableEnabled('reminder')
               ? {
-                  label: 'New reminder',
+                  label: t('New reminder'),
                   onClick: () => runCreateAction('reminder'),
                 }
               : undefined

@@ -1,12 +1,13 @@
 import { onMount } from 'solid-js';
 import { useSplitPanelOrThrow } from '@components/app/split-layout/layoutUtils';
+import { t } from '@macro/i18n';
 import ChatCircleDotsIcon from '@phosphor/chat-circle-dots.svg';
 
 export function ChannelsView() {
   const panel = useSplitPanelOrThrow();
 
   onMount(() => {
-    panel.handle.setDisplayName('Channels');
+    panel.handle.setDisplayName(t('Channels'));
   });
 
   return (
@@ -17,21 +18,23 @@ export function ChannelsView() {
         </div>
         <div class="flex flex-col gap-1.5">
           <h2 class="text-xl font-semibold text-ink">
-            Omnichannel Communications
+            {t('Omnichannel Communications')}
           </h2>
           <p class="text-sm text-ink-muted leading-relaxed">
-            Multi-platform messaging hub is coming soon. Connect and manage customer conversations across WhatsApp, Instagram, Facebook Messenger, and more in one unified interface.
+            {t(
+              'Multi-platform messaging hub is coming soon. Connect and manage customer conversations across WhatsApp, Instagram, Facebook Messenger, and more in one unified interface.'
+            )}
           </p>
         </div>
         <div class="flex flex-wrap justify-center gap-2 mt-2">
           <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-surface-muted text-ink-muted">
-            WhatsApp
+            {t('WhatsApp')}
           </span>
           <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-surface-muted text-ink-muted">
-            Instagram
+            {t('Instagram')}
           </span>
           <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-surface-muted text-ink-muted">
-            Messenger
+            {t('Messenger')}
           </span>
         </div>
       </div>

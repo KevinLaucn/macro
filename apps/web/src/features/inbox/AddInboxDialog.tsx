@@ -1,4 +1,5 @@
 import { useAddInboxFlow } from '@core/email-link';
+import { t } from '@macro/i18n';
 import { Button, Dialog, Panel } from '@ui';
 import { createSignal, onCleanup } from 'solid-js';
 
@@ -51,12 +52,12 @@ export function AddInboxDialog() {
       <Panel depth={2} class="rounded-xl">
         <Panel.Header class="px-6">
           <Dialog.Title class="text-ink text-sm font-semibold">
-            Add inbox
+            {t('Add inbox')}
           </Dialog.Title>
         </Panel.Header>
         <Panel.Body class="p-6 font-sans flex flex-col gap-3">
           <Dialog.Description class="text-ink-muted text-sm/tight font-normal">
-            Connect another Gmail account to Macro?
+            {t('Connect another Gmail account to Macro?')}
           </Dialog.Description>
           <div class="pt-3 justify-end items-center gap-3 inline-flex">
             <Button
@@ -65,7 +66,7 @@ export function AddInboxDialog() {
               disabled={pending()}
               onClick={() => setIsOpen(false)}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="accent"
@@ -73,7 +74,7 @@ export function AddInboxDialog() {
               disabled={pending()}
               onClick={handleConfirm}
             >
-              Add inbox
+              {t('Add inbox')}
             </Button>
           </div>
         </Panel.Body>

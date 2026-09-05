@@ -47,6 +47,7 @@ import ArrowCounterClockwise from '@phosphor-icons/core/regular/arrow-counter-cl
 import { useEmailLinksQuery } from '@queries/email/link';
 import { Button } from '@ui';
 import { onCleanup, Show } from 'solid-js';
+import { t } from '@macro/i18n';
 import { useEmailContext } from './EmailContext';
 
 export function TopBar(props: {
@@ -196,14 +197,14 @@ export function TopBar(props: {
 
   const emailActions: BlockTool[] = [
     {
-      label: 'Mark done',
+      label: () => t('Mark done'),
       icon: CheckIcon,
       action: toggleMarkDone,
       condition: () => isOwnThread() && !isDone(),
       hotkeyToken: TOKENS.entity.action.markDone,
     },
     {
-      label: 'Mark as not done',
+      label: () => t('Mark as not done'),
       icon: CheckBoldIcon,
       action: toggleMarkDone,
       condition: () =>
@@ -211,21 +212,21 @@ export function TopBar(props: {
       hotkeyToken: TOKENS.entity.action.markNotDone,
     },
     {
-      label: 'Mark unread',
+      label: () => t('Mark unread'),
       icon: EnvelopeSimpleOpenIcon,
       action: toggleMarkUnread,
       condition: () => isOwnThread() && !emailCtx.isThreadMarkedUnread(),
       hotkeyToken: TOKENS.entity.action.markUnread,
     },
     {
-      label: 'Mark read',
+      label: () => t('Mark read'),
       icon: EnvelopeSimpleIcon,
       action: toggleMarkUnread,
       condition: () => isOwnThread() && emailCtx.isThreadMarkedUnread(),
       hotkeyToken: TOKENS.entity.action.markRead,
     },
     {
-      label: 'Ask Macro',
+      label: () => t('Ask Macro'),
       icon: ChatWithAgentIcon,
       action: () => {
         const threadId = emailCtx.thread()?.db_id;
@@ -235,7 +236,7 @@ export function TopBar(props: {
       condition: () => !!emailCtx.thread()?.db_id,
     },
     {
-      label: 'Create task',
+      label: () => t('Create task'),
       icon: AnimatedTaskIcon,
       action: () => props.onCreateTask?.(),
       condition: () => !!props.onCreateTask && !!emailCtx.thread()?.db_id,
@@ -243,7 +244,7 @@ export function TopBar(props: {
     shareTool,
     {
       group: 'file',
-      label: 'Move to folder',
+      label: () => t('Move to folder'),
       icon: ArrowRightIcon,
       action: moveToFolder,
       condition: () => {
@@ -253,21 +254,21 @@ export function TopBar(props: {
     },
     {
       group: 'delete',
-      label: 'Delete',
+      label: () => t('Delete'),
       icon: TrashIcon,
       action: trashThread,
       condition: isOwnThread,
     },
     {
       group: 'sender',
-      label: 'Sender → Noise',
+      label: () => t('Sender → Noise'),
       icon: AnimatedNoiseIcon,
       action: () => emailCtx.markSenderNoise(),
       condition: isOwnThread,
     },
     {
       group: 'sender',
-      label: 'Block Sender',
+      label: () => t('Block Sender'),
       icon: ProhibitIcon,
       action: () => emailCtx.blockSender(),
       condition: isOwnThread,

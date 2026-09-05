@@ -39,6 +39,7 @@ import Tag from '@phosphor/tag.svg';
 import Trash from '@phosphor/trash-simple.svg';
 import { blockNameToItemType, type ItemType } from '@service-storage/itemType';
 import { cn, Dropdown, Hotkey } from '@ui';
+import { t } from '@macro/i18n';
 import {
   type Component,
   createEffect,
@@ -123,13 +124,16 @@ function SplitMenuItemContent(
     showHotkey?: boolean;
   }
 ) {
+  const displayLabel = () =>
+    typeof props.label === 'string' ? t(props.label) : props.label;
+
   return (
     <>
       <Dynamic
         component={props.icon as Component<JSX.SvgSVGAttributes<SVGSVGElement>>}
         class="size-4 shrink-0"
       />
-      <div class="flex-1 truncate">{props.label}</div>
+      <div class="flex-1 truncate">{displayLabel()}</div>
       <Show when={props.showHotkey !== false && props.hotkeyToken}>
         <Hotkey
           token={props.hotkeyToken}

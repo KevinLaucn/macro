@@ -38,7 +38,7 @@ status_local *ARGS:
 reset_local *ARGS:
   {{ xtask }} reset-local "$@"
 
-# Remove an instance's containers, networks, and volumes.
+# Remove an instance's containers and networks. Volumes are preserved.
 destroy_local *ARGS:
   {{ xtask }} destroy-local "$@"
 
@@ -50,7 +50,7 @@ stop_local *ARGS:
 #   just stack up                      # full stack; static frontend served by the proxy
 #   just stack update                  # adopt a new build; volumes stay
 #   just stack status --json           # machine-readable state
-#   just stack down                    # reclaim everything
+#   just stack down                    # remove containers; volumes stay
 stack *ARGS:
   {{ xtask }} stack "$@"
 

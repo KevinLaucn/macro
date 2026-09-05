@@ -30,7 +30,7 @@ pub enum GetAttachmentDocumentIdError {
     #[error("Database error occurred")]
     DatabaseError(anyhow::Error),
 
-    #[error("Failed to upload attachment")]
+    #[error("Failed to upload attachment: {0}")]
     UploadError(UploadAttachmentError),
 }
 
@@ -39,20 +39,31 @@ impl IntoResponse for GetAttachmentDocumentIdError {
         let status_code = match &self {
             GetAttachmentDocumentIdError::AttachmentNotFound => StatusCode::NOT_FOUND,
             GetAttachmentDocumentIdError::AccessDenied => StatusCode::FORBIDDEN,
-            GetAttachmentDocumentIdError::UploadError(UploadAttachmentError::RateLimited) => {
-                StatusCode::TOO_MANY_REQUESTS
-            }
-            // Provider failures keep their meaning (401/403/404/409/429)
-            // instead of collapsing to 500.
-            GetAttachmentDocumentIdError::UploadError(UploadAttachmentError::GmailFetchFailed(
-                provider_error,
-            )) => crate::api::email::provider_error::provider_error_status(provider_error),
-            GetAttachmentDocumentIdError::DatabaseError(_)
-            | GetAttachmentDocumentIdError::UploadError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            GetAttachmentDocumentIdError::UploadError(error) => upload_attachment_status(error),
+            GetAttachmentDocumentIdError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (status_code, self.to_string()).into_response()
     }
+}
+
+fn upload_attachment_status(error: &UploadAttachmentError) -> StatusCode {
+    match error {
+        UploadAttachmentError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
+        // Provider failures keep their meaning (401/403/404/409/429)
+        // instead of collapsing to 500.
+        UploadAttachmentError::GmailFetchFailed(provider_error) => {
+            crate::api::email::provider_error::provider_error_status(provider_error)
+        }
+        UploadAttachmentError::DssCreateFailed(error) if is_dss_unauthorized(error) => {
+            StatusCode::BAD_GATEWAY
+        }
+        _ => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+fn is_dss_unauthorized(error: &str) -> bool {
+    error.contains("HTTP 401") || error.contains("401 Unauthorized")
 }
 
 /// The response returned from the get attachment endpoint

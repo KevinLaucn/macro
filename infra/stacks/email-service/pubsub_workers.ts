@@ -29,6 +29,10 @@ type Args = {
   };
   platform: { family: string; architecture: 'amd64' | 'arm64' };
   containerEnvVars: { name: string; value: pulumi.Output<string> | string }[];
+  containerSecrets?: {
+    name: string;
+    valueFrom: pulumi.Output<string> | string;
+  }[];
   tags: { [key: string]: string };
   dopplerEcsEnvironment: DopplerEcsEnvironment;
 };
@@ -49,6 +53,7 @@ export class EmailPubSubWorkers extends pulumi.ComponentResource {
       vpc,
       platform,
       containerEnvVars,
+      containerSecrets = [],
       clusterName,
       dopplerEcsEnvironment,
       tags,
@@ -117,7 +122,10 @@ export class EmailPubSubWorkers extends pulumi.ComponentResource {
               cpu: stack === 'prod' ? 2048 : 1024,
               memory: stack === 'prod' ? 3742 : 1742, // 2048 minimum - 256 for datadog - 50 for log_router
               environment: [...containerEnvVars],
-              secrets: [...dopplerEcsEnvironment.containerSecrets],
+              secrets: [
+                ...dopplerEcsEnvironment.containerSecrets,
+                ...containerSecrets,
+              ],
               logConfiguration: {
                 logDriver: 'awsfirelens',
                 options: {

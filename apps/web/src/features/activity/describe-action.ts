@@ -1,3 +1,4 @@
+import { t } from '@macro/i18n';
 import type { ActivityEvent } from '@queries/activity/graphql/entity';
 import { match } from 'ts-pattern';
 
@@ -25,25 +26,25 @@ export function actionAsPropertyChange(
  */
 export function describeAction(action: ActivityAction): string {
   return match(action)
-    .with({ __typename: 'GraphqlActivityCreated' }, () => 'created this')
-    .with({ __typename: 'GraphqlActivityEdited' }, () => 'made an edit')
-    .with({ __typename: 'GraphqlActivityOpened' }, () => 'opened this')
-    .with({ __typename: 'GraphqlActivityDeleted' }, () => 'deleted this')
-    .with({ __typename: 'GraphqlActivityMessaged' }, () => 'sent a message')
-    .with({ __typename: 'GraphqlActivitySent' }, () => 'sent an email')
+    .with({ __typename: 'GraphqlActivityCreated' }, () => t('created this'))
+    .with({ __typename: 'GraphqlActivityEdited' }, () => t('made an edit'))
+    .with({ __typename: 'GraphqlActivityOpened' }, () => t('opened this'))
+    .with({ __typename: 'GraphqlActivityDeleted' }, () => t('deleted this'))
+    .with({ __typename: 'GraphqlActivityMessaged' }, () => t('sent a message'))
+    .with({ __typename: 'GraphqlActivitySent' }, () => t('sent an email'))
     .with(
       { __typename: 'GraphqlActivityPropertyChanged' },
-      () => 'changed a property'
+      () => t('changed a property')
     )
     .with(
       { __typename: 'GraphqlActivityParticipantAdded' },
-      () => 'added a participant'
+      () => t('added a participant')
     )
     .with(
       { __typename: 'GraphqlActivityParticipantRemoved' },
-      () => 'removed a participant'
+      () => t('removed a participant')
     )
-    .with({ __typename: 'GraphqlActivityCallStarted' }, () => 'started a call')
+    .with({ __typename: 'GraphqlActivityCallStarted' }, () => t('started a call'))
     .with({ __typename: 'GraphqlActivityUnknownAction' }, (unknown) =>
       unknown.tag.replaceAll('_', ' ')
     )
@@ -63,42 +64,42 @@ export function describeActionForEntity(action: ActivityAction): {
   return (
     match(action)
       .with({ __typename: 'GraphqlActivityCreated' }, () => ({
-        verb: 'created',
+        verb: t('created'),
       }))
-      .with({ __typename: 'GraphqlActivityEdited' }, () => ({ verb: 'edited' }))
-      .with({ __typename: 'GraphqlActivityOpened' }, () => ({ verb: 'opened' }))
+      .with({ __typename: 'GraphqlActivityEdited' }, () => ({ verb: t('edited') }))
+      .with({ __typename: 'GraphqlActivityOpened' }, () => ({ verb: t('opened') }))
       .with({ __typename: 'GraphqlActivityDeleted' }, () => ({
-        verb: 'deleted',
+        verb: t('deleted'),
       }))
       .with({ __typename: 'GraphqlActivityMessaged' }, () => ({
-        verb: 'sent a message',
-        connector: 'in',
+        verb: t('sent a message'),
+        connector: t('in'),
       }))
       .with({ __typename: 'GraphqlActivitySent' }, () => ({
-        verb: 'sent an email',
-        connector: 'in',
+        verb: t('sent an email'),
+        connector: t('in'),
       }))
       // The caller renders the full transition phrase; only the connector
       // is needed for property changes.
       .with({ __typename: 'GraphqlActivityPropertyChanged' }, () => ({
-        verb: 'changed a property',
-        connector: 'on',
+        verb: t('changed a property'),
+        connector: t('on'),
       }))
       .with({ __typename: 'GraphqlActivityParticipantAdded' }, () => ({
-        verb: 'added a participant',
-        connector: 'to',
+        verb: t('added a participant'),
+        connector: t('to'),
       }))
       .with({ __typename: 'GraphqlActivityParticipantRemoved' }, () => ({
-        verb: 'removed a participant',
-        connector: 'from',
+        verb: t('removed a participant'),
+        connector: t('from'),
       }))
       .with({ __typename: 'GraphqlActivityCallStarted' }, () => ({
-        verb: 'started a call',
-        connector: 'in',
+        verb: t('started a call'),
+        connector: t('in'),
       }))
       .with({ __typename: 'GraphqlActivityUnknownAction' }, (unknown) => ({
         verb: unknown.tag.replaceAll('_', ' '),
-        connector: 'on',
+        connector: t('on'),
       }))
       .exhaustive()
   );

@@ -207,6 +207,59 @@ unknown_topics = sorted(topics_copy - topics_src)
 if unknown_topics:
     fail(f"self-host/init/kafka-topics.json has unknown topics not in upstream kafka-cluster-topics.json: {unknown_topics}")
 
+# --- CI workflow & action regressions --------------------------------------
+# 1. YAML syntax and block scalar indentation regression check
+import subprocess
+
+yaml_check_script = """
+const fs = require('fs');
+const yaml = require('js-yaml');
+for (const p of process.argv.slice(1)) {
+  const content = fs.readFileSync(p, 'utf8');
+  yaml.load(content);
+}
+"""
+res = subprocess.run(
+    ["bun", "-e", yaml_check_script,
+     str(ROOT / ".github/workflows/self-host-images.yml"),
+     str(ROOT / ".github/actions/setup-nix/action.yml")],
+    capture_output=True,
+    text=True
+)
+if res.returncode != 0:
+    fail(f"CI YAML syntax/indentation check failed:\n{res.stderr.strip()}")
+
+# 2. Daemon socket protection invariant check
+setup_nix_content = (ROOT / ".github/actions/setup-nix/action.yml").read_text()
+if "determinate-nixd.service" not in setup_nix_content:
+    fail("setup-nix must support determinate-nixd.service for Systemd restarts")
+
+if "rm -f /nix/var/nix/daemon-socket/socket" in setup_nix_content:
+    if "if ! sudo test -S /nix/var/nix/daemon-socket/socket; then" not in setup_nix_content:
+        fail("setup-nix must guard daemon socket deletion with `if ! sudo test -S /nix/var/nix/daemon-socket/socket`")
+
+if "chmod -R 777 /var/lib/nix-cache-upload" in setup_nix_content:
+    fail("setup-nix must not use 0777 permissions for nix cache upload queue; use 0770 with runner group")
+
+if 's3_credentials_file="/etc/nix/s3-cache-credentials"' not in setup_nix_content:
+    fail("setup-nix must store private S3 cache credentials in /etc/nix/s3-cache-credentials")
+
+if 'Environment="AWS_SHARED_CREDENTIALS_FILE=$s3_credentials_file"' not in setup_nix_content:
+    fail("setup-nix must pass private S3 cache credentials to systemd daemons via a shared credentials file")
+
+if 'Environment="AWS_SECRET_ACCESS_KEY=' in setup_nix_content:
+    fail("setup-nix must not write AWS secrets directly into systemd drop-ins")
+
+if "NIX_CACHE_AWS_SESSION_TOKEN" not in setup_nix_content:
+    fail("setup-nix must preserve optional AWS_SESSION_TOKEN support for temporary cache credentials")
+
+# 3. Uploader script invariant check
+if 'dest="${NIX_CACHE_URL:-}"' not in workflow:
+    fail("self-host-images workflow uploader must declare `dest` prior to main loop")
+
+if "Finalize Nix cache uploads\n        if: always()" in workflow:
+    fail("self-host-images must not flush streaming Nix cache uploads after failed builds")
+
 # --- report ----------------------------------------------------------------
 if failures:
     print("self-host consistency check failed:\n", file=sys.stderr)

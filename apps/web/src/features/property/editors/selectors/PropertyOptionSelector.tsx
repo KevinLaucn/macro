@@ -1,5 +1,6 @@
 import { isTouchDevice } from '@core/mobile/isTouchDevice';
 import { useKeyPressed } from '@core/util/useKeyPressed';
+import { t } from '@macro/i18n';
 import CircleDashedEmpty from '@phosphor/circle-dashed.svg';
 import SearchIcon from '@phosphor/magnifying-glass.svg';
 import PlusIcon from '@phosphor/plus.svg';
@@ -381,7 +382,7 @@ export const PropertyOptionSelector = (props: SelectOptionsProps) => {
                   when={isValidNewOption() && props.onAddOption}
                   fallback={
                     <div class="text-center py-6 text-ink-muted">
-                      No options available
+                      {t('No options available')}
                     </div>
                   }
                 >
@@ -402,7 +403,7 @@ export const PropertyOptionSelector = (props: SelectOptionsProps) => {
                   when={selectableItems().length > 0}
                   fallback={
                     <div class="text-center py-4 text-ink-muted">
-                      No options match your search
+                      {t('No options match your search')}
                     </div>
                   }
                 >

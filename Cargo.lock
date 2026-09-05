@@ -9970,7 +9970,6 @@ dependencies = [
 name = "macro_db_migrator"
 version = "0.1.0"
 dependencies = [
- "macro_env_var",
  "sqlx 0.8.6",
  "tokio",
  "workspace-hack",

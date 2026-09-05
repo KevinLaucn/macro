@@ -1,6 +1,7 @@
 import { useUserId } from '@core/context/user';
 import { tryMacroId, useDisplayName } from '@core/user';
 import type { MacroId } from '@core/user/macroId';
+import { t } from '@macro/i18n';
 import { Show } from 'solid-js';
 
 /**
@@ -13,13 +14,13 @@ export function ActorName(props: { actorId: string }) {
   const macroId = () => tryMacroId(props.actorId);
 
   return (
-    <Show when={macroId()} fallback={<>Automation</>}>
+    <Show when={macroId()} fallback={<>{t('Automation')}</>}>
       {(id) => (
         <Show
           when={props.actorId === userId()}
           fallback={<RemoteName id={id()} />}
         >
-          You
+          {t('You')}
         </Show>
       )}
     </Show>

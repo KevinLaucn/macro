@@ -7,9 +7,10 @@ description: >-
   systemd is active (full VMs), otherwise starts nix-daemon directly as a
   background process (e.g. Namespace runners, where systemd is not active).
   Optionally configures a private S3 binary cache as a substituter: the daemon
-  performs substitution, so it is started with the AWS credentials in its
-  environment. All four cache inputs must be set for the substituter to be
-  configured; otherwise the action behaves exactly as before.
+  performs substitution, so systemd units receive a root-only AWS shared
+  credentials file path instead of inline secrets. All four cache inputs must
+  be set for the substituter to be configured; otherwise the action behaves
+  exactly as before.
 
 inputs:
   nix-cache-url:
@@ -30,6 +31,10 @@ inputs:
     description: AWS secret access key for reading the private cache bucket.
     required: false
     default: ''
+  aws-session-token:
+    description: Optional AWS session token for temporary cache credentials.
+    required: false
+    default: ''
   nix-cache-signing-key:
     description: Private signing key for signing locally built store paths before uploading to the private cache.
     required: false
@@ -45,12 +50,14 @@ runs:
         NIX_CACHE_PUBLIC_KEY: ${{ inputs.nix-cache-public-key }}
         NIX_CACHE_AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
         NIX_CACHE_AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        NIX_CACHE_AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
         NIX_CACHE_SIGNING_KEY: ${{ inputs.nix-cache-signing-key }}
       run: |
         set -euo pipefail
 
         nix_bin="/nix/var/nix/profiles/default/bin/nix"
         daemon_bin="/nix/var/nix/profiles/default/bin/nix-daemon"
+        s3_credentials_file="/etc/nix/s3-cache-credentials"
 
         have_systemd=false
         if [ -d /run/systemd/system ]; then have_systemd=true; fi
@@ -63,6 +70,11 @@ runs:
           cache_enabled=true
         fi
 
+        cache_region="us-east-1"
+        if [[ "$NIX_CACHE_URL" =~ (^|[?&])region=([^&]+) ]]; then
+          cache_region="${BASH_REMATCH[2]}"
+        fi
+
         # Streaming upload cache requires signing key in addition to substituter credentials
         streaming_cache_enabled=false
         if $cache_enabled && [[ -n "$NIX_CACHE_SIGNING_KEY" ]]; then
@@ -73,6 +85,19 @@ runs:
           sudo mkdir -p /etc/nix
           current_user="$(id -un 2>/dev/null || echo runner)"
           current_group="$(id -gn 2>/dev/null || echo "$current_user")"
+
+          if $cache_enabled; then
+            {
+              echo "[default]"
+              echo "aws_access_key_id = $NIX_CACHE_AWS_ACCESS_KEY_ID"
+              echo "aws_secret_access_key = $NIX_CACHE_AWS_SECRET_ACCESS_KEY"
+              if [[ -n "${NIX_CACHE_AWS_SESSION_TOKEN:-}" ]]; then
+                echo "aws_session_token = $NIX_CACHE_AWS_SESSION_TOKEN"
+              fi
+            } | sudo tee "$s3_credentials_file" >/dev/null
+            sudo chmod 600 "$s3_credentials_file"
+            sudo chown root:root "$s3_credentials_file"
+          fi
 
           if $streaming_cache_enabled; then
             # 1. Store private key securely
@@ -156,12 +181,40 @@ runs:
           if $have_systemd; then
             if [[ -e /nix/var/nix/profiles/default/lib/systemd/system/nix-daemon.service ]]; then
               sudo cp /nix/var/nix/profiles/default/lib/systemd/system/nix-daemon.* /etc/systemd/system/ || true
-              sudo systemctl daemon-reload || true
             fi
+            if $cache_enabled; then
+              for unit in determinate-nixd.service nix-daemon.service; do
+                sudo mkdir -p "/etc/systemd/system/${unit}.d"
+                cat << EOF_SYSTEMD_CACHE | sudo tee "/etc/systemd/system/${unit}.d/10-s3-cache-credentials.conf" >/dev/null
+        [Service]
+        Environment="AWS_SHARED_CREDENTIALS_FILE=$s3_credentials_file"
+        Environment="AWS_REGION=$cache_region"
+        Environment="AWS_DEFAULT_REGION=$cache_region"
+        EOF_SYSTEMD_CACHE
+              done
+            fi
+            sudo systemctl daemon-reload
             # Restart systemd daemon so newly written nix.conf takes effect
-            sudo systemctl try-restart determinate-nixd.service 2>/dev/null \
-              || sudo systemctl restart nix-daemon.service 2>/dev/null \
-              || sudo systemctl enable --now nix-daemon.socket nix-daemon.service 2>/dev/null || true
+            systemd_started=false
+            for unit in determinate-nixd.service nix-daemon.service; do
+              if sudo systemctl list-unit-files "$unit" >/dev/null 2>&1 \
+                 || sudo systemctl status "$unit" >/dev/null 2>&1; then
+                if sudo systemctl restart "$unit" 2>/dev/null; then
+                  systemd_started=true
+                  echo "Restarted $unit for updated Nix configuration."
+                  break
+                fi
+                echo "::warning::Failed to restart $unit; trying next Nix daemon option."
+              fi
+            done
+            if ! $systemd_started; then
+              if sudo systemctl enable --now nix-daemon.socket nix-daemon.service 2>/dev/null; then
+                systemd_started=true
+                echo "Started nix-daemon.socket and nix-daemon.service."
+              else
+                echo "::warning::Systemd Nix daemon startup failed; falling back to direct nix-daemon if no socket is available."
+              fi
+            fi
           else
             # Non-systemd (Namespace or container runners): stop existing daemon if running so fresh config is reloaded
             if pgrep -f 'nix-daemon|determinate-nixd' >/dev/null 2>&1; then
@@ -178,8 +231,9 @@ runs:
             sudo rm -f /nix/var/nix/daemon-socket/socket
             daemon_env=()
             if $cache_enabled; then
-              daemon_env+=("AWS_ACCESS_KEY_ID=$NIX_CACHE_AWS_ACCESS_KEY_ID")
-              daemon_env+=("AWS_SECRET_ACCESS_KEY=$NIX_CACHE_AWS_SECRET_ACCESS_KEY")
+              daemon_env+=("AWS_SHARED_CREDENTIALS_FILE=$s3_credentials_file")
+              daemon_env+=("AWS_REGION=$cache_region")
+              daemon_env+=("AWS_DEFAULT_REGION=$cache_region")
             fi
             sudo env "${daemon_env[@]}" sh -c "nohup '$daemon_bin' >/tmp/nix-daemon.log 2>&1 &"
             for _ in $(seq 1 30); do

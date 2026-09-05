@@ -52,3 +52,12 @@ infra/local/generated/
 # Local-only production infrastructure credentials and specs
 **/.local*
 *.local.md
+
+# Production/self-host runtime secrets generated from templates.
+/production.env
+/production.env.*
+/self-host/.env
+/self-host/.env.*
+/self-host/generated/
+*.pem
+*.key

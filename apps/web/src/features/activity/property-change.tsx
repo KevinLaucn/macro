@@ -1,3 +1,4 @@
+import { t } from '@macro/i18n';
 import { PropertyValueIcon } from '@property/component/propertyValue/PropertyValueIcon';
 import { useAllProperties } from '@property/editor/hooks/useAllProperties';
 import { TagDot } from '@property/tags/TagDot';
@@ -44,22 +45,22 @@ export function PropertyChangeText(props: {
       <span class="shrink-0">
         {cleared()
           ? props.capitalize
-            ? 'Cleared'
-            : 'cleared'
+            ? t('Cleared')
+            : t('cleared')
           : props.capitalize
-            ? 'Changed'
-            : 'changed'}
+            ? t('Changed')
+            : t('changed')}
       </span>
-      <span class="shrink-0 font-medium text-ink">{name()}</span>
+      <span class="shrink-0 font-medium text-ink">{t(name())}</span>
       <Show when={hasFrom()}>
-        <span class="shrink-0">from</span>
+        <span class="shrink-0">{t('from')}</span>
         <PropertyValueDisplay
           raw={props.action.from}
           definition={definition()}
         />
       </Show>
       <Show when={hasTo()}>
-        <span class="shrink-0">to</span>
+        <span class="shrink-0">{t('to')}</span>
         <PropertyValueDisplay raw={props.action.to} definition={definition()} />
       </Show>
     </span>
@@ -81,7 +82,7 @@ function PropertyValueDisplay(props: {
       when={options()}
       fallback={
         <span class="min-w-0 truncate font-medium text-ink">
-          {propertyValueLabel(props.raw, props.definition)}
+          {t(propertyValueLabel(props.raw, props.definition) ?? '')}
         </span>
       }
     >
@@ -97,7 +98,7 @@ function PropertyValueDisplay(props: {
                 <Show when={entry.color}>
                   {(color) => <TagDot color={color()} class="size-2" />}
                 </Show>
-                <span class="truncate">{entry.label}</span>
+                <span class="truncate">{t(entry.label)}</span>
               </span>
             )}
           </For>

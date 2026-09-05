@@ -41,8 +41,10 @@ export function ThemeChips(props: { theme: ThemeV3; size?: ThemeChipsSize }) {
     const style: Record<string, string> = {
       'background-color': 'var(--color-panel)',
     };
-    for (const [token, value] of Object.entries(props.theme.colorTokens)) {
-      style[`--color-${token}`] = value;
+    if (props.theme?.colorTokens) {
+      for (const [token, value] of Object.entries(props.theme.colorTokens)) {
+        style[`--color-${token}`] = value;
+      }
     }
     return style as JSX.CSSProperties;
   };

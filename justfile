@@ -178,4 +178,4 @@ setup:
 
 destroy:
   just infra/stacks/fusionauth-instance/destroy
-  {{ compose }} down -v
+  {{ compose }} down --remove-orphans

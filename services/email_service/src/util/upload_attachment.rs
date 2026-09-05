@@ -290,6 +290,7 @@ async fn upload_data_to_presigned_url(
         .presigned_url
         .as_ref()
         .ok_or(UploadAttachmentError::PresignedUrlMissing)?;
+    let presigned_url = macro_aws_config::transform_aws_url_for_internal_fetch(presigned_url);
 
     let response = reqwest::Client::new()
         .put(presigned_url)

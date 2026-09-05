@@ -2,12 +2,14 @@ import { QUERY_FILTERS_BASE } from '@app/features/next-soup/filters/query-filter
 import { globalSplitManager } from '@app/signal/splitLayout';
 import { useSplitPanel } from '@components/app/split-layout/layoutUtils';
 import { EntityIcon } from '@core/component/EntityIcon';
+import { locale, t } from '@macro/i18n';
 import ChevronRightIcon from '@phosphor/caret-right.svg';
 import {
   type SoupItemsQueryArgs,
   useSoupItemsQuery,
 } from '@queries/soup/items';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import { ErrorBoundary, For, Show, Suspense } from 'solid-js';
 
 const DEFAULT_LIMIT = 3;
@@ -62,7 +64,7 @@ function RecentSessionsContent(props: { limit?: number }) {
     <Show when={sessions().length > 0}>
       <section>
         <div class="mb-2 flex items-center px-1">
-          <span class="text-sm text-ink-muted">Recent sessions</span>
+          <span class="text-sm text-ink-muted">{t('Recent sessions')}</span>
         </div>
         <div class="flex flex-col gap-2">
           <For each={sessions()}>
@@ -81,6 +83,7 @@ function RecentSessionsContent(props: { limit?: number }) {
                     <span class="shrink-0 text-xs tabular-nums text-ink-extra-muted">
                       {formatDistanceToNowStrict(updatedAt(), {
                         addSuffix: true,
+                        locale: locale() === 'zh-CN' ? zhCN : undefined,
                       })}
                     </span>
                   )}

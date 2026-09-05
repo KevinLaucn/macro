@@ -48,6 +48,7 @@ import { senderFromStorageId } from '@queries/channel/message-sender';
 import type { ItemEntity } from '@queries/preview';
 import { useBulkSaveEntityPropertiesMutation } from '@queries/properties/entity';
 import { EntityType } from '@service-storage/generated/schemas';
+import { locale } from '@macro/i18n';
 import { Avatar, cn, Tooltip } from '@ui';
 import { parseISO } from 'date-fns';
 import { createMemo, For, type JSX, Match, Show, Switch } from 'solid-js';
@@ -377,7 +378,8 @@ const formatDetailedTimestamp = (timestamp: string | undefined) => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return timestamp;
 
-  return date.toLocaleString(undefined, {
+  const current = locale() === 'zh-CN' ? 'zh-CN' : undefined;
+  return date.toLocaleString(current, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });

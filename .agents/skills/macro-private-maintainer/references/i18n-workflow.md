@@ -18,7 +18,23 @@
 
 ---
 
-## 二开组件多语言开发标准
+## 一、组件与词条快速定位（CodeGraph 优先）
+
+进行界面多语言国际化二开时，**严禁盲目递归文件系统查找组件**：
+1. **秒级定位路由或组件**：
+   - 提取路由标识或组件符号（例如 `EmptyChatState`、`RecentSessionsSection`、`ChatTipsSection`、`SettingsAgent`）。
+   - 运行 `codegraph explore <symbol>` 或 `codegraph node <symbol>` 快速定位目标文件路径与层级结构。
+   - 使用 `codegraph callers <symbol>` 确认该组件挂载在哪个页面或父级视图中。
+2. **索引刷新机制（Sync）**：
+   - 若近期刚新增组件、重命名文件或发现 CodeGraph 返回结果不完整，立即在根目录执行增量同步：
+     ```bash
+     codegraph sync /Volumes/开发/macro
+     ```
+   - 保证索引在毫秒级内感知最新 AST 变更。
+
+---
+
+## 二、二开组件多语言开发标准
 
 ### 1. 显式引入与调用
 在任何二开或重构的 SolidJS 组件中：

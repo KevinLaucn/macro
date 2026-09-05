@@ -2,6 +2,21 @@
   "Ask AI": [
     "features/next-soup/soup-view/search-ask-ai-button.tsx"
   ],
+  "No results for \"{query}\"": [
+    "features/next-soup/soup-view/empty-states.tsx"
+  ],
+  "No results": [
+    "features/next-soup/soup-view/empty-states.tsx"
+  ],
+  "No {item} to show": [
+    "features/next-soup/soup-view/empty-states.tsx"
+  ],
+  "Status": [
+    "features/next-soup/soup-view/filters-bar/unified-filter-dropdown.tsx"
+  ],
+  "Filter": [
+    "features/next-soup/soup-view/filters-bar/unified-filter-dropdown.tsx"
+  ],
   "All": [
     "features/next-soup/soup-view/filters-bar/searchable-multi-select.tsx"
   ],
@@ -55,7 +70,11 @@
   ],
   "Cancel": [
     "features/settings/Crm.tsx",
-    "features/settings/Agents.tsx"
+    "features/settings/Harness.tsx",
+    "features/settings/Agents.tsx",
+    "features/settings/HarnessPairingDialog.tsx",
+    "features/block-automation/component/AutomationComposer.tsx",
+    "features/inbox/AddInboxDialog.tsx"
   ],
   "CRM enabled": [
     "features/settings/Crm.tsx"
@@ -108,6 +127,150 @@
   "Enable or disable your team's CRM.": [
     "features/settings/Crm.tsx"
   ],
+  "Last connected {time}": [
+    "features/settings/Harness.tsx"
+  ],
+  "Never connected": [
+    "features/settings/Harness.tsx"
+  ],
+  "Harness removed": [
+    "features/settings/Harness.tsx"
+  ],
+  "Failed to remove harness": [
+    "features/settings/Harness.tsx"
+  ],
+  "Default model updated": [
+    "features/settings/Harness.tsx"
+  ],
+  "Failed to set your default model": [
+    "features/settings/Harness.tsx"
+  ],
+  "Cursor API keys start with {prefix}": [
+    "features/settings/Harness.tsx"
+  ],
+  "Cursor connected": [
+    "features/settings/Harness.tsx"
+  ],
+  "Failed to save your Cursor API key": [
+    "features/settings/Harness.tsx"
+  ],
+  "Cursor disconnected": [
+    "features/settings/Harness.tsx"
+  ],
+  "Failed to disconnect Cursor": [
+    "features/settings/Harness.tsx"
+  ],
+  "Harness": [
+    "features/settings/Harness.tsx",
+    "features/settings/Agents.tsx"
+  ],
+  "Configure how agents run for your Macro workspace.": [
+    "features/settings/Harness.tsx"
+  ],
+  "In-memory": [
+    "features/settings/Harness.tsx"
+  ],
+  "Built in": [
+    "features/settings/Harness.tsx"
+  ],
+  "Macro's in-memory harness runs agents directly in your workspace. It is ready to use and does not require any configuration. This is not a coding harness.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Cursor": [
+    "features/settings/Harness.tsx"
+  ],
+  "Connected": [
+    "features/settings/Harness.tsx"
+  ],
+  "Use your Cursor account to run agent sessions in Macro.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Loading…": [
+    "features/settings/Harness.tsx",
+    "features/settings/GitHub.tsx"
+  ],
+  "API key": [
+    "features/settings/Harness.tsx"
+  ],
+  "Save": [
+    "features/settings/Harness.tsx"
+  ],
+  "Create an API key in Cursor and paste it here. Macro stores it encrypted.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Default model": [
+    "features/settings/Harness.tsx",
+    "features/settings/Agents.tsx"
+  ],
+  "The model new `@cursor` sessions start on. Recommended models stay up top; everything else is behind More models.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Disconnecting removes Macro's copy of the key but does not revoke it in Cursor.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Disconnect": [
+    "features/settings/Harness.tsx",
+    "features/settings/GitHub.tsx"
+  ],
+  "Bring your own agent": [
+    "features/settings/Harness.tsx"
+  ],
+  "Enter pairing code": [
+    "features/settings/Harness.tsx"
+  ],
+  "Setup guide": [
+    "features/settings/Harness.tsx"
+  ],
+  "Install macrod on your computer to connect Claude or another compatible agent.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Connected agents": [
+    "features/settings/Harness.tsx"
+  ],
+  "No agents connected": [
+    "features/settings/Harness.tsx"
+  ],
+  "Agents connected through macrod will appear here.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Team": [
+    "features/settings/Harness.tsx",
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Private": [
+    "features/settings/Harness.tsx",
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Disconnected": [
+    "features/settings/Harness.tsx"
+  ],
+  "Remove": [
+    "features/settings/Harness.tsx"
+  ],
+  "Could not load your harnesses. Try refreshing this page.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Remove {name}?": [
+    "features/settings/Harness.tsx"
+  ],
+  "Agents using this harness will stop running until it's reconnected. macrod on that machine will need to pair again.": [
+    "features/settings/Harness.tsx"
+  ],
+  "Removing…": [
+    "features/settings/Harness.tsx"
+  ],
+  "Remove harness": [
+    "features/settings/Harness.tsx"
+  ],
+  "Connections": [
+    "features/settings/ConnectedAccounts.tsx"
+  ],
+  "Connect your accounts so Macro can work across the tools you already use.": [
+    "features/settings/ConnectedAccounts.tsx"
+  ],
+  "Accounts": [
+    "features/settings/ConnectedAccounts.tsx"
+  ],
   "Edit agent": [
     "features/settings/Agents.tsx"
   ],
@@ -124,7 +287,9 @@
     "features/settings/Agents.tsx"
   ],
   "Name": [
-    "features/settings/Agents.tsx"
+    "features/settings/Agents.tsx",
+    "features/settings/HarnessPairingDialog.tsx",
+    "features/block-automation/component/AutomationComposer.tsx"
   ],
   "Bug fixer": [
     "features/settings/Agents.tsx"
@@ -135,21 +300,111 @@
   "You are a bug-fixing agent. Reproduce issues, identify root causes, and make focused, tested fixes…": [
     "features/settings/Agents.tsx"
   ],
-  "Harness": [
-    "features/settings/Agents.tsx"
-  ],
-  "Default model": [
-    "features/settings/Agents.tsx"
-  ],
   "Saving…": [
     "features/settings/Agents.tsx",
     "features/block-email/component/compose/ComposeToolbar.tsx"
   ],
   "Creating…": [
-    "features/settings/Agents.tsx"
+    "features/settings/Agents.tsx",
+    "features/block-automation/component/AutomationComposer.tsx"
   ],
   "Save changes": [
     "features/settings/Agents.tsx"
+  ],
+  "GitHub": [
+    "features/settings/GitHub.tsx"
+  ],
+  "Connect Macro to your GitHub account and repositories.": [
+    "features/settings/GitHub.tsx"
+  ],
+  "Account": [
+    "features/settings/GitHub.tsx"
+  ],
+  "Identify your GitHub activity in Macro.": [
+    "features/settings/GitHub.tsx"
+  ],
+  "Connect": [
+    "features/settings/GitHub.tsx",
+    "features/home/home-hub.tsx"
+  ],
+  "Reconnect": [
+    "features/settings/GitHub.tsx"
+  ],
+  "GitHub App": [
+    "features/settings/GitHub.tsx"
+  ],
+  "Choose repositories for Macro to sync.": [
+    "features/settings/GitHub.tsx"
+  ],
+  "Connect your GitHub account first": [
+    "features/settings/GitHub.tsx"
+  ],
+  "Configure app": [
+    "features/settings/GitHub.tsx"
+  ],
+  "This pairing code is invalid, expired, or already claimed.": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Harness connected": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Connect a harness": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Harness connected. macrod will finish pairing automatically.": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Try another code": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Confirm this matches the code macrod printed.": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Requested name:": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Host:": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Expires in {count} minutes": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Share": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Only you can run agents on this harness.": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Your team can run agents on this harness.": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Create or join a team before sharing harnesses.": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Looking up pairing code…": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Pairing code": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Run macrod on your computer and enter the code it prints.": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Done": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Close": [
+    "features/settings/HarnessPairingDialog.tsx",
+    "components/app/split-layout/components/SplitHeader.tsx"
+  ],
+  "Approving…": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Approve": [
+    "features/settings/HarnessPairingDialog.tsx"
+  ],
+  "Look up": [
+    "features/settings/HarnessPairingDialog.tsx"
   ],
   "Interface": [
     "features/settings/Appearance.tsx"
@@ -172,11 +427,62 @@
   "Show hover hints on buttons and controls.": [
     "features/settings/Appearance.tsx"
   ],
+  "Billing": [
+    "features/settings/Billing.tsx"
+  ],
+  "For questions about billing,": [
+    "features/settings/Billing.tsx"
+  ],
+  "contact us": [
+    "features/settings/Billing.tsx"
+  ],
+  "Premium plan": [
+    "features/settings/Billing.tsx"
+  ],
+  "Free plan": [
+    "features/settings/Billing.tsx"
+  ],
+  "Current": [
+    "features/settings/Billing.tsx"
+  ],
+  "Your subscription is managed by your team owner. Contact them to make changes.": [
+    "features/settings/Billing.tsx"
+  ],
+  "{count} {users} • $40 per seat / month": [
+    "features/settings/Billing.tsx"
+  ],
+  "Manage": [
+    "features/settings/Billing.tsx"
+  ],
+  "Premium": [
+    "features/settings/Billing.tsx"
+  ],
+  "$40 per seat / month": [
+    "features/settings/Billing.tsx"
+  ],
+  "Upgrade now": [
+    "features/settings/Billing.tsx"
+  ],
   "Keyboard shortcuts": [
     "features/settings/Shortcuts.tsx"
   ],
   "Screencast keys": [
     "features/settings/Shortcuts.tsx"
+  ],
+  "Debug": [
+    "features/settings/Admin.tsx"
+  ],
+  "Local toggles for debugging — only visible to Macro staff.": [
+    "features/settings/Admin.tsx"
+  ],
+  "Reset all": [
+    "features/settings/Admin.tsx"
+  ],
+  "Persist list filters": [
+    "features/settings/Admin.tsx"
+  ],
+  "Keep soup filters and the last selected tab across reloads on this device.": [
+    "features/settings/Admin.tsx"
   ],
   "Importing your inbox": [
     "features/home/home-backfill-progress.tsx"
@@ -192,6 +498,43 @@
   ],
   "Good evening": [
     "features/home/home.tsx"
+  ],
+  "Tips": [
+    "features/home/chat-tips.tsx"
+  ],
+  "@mention anything": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Attach files, documents, emails & more as context for the AI": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Send in the background": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Press {hotkey} to send and get notified when the AI responds": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Connect your tools": [
+    "features/home/chat-tips.tsx",
+    "features/home/home-hub.tsx"
+  ],
+  "Give the agent access to Linear, Notion, PostHog & more": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Connect your own agents": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Use Macro as a tool from Claude Code, Cursor, or any MCP client": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Learn about the agent": [
+    "features/home/chat-tips.tsx"
+  ],
+  "What it can do and how to get the most out of it": [
+    "features/home/chat-tips.tsx"
+  ],
+  "Recent sessions": [
+    "features/home/home-recent-sessions.tsx"
   ],
   "Recommended": [
     "features/home/home-hub.tsx"
@@ -214,16 +557,10 @@
   "Macro reads & triages your email in seconds": [
     "features/home/home-hub.tsx"
   ],
-  "Connect": [
-    "features/home/home-hub.tsx"
-  ],
   "You're all caught up.": [
     "features/home/home-hub.tsx"
   ],
   "Getting started": [
-    "features/home/home-hub.tsx"
-  ],
-  "Connect your tools": [
     "features/home/home-hub.tsx"
   ],
   "Link your inbox, Linear, Notion, GitHub & more": [
@@ -237,6 +574,94 @@
   ],
   "Open": [
     "features/home/home-hub.tsx"
+  ],
+  "Every week": [
+    "features/block-automation/component/automationUtils.ts"
+  ],
+  "Every month": [
+    "features/block-automation/component/automationUtils.ts"
+  ],
+  "Please try again.": [
+    "features/block-automation/component/automationUtils.ts"
+  ],
+  "Prompt is required.": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Choose a valid time.": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Select at least one day.": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Pick a day between 1 and 31.": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Automation created": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "The automation is now scheduled.": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Failed to create automation": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "New Automation": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "e.g. Morning standup summary": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Instructions": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Schedule": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Days": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Day of Month": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Time": [
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Create": [
+    "features/block-automation/component/AutomationComposer.tsx",
+    "features/command/sidebar/sidebar-create-menu.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/mobile/MobileDockRow.tsx"
+  ],
+  "Add inbox": [
+    "features/inbox/AddInboxDialog.tsx"
+  ],
+  "Connect another Gmail account to Macro?": [
+    "features/inbox/AddInboxDialog.tsx"
+  ],
+  "Chat with Agent": [
+    "features/chat/ChatWithAgentButton.tsx"
+  ],
+  "Chat": [
+    "features/chat/ChatWithAgentButton.tsx"
+  ],
+  "Ask Macro": [
+    "features/chat/ChatWithAgentButton.tsx",
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Activity": [
+    "features/activity/EntityActivitySection.tsx"
+  ],
+  "Activity is unavailable": [
+    "features/activity/EntityActivitySection.tsx"
+  ],
+  "No activity yet": [
+    "features/activity/EntityActivitySection.tsx"
+  ],
+  "Show less": [
+    "features/activity/EntityActivitySection.tsx"
+  ],
+  "Show all ({count})": [
+    "features/activity/EntityActivitySection.tsx"
   ],
   "Favorites": [
     "features/favorites/sidebar/favorites-section.tsx"
@@ -270,6 +695,24 @@
   "Remove from favorites": [
     "features/favorites/sidebar/favorites-section.tsx"
   ],
+  "Channels": [
+    "features/channels-view/channels-view.tsx"
+  ],
+  "Omnichannel Communications": [
+    "features/channels-view/channels-view.tsx"
+  ],
+  "Multi-platform messaging hub is coming soon. Connect and manage customer conversations across WhatsApp, Instagram, Facebook Messenger, and more in one unified interface.": [
+    "features/channels-view/channels-view.tsx"
+  ],
+  "WhatsApp": [
+    "features/channels-view/channels-view.tsx"
+  ],
+  "Instagram": [
+    "features/channels-view/channels-view.tsx"
+  ],
+  "Messenger": [
+    "features/channels-view/channels-view.tsx"
+  ],
   "Mark as read": [
     "features/channel/sidebar/channels-recent-widget.tsx"
   ],
@@ -281,11 +724,6 @@
   ],
   "Unread": [
     "features/channel/sidebar/channels-recent-widget.tsx"
-  ],
-  "Create": [
-    "features/command/sidebar/sidebar-create-menu.tsx",
-    "features/command/Launcher.tsx",
-    "components/app/mobile/MobileDockRow.tsx"
   ],
   "Exit": [
     "features/command/Launcher.tsx"
@@ -314,6 +752,33 @@
   "Close search": [
     "features/command/mobile/MobileSearchInput.tsx"
   ],
+  "Mark done": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Mark as not done": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Mark unread": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Mark read": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Create task": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Move to folder": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Delete": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Sender → Noise": [
+    "features/block-email/component/TopBar.tsx"
+  ],
+  "Block Sender": [
+    "features/block-email/component/TopBar.tsx"
+  ],
   "Attach": [
     "features/block-email/component/compose/ComposeToolbar.tsx"
   ],
@@ -331,6 +796,24 @@
   ],
   "Send email": [
     "features/block-email/component/compose/ComposeToolbar.tsx"
+  ],
+  "Forwarding": [
+    "features/block-email/component/BaseInput.tsx"
+  ],
+  "Replying to": [
+    "features/block-email/component/BaseInput.tsx"
+  ],
+  "Use `@` to reference files": [
+    "features/block-email/component/BaseInput.tsx"
+  ],
+  "Reply — @mention to share or cc people": [
+    "features/block-email/component/BaseInput.tsx"
+  ],
+  "Show quoted text": [
+    "features/block-email/component/BaseInput.tsx"
+  ],
+  "Hide quoted text": [
+    "features/block-email/component/BaseInput.tsx"
   ],
   "then": [
     "components/ui/components/Tooltip.tsx"
@@ -400,6 +883,21 @@
   ],
   "Views": [
     "components/app/mobile/MobileDockRow.tsx"
+  ],
+  "Go Back": [
+    "components/app/split-layout/components/SplitHeader.tsx"
+  ],
+  "Go Forward": [
+    "components/app/split-layout/components/SplitHeader.tsx"
+  ],
+  "Return to list": [
+    "components/app/split-layout/components/SplitHeader.tsx"
+  ],
+  "Previous item": [
+    "components/app/split-layout/components/SplitHeader.tsx"
+  ],
+  "Next item": [
+    "components/app/split-layout/components/SplitHeader.tsx"
   ],
   "Ask AI, @mention anything": [
     "lib/core/component/AI/component/input/ChatInput.tsx"

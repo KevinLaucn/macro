@@ -323,7 +323,7 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let dss_client = DocumentStorageServiceClient::new(
-        config.internal_api_key.to_string(),
+        config.document_storage_service_auth_key.to_string(),
         DocumentStorageServiceUrl::new()?.to_string(),
     );
 

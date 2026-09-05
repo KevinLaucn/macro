@@ -17,6 +17,7 @@ import type {
   ScheduledAction,
   UpdateScheduledAction,
 } from '@service-scheduled-action/generated/schemas';
+import { t } from '@macro/i18n';
 import type { ScheduleDraft, ScheduleFrequency } from './types';
 
 export {
@@ -33,9 +34,14 @@ export const FREQUENCY_OPTIONS: Array<{
   value: ScheduleFrequency;
   label: string;
 }> = [
-  { value: 'week', label: 'Every week' },
-  { value: 'month', label: 'Every month' },
+  { value: 'week', get label() { return t('Every week'); } },
+  { value: 'month', get label() { return t('Every month'); } },
 ];
+
+export const getFrequencyOptions = (): Array<{
+  value: ScheduleFrequency;
+  label: string;
+}> => FREQUENCY_OPTIONS;
 
 function normalizePrompt(value: string) {
   return value
@@ -175,5 +181,5 @@ export function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return 'Please try again.';
+  return t('Please try again.');
 }

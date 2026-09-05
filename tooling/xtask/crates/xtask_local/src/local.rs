@@ -825,6 +825,7 @@ fn bring_up_infra(
         fa.arg("up").arg("-d").arg("fusionauth");
         stage.run("Starting FusionAuth", &mut fa)?;
         fusionauth::wait_ready(stage, instance)?;
+        fusionauth::reconcile_local_config(stage, instance)?;
 
         // OpenSearch is up (`--wait`) but empty. Create the search indices +
         // aliases (idempotent) so the unified search path works out of the box
@@ -1128,14 +1129,11 @@ fn instance_networks(instance: &Instance) -> [String; 2] {
     [instance.network_databases(), instance.network_auth()]
 }
 
-/// The docker teardown work: stop + remove the instance's stack and ALL its
-/// stateful volumes — the basis of `run_local`'s full-delete/full-create
-/// idempotency, the quit hotkey, and `destroy-local`. Containers + project
-/// networks come down with `down -v`; the data volumes are then removed
-/// explicitly, because FusionAuth's (and named instances' infra) volumes are
-/// declared `external`, which `down -v` leaves behind. Output is captured (this
-/// is best-effort and noisy) so callers surface it as a single line; absent
-/// containers/volumes are ignored.
+/// The docker teardown work: stop + remove the instance's stack while
+/// preserving every data volume. Containers + project networks come down with
+/// `down` (no `-v`); named-instance networks are removed separately. Output is
+/// captured (this is best-effort and noisy) so callers surface it as a single
+/// line; absent containers are ignored.
 fn teardown_commands(instance: &Instance) {
     sdk_webhook::stop(instance);
     // Detach the global trace collector first or `down` can't remove the
@@ -1144,25 +1142,25 @@ fn teardown_commands(instance: &Instance) {
     let project = instance.project_name();
     // `-t 0`: SIGKILL immediately, no graceful-shutdown grace. The default 10s
     // SIGTERM timeout per container (Postgres' smart shutdown, OpenSearch, …)
-    // dominates teardown — and we're wiping the volumes anyway, so a clean
-    // shutdown buys nothing.
+    // is unnecessary for a stack stop.
     let _ = Command::new("docker")
-        .args([
-            "compose",
-            "-p",
-            project,
-            "down",
-            "-v",
-            "--remove-orphans",
-            "-t",
-            "0",
-        ])
+        .args(teardown_compose_args(project))
         .output();
-    for vol in instance_volumes(instance) {
-        let _ = Command::new("docker")
-            .args(["volume", "rm", "-f", &vol])
-            .output();
-    }
+}
+
+fn teardown_compose_args(project: &str) -> Vec<String> {
+    [
+        "compose",
+        "-p",
+        project,
+        "down",
+        "--remove-orphans",
+        "-t",
+        "0",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect()
 }
 
 /// [`teardown_commands`] shown as a single progress row (for the quit hotkey and
@@ -1252,13 +1250,12 @@ pub fn reset(args: &cli::InstanceArgs) -> Result<()> {
     db::reset(&stage, &instance)
 }
 
-/// `cargo x destroy-local` — remove the instance's containers, volumes, and
-/// (named instances) external networks.
+/// `cargo x destroy-local` — remove the instance's containers and (named
+/// instances) external networks.
 pub fn destroy(args: &cli::InstanceArgs) -> Result<()> {
     let stage = Stage::from_env();
     let instance = Instance::derive(args.instance.as_deref(), args.port_base)?;
-    // Containers + all volumes (incl. FusionAuth's external ones, which `down -v`
-    // leaves behind — the same teardown run_local does for its clean slate).
+    // Containers only; data volumes are intentionally preserved.
     teardown(&stage, &instance)?;
     // The per-instance external networks only exist for named instances; the
     // default instance's are shared base-compose networks we leave in place.

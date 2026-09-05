@@ -25,7 +25,6 @@ import { authServiceClient } from '@service-auth/client';
 import {
   action,
   useAction,
-  useNavigate,
   useSearchParams,
   useSubmission,
 } from '@solidjs/router';
@@ -44,23 +43,14 @@ import {
   untrack,
 } from 'solid-js';
 import { match } from 'ts-pattern';
-import {
-  autoLoginCode,
-  sendEmailCode,
-  sentEmailCode,
-  useResetEmailCode,
-} from './EmailForm';
+import { autoLoginCode, sendEmailCode, useResetEmailCode } from './EmailForm';
 import { OtpInput } from './OtpInput';
 import { Stage } from './Shared';
 import { useSsoLogin } from './useSsoLogin';
 
 function PostLoginRedirect() {
-  const navigate = useNavigate();
-
-  // Login init is owned by the per-method handlers (the session-token effect and
-  // onComplete); this redirect only navigates, so login doesn't fire init twice.
   onMount(() => {
-    navigate('/', { replace: true });
+    window.location.href = `${window.location.origin}/app`;
   });
 
   return <LoadingBlock />;
@@ -210,7 +200,6 @@ function EmailFormNew(props: {
   setStage: (next: Stage) => void;
   onBack: () => void;
 }) {
-  const [isPasswordLogin, setIsPasswordLogin] = createSignal(false);
   const submission = useSubmission(sendEmailCode);
   const send = useAction(sendEmailCode);
   const [searchParams] = useSearchParams();
@@ -237,11 +226,7 @@ function EmailFormNew(props: {
   });
 
   createEffect(() => {
-    if (sentEmailCode(submission.result)) {
-      props.setStage(Stage.Verify);
-    } else if (submission.result === 'isPasswordLogin') {
-      setIsPasswordLogin(true);
-    } else if (submission.result === 'LoggedIn') {
+    if (submission.result === 'LoggedIn') {
       props.setStage(Stage.Done);
     }
   });
@@ -253,32 +238,21 @@ function EmailFormNew(props: {
       noValidate={false}
       class="flex flex-col gap-3"
     >
-      <Show
-        when={!isPasswordLogin()}
-        fallback={
-          <p class="text-xs text-ink-muted leading-snug">
-            请输入密码进行登录。
-          </p>
-        }
-      >
-        <p class="text-xs text-ink-muted leading-snug">
-          We’ll send a one-time code to verify.
-        </p>
-      </Show>
+      <p class="text-xs text-ink-muted leading-snug">
+        请输入邮箱和密码进行登录。
+      </p>
       <FormInput
         id="email"
         type="email"
         placeholder="you@company.com"
         value={searchParamsEmail}
       />
-      <Show when={isPasswordLogin()}>
-        <FormInput
-          id="password"
-          type="password"
-          placeholder="Password"
-          required={isPasswordLogin()}
-        />
-      </Show>
+      <FormInput
+        id="password"
+        type="password"
+        placeholder="Password"
+        required
+      />
       <FormError msg={submission.error?.message} />
       <Button
         variant="cta"

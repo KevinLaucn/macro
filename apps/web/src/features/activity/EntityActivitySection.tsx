@@ -8,6 +8,7 @@ import {
 import type { EntityType } from '@service-properties/generated/schemas/entityType';
 import { cn } from '@ui';
 import { createSignal, For, Show, Suspense } from 'solid-js';
+import { t } from '@macro/i18n';
 import { ActionPhrase } from './action-phrase';
 import { ActorName } from './actor-name';
 import { useEntityActivityFlag } from './use-entity-activity-flag';
@@ -53,7 +54,7 @@ function EntityActivitySection(props: EntityActivitySectionProps) {
 
   return (
     <Show when={query.isEnabled()}>
-      <SidePanel.Section id="activity" title="Activity" order={props.order}>
+      <SidePanel.Section id="activity" title={t('Activity')} order={props.order}>
         {/* Two loading layers: the urql store never suspends, so the query's
             own fetch/error need explicit branches (or they'd render as a
             false "No activity yet"), while the Suspense boundary scopes
@@ -63,11 +64,11 @@ function EntityActivitySection(props: EntityActivitySectionProps) {
           <Show when={!query.result.isLoading} fallback={<SidePanel.Loading />}>
             <Show
               when={!query.result.isError}
-              fallback={<SidePanel.EmptyPill label="Activity is unavailable" />}
+              fallback={<SidePanel.EmptyPill label={t('Activity is unavailable')} />}
             >
               <Show
                 when={events().length > 0}
-                fallback={<SidePanel.EmptyPill label="No activity yet" />}
+                fallback={<SidePanel.EmptyPill label={t('No activity yet')} />}
               >
                 <div class="text-xs">
                   <SidePanel.Card>
@@ -90,8 +91,8 @@ function EntityActivitySection(props: EntityActivitySectionProps) {
                       />
                       <span>
                         {expanded()
-                          ? 'Show less'
-                          : `Show all (${events().length})`}
+                          ? t('Show less')
+                          : t('Show all ({count})', { count: events().length })}
                       </span>
                     </button>
                   </Show>

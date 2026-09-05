@@ -7,6 +7,7 @@ import PencilIcon from '@phosphor/pencil-simple.svg';
 import PlusIcon from '@phosphor/plus.svg';
 import TrashIcon from '@phosphor/trash.svg';
 import { locale, setLocale, t, type SupportedLocale } from '@macro/i18n';
+import { ThemeChipPill } from '@theme/components/ThemeChipPill';
 import { ThemeChips } from '@theme/components/ThemeChips';
 import { ThemeEditor } from '@theme/components/ThemeEditor';
 import { DEFAULT_THEMES } from '@theme/constants';

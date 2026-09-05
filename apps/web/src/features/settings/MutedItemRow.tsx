@@ -19,6 +19,7 @@ import {
 } from '@queries/preview';
 import type { UserUnsubscribe } from '@service-notification/generated/schemas/userUnsubscribe';
 import { ChannelType } from '@service-storage/generated/schemas/channelType';
+import { t } from '@macro/i18n';
 import { createMemo, Show } from 'solid-js';
 
 /**
@@ -115,7 +116,7 @@ function MutedItemLayout(props: {
         class="shrink-0 text-sm text-ink-muted hover:text-ink"
         onClick={props.onUnmute}
       >
-        Unmute
+        {t('Unmute')}
       </button>
     </div>
   );

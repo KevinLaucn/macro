@@ -145,6 +145,18 @@ pub async fn init_gmail_link_handler(
     )
     .await?;
 
+    let gmail_idp_id = ctx
+        .auth_client
+        .get_identity_provider_id_by_name(GMAIL_IDENTITY_PROVIDER_NAME)
+        .await
+        .map_err(|_| InitGmailLinkError::IdentityProviderNotFound)?;
+
+    macro_db_client::in_progress_user_link::delete_expired_uncompleted_in_progress_user_links_for_user(
+        &ctx.db,
+        &authorization.authorization.user.user_context.fusion_user_id,
+    )
+    .await?;
+
     let count =
         macro_db_client::in_progress_user_link::count_existing_in_progress_user_links_for_user(
             &ctx.db,
@@ -167,12 +179,6 @@ pub async fn init_gmail_link_handler(
         &requested_google_scopes,
     )
     .await?;
-
-    let gmail_idp_id = ctx
-        .auth_client
-        .get_identity_provider_id_by_name(GMAIL_IDENTITY_PROVIDER_NAME)
-        .await
-        .map_err(|_| InitGmailLinkError::IdentityProviderNotFound)?;
 
     let state = OAuthState {
         identity_provider_id: gmail_idp_id,

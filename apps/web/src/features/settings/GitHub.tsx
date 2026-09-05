@@ -1,6 +1,7 @@
 import { toast } from '@core/component/Toast/Toast';
 import { SERVER_HOSTS } from '@core/constant/servers';
 import GithubIcon from '@icon/mcp-github.svg';
+import { t } from '@macro/i18n';
 import ArrowUpRightIcon from '@phosphor/arrow-up-right.svg';
 import {
   useDeleteGithubLinkMutation,
@@ -68,31 +69,33 @@ export function GitHubCard() {
     <SettingsCard>
       <IntegrationRow
         icon={<GithubIcon />}
-        title="GitHub"
-        description="Connect Macro to your GitHub account and repositories."
+        title={t('GitHub')}
+        description={t(
+          'Connect Macro to your GitHub account and repositories.'
+        )}
       />
 
       <SettingsRow
         label={
           <span class="flex items-center gap-2">
-            <span>Account</span>
+            <span>{t('Account')}</span>
             <Show when={connectionState()}>
               {(state) => (
-                <StatusDot state={state()} label={connectionLabel()} />
+                <StatusDot state={state()} label={t(connectionLabel())} />
               )}
             </Show>
           </span>
         }
-        description="Identify your GitHub activity in Macro."
+        description={t('Identify your GitHub activity in Macro.')}
       >
         <Show
           when={!githubLink.isLoading}
-          fallback={<span class="text-xs text-ink-muted">Loading…</span>}
+          fallback={<span class="text-xs text-ink-muted">{t('Loading…')}</span>}
         >
           <Switch
             fallback={
               <ConnectAction
-                label="Connect"
+                label={t('Connect')}
                 onClick={handleGithubEnable}
                 disabled={initGithubLink.isPending}
               />
@@ -107,7 +110,7 @@ export function GitHubCard() {
                 )}
               </Show>
               <ConnectAction
-                label="Disconnect"
+                label={t('Disconnect')}
                 variant="danger"
                 onClick={handleGithubDisable}
                 disabled={deleteGithubLink.isPending}
@@ -115,7 +118,7 @@ export function GitHubCard() {
             </Match>
             <Match when={status() === 'reauthentication_required'}>
               <ConnectAction
-                label="Reconnect"
+                label={t('Reconnect')}
                 onClick={handleGithubReconnect}
                 disabled={reauthenticateGithub.isPending}
               />
@@ -125,8 +128,8 @@ export function GitHubCard() {
       </SettingsRow>
 
       <SettingsRow
-        label="GitHub App"
-        description="Choose repositories for Macro to sync."
+        label={t('GitHub App')}
+        description={t('Choose repositories for Macro to sync.')}
       >
         {/* The install callback rejects users without a linked account, so
             don't offer the flow until the account above is connected. */}
@@ -135,8 +138,8 @@ export function GitHubCard() {
           fallback={
             <span class="text-xs text-ink-muted">
               {githubLink.isLoading
-                ? 'Loading…'
-                : 'Connect your GitHub account first'}
+                ? t('Loading…')
+                : t('Connect your GitHub account first')}
             </span>
           }
         >
@@ -146,7 +149,7 @@ export function GitHubCard() {
             rel="noopener noreferrer"
             class="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-ink-muted outline-none transition-colors hover:bg-ink/4 hover:text-ink focus-visible:bg-ink/6"
           >
-            Configure app
+            {t('Configure app')}
             <ArrowUpRightIcon class="size-3.5 opacity-70" />
           </a>
         </Show>

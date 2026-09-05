@@ -9,6 +9,25 @@
     "features/favorites/sidebar/favorites-section.tsx",
     "components/app/app-sidebar/sidebar.tsx"
   ],
+  "Cancel": [
+    "features/settings/Crm.tsx",
+    "features/settings/Harness.tsx",
+    "features/settings/Agents.tsx",
+    "features/settings/HarnessPairingDialog.tsx",
+    "features/block-automation/component/AutomationComposer.tsx",
+    "features/inbox/AddInboxDialog.tsx"
+  ],
+  "Name": [
+    "features/settings/Agents.tsx",
+    "features/settings/HarnessPairingDialog.tsx",
+    "features/block-automation/component/AutomationComposer.tsx"
+  ],
+  "Create": [
+    "features/block-automation/component/AutomationComposer.tsx",
+    "features/command/sidebar/sidebar-create-menu.tsx",
+    "features/command/Launcher.tsx",
+    "components/app/mobile/MobileDockRow.tsx"
+  ],
   "Open in new split": [
     "features/favorites/sidebar/favorites-section.tsx",
     "features/channel/sidebar/channels-recent-widget.tsx",
@@ -20,10 +39,5 @@
     "features/channel/sidebar/channels-recent-widget.tsx",
     "features/command/Launcher.tsx",
     "components/app/app-sidebar/sidebar.tsx"
-  ],
-  "Create": [
-    "features/command/sidebar/sidebar-create-menu.tsx",
-    "features/command/Launcher.tsx",
-    "components/app/mobile/MobileDockRow.tsx"
   ]
 }

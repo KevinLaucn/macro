@@ -30,6 +30,7 @@ import { useLocation } from '@solidjs/router';
 import {
   createRenderEffect,
   createSignal,
+  ErrorBoundary,
   For,
   onCleanup,
   onMount,
@@ -407,7 +408,18 @@ export function SettingsPanel(props: SettingsPanelProps) {
                   </Suspense>
                 </Show>
                 <Show when={isCurrentTab('Appearance')}>
-                  <Appearance />
+                  <ErrorBoundary
+                    fallback={(err) => {
+                      console.error('Failed to load Appearance settings:', err);
+                      return (
+                        <div class="p-8 text-ink text-sm">
+                          Failed to load Appearance settings. Check console for details.
+                        </div>
+                      );
+                    }}
+                  >
+                    <Appearance />
+                  </ErrorBoundary>
                 </Show>
                 <Show when={isCurrentTab('Shortcuts')}>
                   <Shortcuts />

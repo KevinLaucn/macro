@@ -8,7 +8,8 @@
 //!     code is the AUTHORITATIVE source for local plumbing + the fixed FusionAuth
 //!     identity (it wins over Doppler; the deleted defaults.env was the reverse,
 //!     a fallback Doppler overrode).
-//!   - `--env-file`  <  process env (existing keys only).
+//!   - Root `.env.local` by default, or explicit `--env-file`.
+//!   - Process env (existing keys only).
 //!   - Dev only: overrides (pin env/project, strip local endpoints, real AWS creds).
 //!
 //! The merged map is written to a per-instance generated env file consumed by
@@ -90,8 +91,13 @@ pub fn resolve(
         }
     }
 
-    // `--env-file` overlay (the only dotenv we still parse).
-    if let Some(file) = env_file {
+    let effective_env_file = env_file
+        .map(Path::to_path_buf)
+        .or_else(default_local_env_file);
+
+    // Local dotenv overlay. An explicit `--env-file` wins; otherwise the
+    // private fork uses root `.env.local` for developer credentials.
+    if let Some(file) = effective_env_file.as_deref() {
         load_dotenv_into(file, &mut env)
             .with_context(|| format!("loading --env-file {}", file.display()))?;
     }
@@ -125,9 +131,14 @@ pub fn resolve(
     Ok(ResolvedEnv {
         merged: env,
         doppler_used,
-        env_file: env_file.map(Path::to_path_buf),
+        env_file: effective_env_file,
         generated_path,
     })
+}
+
+fn default_local_env_file() -> Option<PathBuf> {
+    let path = super::repo_root().join(".env.local");
+    path.exists().then_some(path)
 }
 
 fn should_overlay_process_env(key: &str, value: &str) -> bool {

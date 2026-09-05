@@ -12,6 +12,7 @@ env_vars! {
     pub struct GmailGcpQueue;
     #[derive(Debug)]
     pub struct AttachmentBucket;
+    pub struct DocumentStorageServiceAuthKey;
     pub struct NotificationsEnabled;
     pub struct AuthenticationServiceSecretKey;
     pub struct EmailServiceCloudfrontDistributionUrl;
@@ -45,6 +46,9 @@ pub struct Config {
 
     /// The SQS bucket for storing attachments
     pub attachment_bucket: AttachmentBucket,
+
+    /// Auth key used when calling document_storage_service internal endpoints.
+    pub document_storage_service_auth_key: DocumentStorageServiceAuthKey,
 
     /// Notification-service functionality
     #[macro_config_default(true)]

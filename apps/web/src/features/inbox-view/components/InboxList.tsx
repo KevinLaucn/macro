@@ -135,7 +135,7 @@ export function InboxList() {
   const { buildActionGroups } = createSoupEntityActions();
   const entityActionViewContext = () =>
     resolveEntityActionViewContext({
-      activeListView: panel.handle.content().id,
+      activeListView: panel.handle.content()?.id ?? 'inbox',
       activeTab: state.tab,
     });
 

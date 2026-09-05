@@ -58,6 +58,13 @@ const internalAuthKeyArn: pulumi.Output<string> = aws.secretsmanager
   .getSecretVersionOutput({ secretId: config.require(`internal_auth_key`) })
   .apply((secret) => secret.arn);
 
+const documentStorageServiceAuthKeyArn: pulumi.Output<string> =
+  aws.secretsmanager
+    .getSecretVersionOutput({
+      secretId: config.require(`document_storage_service_auth_key`),
+    })
+    .apply((secret) => secret.arn);
+
 const cloudStorageStack = new pulumi.StackReference('cloud-storage-stack', {
   name: `macro-inc/document-storage/${stack}`,
 });
@@ -279,6 +286,7 @@ const secretKeyArns = [
   jwtSecretKeyArn,
   authenticationServiceInternalApiKeyArn,
   internalAuthKeyArn,
+  documentStorageServiceAuthKeyArn,
   macroDbUrlArn,
   MACRO_API_TOKENS.macroApiTokenPublicKeyArn,
   cloudfrontSecretKey.arn,
@@ -402,6 +410,13 @@ const containerEnvVars = [
   },
 ];
 
+const containerSecrets = [
+  {
+    name: 'DOCUMENT_STORAGE_SERVICE_AUTH_KEY',
+    valueFrom: documentStorageServiceAuthKeyArn,
+  },
+];
+
 const dopplerEcsEnvironment = new DopplerEcsEnvironment(pulumi.getProject(), {
   tags,
 });
@@ -417,6 +432,7 @@ const emailService = new EmailService('email-service', {
   healthCheckPath: '/health',
   platform: { family: 'linux', architecture: 'amd64' },
   containerEnvVars,
+  containerSecrets,
   dopplerEcsEnvironment,
 });
 
@@ -430,6 +446,7 @@ new EmailPubSubWorkers('email-pubsub-workers', {
   role: emailServiceRole,
   platform: { family: 'linux', architecture: 'amd64' },
   containerEnvVars,
+  containerSecrets,
   dopplerEcsEnvironment,
 });
 

@@ -303,7 +303,7 @@ just stack status --json      # machine-readable state (containers, health, URLs
 just stack update             # rebuild and reload only the changed services (the `r` hotkey)
 just stack update --frontend  # also rebuild the frontend bundle
 just stack update --binaries-dir <dir>  # remount a prebuilt set; volumes stay
-just stack down               # remove containers, volumes, and state
+just stack down               # remove containers and state; volumes stay
 ```
 
 All the `run_local` flags apply to `stack` too. This includes `--instance`, `--no-doppler`, `--no-build`, and `--binaries-dir`.
@@ -350,7 +350,7 @@ Stop an instance but keep its volumes:
 just stop_local --instance agent-a
 ```
 
-Remove the containers, volumes, and named-instance networks of an instance:
+Remove the containers and named-instance networks of an instance. Volumes are preserved:
 
 ```bash
 just destroy_local --instance agent-a

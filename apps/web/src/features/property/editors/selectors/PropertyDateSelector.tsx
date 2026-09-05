@@ -1,6 +1,7 @@
 import { DatePickerUI } from '@core/component/DatePicker/DatePickerUI';
 import { useDateSearch } from '@core/util/dateSearch/useDateSearch';
 import { useKeyPressed } from '@core/util/useKeyPressed';
+import { t } from '@macro/i18n';
 import SearchIcon from '@phosphor/magnifying-glass.svg';
 import type { DateProperty } from '@property/types';
 import { useSearchInputFocus } from '@property/utils';
@@ -163,7 +164,9 @@ export const PropertyDateSelector = (props: DateSelectorProps) => {
               }
             }
           }}
-          placeholder={`Set ${props.property.displayName.toLowerCase()}...`}
+          placeholder={t('Set {property}...', {
+            property: t(props.property.displayName),
+          })}
           disabled={mode() !== 'search'}
         />
       </div>
@@ -179,13 +182,13 @@ export const PropertyDateSelector = (props: DateSelectorProps) => {
                     fallback={
                       <Show when={!hasClear()}>
                         <div class="text-center py-2 text-ink-muted text-sm">
-                          Enter a date or duration
+                          {t('Enter a date or duration')}
                         </div>
                       </Show>
                     }
                   >
                     <div class="text-center py-2 text-ink-muted text-sm">
-                      No dates match "{searchQuery()}"
+                      {t('No dates match "{query}"', { query: searchQuery() })}
                     </div>
                   </Show>
                 }
@@ -233,12 +236,12 @@ export const PropertyDateSelector = (props: DateSelectorProps) => {
                 >
                   <div class="flex items-center gap-2 flex-1 min-w-0">
                     <div class="flex-1 min-w-0">
-                      <p class="truncate">Custom date...</p>
+                      <p class="truncate">{t('Custom date...')}</p>
                     </div>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
                     <span class="text-xs text-ink-muted">
-                      Pick from calendar
+                      {t('Pick from calendar')}
                     </span>
                   </div>
                 </div>
@@ -257,7 +260,7 @@ export const PropertyDateSelector = (props: DateSelectorProps) => {
                     }}
                   >
                     <div class="flex items-center gap-2 flex-1 min-w-0">
-                      <p class="truncate text-ink-muted">Clear date</p>
+                      <p class="truncate text-ink-muted">{t('Clear date')}</p>
                     </div>
                   </div>
                 </Show>
@@ -268,11 +271,20 @@ export const PropertyDateSelector = (props: DateSelectorProps) => {
           {/* Help text */}
           <div class="shrink-0 px-2 py-1.5 border-t border-edge-muted">
             <div class="text-xs text-ink-muted">
-              <span>Use queries like </span>
-              <code class="bg-active px-1">3d</code>,{' '}
-              <code class="bg-active px-1">1w</code>,{' '}
-              <code class="bg-active px-1">feb 17</code>, or{' '}
-              <code class="bg-active px-1">tomorrow</code>
+              {t('Use queries like {eg1}, {eg2}, {eg3}, or {eg4}', {
+                eg1: '__EG1__',
+                eg2: '__EG2__',
+                eg3: '__EG3__',
+                eg4: '__EG4__',
+              })
+                .split(/(__EG1__|__EG2__|__EG3__|__EG4__)/g)
+                .map((part) => {
+                  if (part === '__EG1__') return <code class="bg-active px-1">3d</code>;
+                  if (part === '__EG2__') return <code class="bg-active px-1">1w</code>;
+                  if (part === '__EG3__') return <code class="bg-active px-1">feb 17</code>;
+                  if (part === '__EG4__') return <code class="bg-active px-1">tomorrow</code>;
+                  return part;
+                })}
             </div>
           </div>
         </Match>

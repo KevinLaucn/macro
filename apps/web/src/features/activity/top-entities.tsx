@@ -1,6 +1,7 @@
 import { SoupSectionHeader } from '@app/features/next-soup/soup-view/section-header';
 import { openDocument } from '@core/component/LexicalMarkdown/component/core/BlockLink';
 import { useSplitNavigationHandler } from '@core/util/useSplitNavigationHandler';
+import { locale, t } from '@macro/i18n';
 import { usePropertyEntityDisplay } from '@property/hooks';
 import type { ActivityOverview } from '@queries/activity/graphql/overview';
 import type { EntityType } from '@service-properties/generated/schemas/entityType';
@@ -22,12 +23,12 @@ export function TopEntities(props: {
   entities: ActivityOverview['topEntities'];
 }) {
   return (
-    <section class="min-w-0" aria-label="Most active">
-      <SoupSectionHeader>Most active</SoupSectionHeader>
+    <section class="min-w-0" aria-label={t('Most active')}>
+      <SoupSectionHeader>{t('Most active')}</SoupSectionHeader>
       <Show
         when={props.entities.length > 0}
         fallback={
-          <p class="px-2 py-2 text-ink-muted text-sm">No entities yet.</p>
+          <p class="px-2 py-2 text-ink-muted text-sm">{t('No entities yet.')}</p>
         }
       >
         <For each={props.entities}>
@@ -92,10 +93,17 @@ function MappedEntityRow(props: {
 }
 
 function ActionCount(props: { count: number }) {
-  const noun = () => (props.count === 1 ? 'action' : 'actions');
+  const isZh = locale() === 'zh-CN';
+  const label = () => {
+    if (isZh) {
+      return `${props.count.toLocaleString()} 次操作`;
+    }
+    const noun = props.count === 1 ? 'action' : 'actions';
+    return `${props.count.toLocaleString()} ${noun}`;
+  };
   return (
     <span class="ml-auto shrink-0 text-right font-medium text-ink-extra-muted text-xs tabular-nums">
-      {props.count.toLocaleString()} {noun()}
+      {label()}
     </span>
   );
 }

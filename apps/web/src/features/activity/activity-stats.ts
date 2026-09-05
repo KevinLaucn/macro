@@ -1,3 +1,4 @@
+import { locale } from '@macro/i18n';
 import {
   addDays,
   eachDayOfInterval,
@@ -5,6 +6,7 @@ import {
   isBefore,
   isValid,
 } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import {
   formatOverviewDate,
   OVERVIEW_TZ,
@@ -104,15 +106,28 @@ export function summarizeActivity(overview: {
 }
 
 export function formatMonthName(yearMonth: string): string {
-  return format(parseOverviewDate(`${yearMonth}-01`), 'MMMM', {
-    in: OVERVIEW_TZ,
-  });
+  const isZh = locale() === 'zh-CN';
+  return isZh
+    ? format(parseOverviewDate(`${yearMonth}-01`), 'M月', {
+        in: OVERVIEW_TZ,
+        locale: zhCN,
+      })
+    : format(parseOverviewDate(`${yearMonth}-01`), 'MMMM', {
+        in: OVERVIEW_TZ,
+      });
 }
 
 export function formatDayLabel(date: string): string {
-  return format(parseOverviewDate(date), 'MMM d, yyyy', { in: OVERVIEW_TZ });
+  const isZh = locale() === 'zh-CN';
+  return isZh
+    ? format(parseOverviewDate(date), 'yyyy年M月d日', {
+        in: OVERVIEW_TZ,
+        locale: zhCN,
+      })
+    : format(parseOverviewDate(date), 'MMM d, yyyy', { in: OVERVIEW_TZ });
 }
 
 export function formatStreak(days: number): string {
-  return `${days}d`;
+  const isZh = locale() === 'zh-CN';
+  return isZh ? `${days}天` : `${days}d`;
 }

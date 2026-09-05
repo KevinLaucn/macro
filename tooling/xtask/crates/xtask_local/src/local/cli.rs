@@ -49,7 +49,7 @@ enum Cmd {
     StopLocal(InstanceArgs),
     /// Drop, recreate, and migrate the instance database.
     ResetLocal(InstanceArgs),
-    /// Remove an instance's containers, networks, and volumes.
+    /// Remove an instance's containers and networks. Volumes are preserved.
     DestroyLocal(InstanceArgs),
     /// Start, seed, and test an isolated local E2E stack.
     LocalE2e(super::e2e::LocalE2eArgs),
@@ -67,7 +67,7 @@ pub enum StackCmd {
     Update(super::stack::UpdateArgs),
     /// Report the instance's containers, health, and URLs (`--json` for machines).
     Status(super::stack::StatusArgs),
-    /// Tear the instance down: containers, volumes, and state.
+    /// Tear the instance down: containers and state. Volumes are preserved.
     Down(super::stack::DownArgs),
 }
 

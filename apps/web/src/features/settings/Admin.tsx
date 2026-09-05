@@ -9,6 +9,7 @@ import {
   setDebugSetting,
 } from '@app/lib/debugSettings';
 import { enableSoupFilterPersistence } from '@core/constant/featureFlags';
+import { t } from '@macro/i18n';
 import { Button, ToggleSwitch } from '@ui';
 import { For, Show } from 'solid-js';
 import { SettingsCard, SettingsPage, SettingsRow } from './primitives';
@@ -18,8 +19,8 @@ function DebugSettingRow(props: { setting: DebugSettingDef }) {
 
   return (
     <SettingsRow
-      label={props.setting.label}
-      description={props.setting.description}
+      label={t(props.setting.label)}
+      description={t(props.setting.description)}
     >
       <ToggleSwitch
         size="md"
@@ -38,8 +39,10 @@ export function Admin() {
 
   return (
     <SettingsPage
-      title="Debug"
-      description="Local toggles for debugging — only visible to Macro staff."
+      title={t('Debug')}
+      description={t(
+        'Local toggles for debugging — only visible to Macro staff.'
+      )}
       actions={
         <Button
           variant="outline"
@@ -48,15 +51,17 @@ export function Admin() {
           disabled={!hasActiveSettings()}
           onClick={clearAllDebugSettings}
         >
-          Reset all
+          {t('Reset all')}
         </Button>
       }
     >
       <Show when={soupFilterPersistenceFlag().enabled}>
         <SettingsCard>
           <SettingsRow
-            label="Persist list filters"
-            description="Keep soup filters and the last selected tab across reloads on this device."
+            label={t('Persist list filters')}
+            description={t(
+              'Keep soup filters and the last selected tab across reloads on this device.'
+            )}
           >
             <ToggleSwitch
               size="md"

@@ -1,3 +1,4 @@
+import { t } from '@macro/i18n';
 import type { PropertyDefinitionDomain } from '@property/types';
 import {
   formatBoolean,
@@ -105,8 +106,8 @@ export function propertyValueLabel(
     case 'EntityReference':
       return Array.isArray(tagged.value) && tagged.value.length > 0
         ? tagged.value.length === 1
-          ? 'an item'
-          : `${tagged.value.length} items`
+          ? t('an item')
+          : t('{0} items', [tagged.value.length])
         : undefined;
     default:
       return undefined;

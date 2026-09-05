@@ -119,9 +119,24 @@ export function i18nAstPlugin(options: I18nAstPluginOptions = {}): Plugin {
           }
         },
         JSXExpressionContainer(path: any) {
+          if (path.parent?.type === "JSXAttribute") {
+            const attrName = path.parent.name?.name;
+            if (!TRANSLATABLE_ATTRIBUTES.has(attrName)) {
+              return;
+            }
+          }
           if (path.node.expression?.type === "TemplateLiteral") {
             const unit = parseSimpleTemplateLiteral(path.node.expression);
             if (unit) {
+              const names = new Set<string>();
+              const hasDuplicates = unit.variables.some((v) => {
+                if (names.has(v.name)) return true;
+                names.add(v.name);
+                return false;
+              });
+              if (hasDuplicates) {
+                return;
+              }
               const escaped = JSON.stringify(unit.template);
               const varObj = `{ ${unit.variables
                 .map((v) => `${v.name}: ${code.slice(v.start, v.end)}`)

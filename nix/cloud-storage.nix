@@ -764,6 +764,12 @@
           cargoArtifacts = selfHostEmailCargoArtifacts;
           pname = "cloud-storage-self-host-email-binaries";
           doCheck = false;
+          # This derivation consumes the deps-only cargoArtifacts cache but
+          # installs production binaries directly into $out/bin. Do not let
+          # crane's artifact-cache postInstall hook append target.tar.zst here:
+          # with set -u that hook can reference unset compression toggles, and
+          # the tarball is not part of this package's runtime contract.
+          doInstallCargoArtifacts = false;
           CARGO_PROFILE = "release";
 
           buildPhaseCargoCommand = ''

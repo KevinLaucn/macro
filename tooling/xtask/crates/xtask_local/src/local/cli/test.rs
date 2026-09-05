@@ -91,6 +91,18 @@ fn stack_has_no_snapshot_verb() {
 }
 
 #[test]
+fn stack_down_rejects_legacy_keep_data_flag() {
+    // `stack down` now preserves local user data by default. Rejecting the old
+    // flag prevents scripts and docs from carrying a stale "data is optional"
+    // model forward; the default behavior must not change unless a
+    // user-explicit destructive reset replaces it.
+    match Cli::try_parse_from(["cargo-x", "stack", "down", "--keep-data"]) {
+        Err(err) => assert_eq!(err.kind(), clap::error::ErrorKind::UnknownArgument),
+        Ok(_) => panic!("stack down --keep-data must not parse"),
+    }
+}
+
+#[test]
 fn seed_scenario_accepts_instance_and_trailing_scenario_arguments() {
     let cli = Cli::try_parse_from([
         "cargo-x",

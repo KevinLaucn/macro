@@ -4,6 +4,7 @@ import { useHasPaidAccess } from '@core/auth';
 import { PERMISSION_IDS } from '@core/constant/permissions';
 import { usePermissions, useUserId } from '@core/context/user';
 import { plural } from '@core/util/string';
+import { t } from '@macro/i18n';
 import CheckIcon from '@phosphor/check.svg';
 import EnvelopeIcon from '@phosphor/envelope.svg';
 import { useCurrentTeamQuery } from '@queries/team/teams';
@@ -31,7 +32,7 @@ const PlanFeatures = (props: { tier: PlanTier }) => (
     {(label) => (
       <li class="flex items-center gap-2">
         <CheckIcon class="size-3 text-success" />
-        <span class="text-ink-muted text-xs">{label}</span>
+        <span class="text-ink-muted text-xs">{t(label)}</span>
       </li>
     )}
   </For>
@@ -90,15 +91,15 @@ export const Billing = () => {
 
   return (
     <SettingsPage
-      title="Billing"
+      title={t('Billing')}
       description={
         <>
-          For questions about billing,{' '}
+          {t('For questions about billing,')}{' '}
           <a
             class="text-link hover:text-link-hover visited:text-link-visited inline-flex items-center"
             href="mailto:support@macro.com"
           >
-            contact us
+            {t('contact us')}
             <EnvelopeIcon class="size-4 inline mx-1" />
           </a>
         </>
@@ -111,22 +112,23 @@ export const Billing = () => {
               <div class="flex flex-col gap-1">
                 <div class="flex items-center gap-2">
                   <h2 class="text-lg font-medium text-ink">
-                    <Show when={!hasPaid()} fallback={'Premium plan'}>
-                      Free plan
+                    <Show when={!hasPaid()} fallback={t('Premium plan')}>
+                      {t('Free plan')}
                     </Show>
                   </h2>
 
                   <Layer depth={3}>
                     <span class="text-xs text-ink-muted px-1.5 py-0.25 border border-edge-muted rounded-md bg-active">
-                      Current
+                      {t('Current')}
                     </span>
                   </Layer>
                 </div>
                 <Switch>
                   <Match when={teamRole() === 'member'}>
                     <p class="text-ink-extra-muted text-xs">
-                      Your subscription is managed by your team owner. Contact
-                      them to make changes.
+                      {t(
+                        'Your subscription is managed by your team owner. Contact them to make changes.'
+                      )}
                     </p>
                   </Match>
                   <Match
@@ -134,9 +136,10 @@ export const Billing = () => {
                   >
                     {(team) => (
                       <p class="text-ink-extra-muted text-xs">
-                        {team().members.length}{' '}
-                        {plural('user', team().members.length)} • $40 per
-                        seat/per month
+                        {t('{count} {users} • $40 per seat / month', {
+                          count: team().members.length,
+                          users: plural('user', team().members.length),
+                        })}
                       </p>
                     )}
                   </Match>
@@ -157,7 +160,7 @@ export const Billing = () => {
                   variant="outline"
                   onClick={handleManage}
                 >
-                  Manage
+                  {t('Manage')}
                 </Button>
               </Show>
             </header>
@@ -180,9 +183,9 @@ export const Billing = () => {
             <section class="flex flex-col gap-4 p-4">
               <header class="flex items-center gap-2">
                 <div class="flex flex-col">
-                  <h2 class="text-lg font-medium text-ink">Premium</h2>
+                  <h2 class="text-lg font-medium text-ink">{t('Premium')}</h2>
                   <p class="text-ink-extra-muted text-xs">
-                    $40 per seat / month
+                    {t('$40 per seat / month')}
                   </p>
                 </div>
 
@@ -192,7 +195,7 @@ export const Billing = () => {
                   variant="cta"
                   onClick={handleCheckout}
                 >
-                  Upgrade now
+                  {t('Upgrade now')}
                 </Button>
               </header>
               <ul class="border-t border-t-edge-muted pt-4 flex flex-wrap gap-4 text-sm text-ink-muted">
