@@ -5,7 +5,8 @@
 # run-local needs.
 xtask := "cargo run --quiet --manifest-path Cargo.toml -p xtask_local --features local-stack --"
 
-# Start a fully local stack (xtask: zigbuild + runtime image + infra + proxy + frontend).
+# Start a fully local DEV stack with Vite HMR on http://localhost:3000/app
+# (xtask: zigbuild + runtime image + infra + proxy + frontend).
 #   just run_local                      # default instance
 #   just run_local --instance agent-a   # isolated, concurrent instance
 #   just run_local --no-doppler --env-file ./local.env --no-frontend --no-build
@@ -17,7 +18,7 @@ run_local *ARGS:
 run_dev *ARGS:
   {{ xtask }} run-dev "$@"
 
-# Run only the frontend dev server for an instance (Vite foreground exec).
+# Run only the frontend dev server for an instance (Vite foreground exec on port 3000).
 #   just frontend
 #   just frontend --instance email-test --port-base 31000
 frontend *ARGS:
@@ -46,7 +47,9 @@ destroy_local *ARGS:
 stop_local *ARGS:
   {{ xtask }} stop-local "$@"
 
-# Headless stack orchestration for agents and CI.
+# Headless/static stack orchestration for agents and CI. Not for normal UI dev:
+# it serves the frontend bundle through the proxy at http://localhost:8090/app
+# and does not start Vite HMR on port 3000.
 #   just stack up                      # full stack; static frontend served by the proxy
 #   just stack update                  # adopt a new build; volumes stay
 #   just stack status --json           # machine-readable state

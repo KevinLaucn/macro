@@ -43,7 +43,9 @@ just stack update --frontend
 just stack down
 ```
 
-`stack up` is for agents and CI-style local operation. It returns after startup, serves a static frontend bundle through the proxy, and leaves Docker containers running.
+`stack up` is for agents and CI-style local operation. It returns after startup, serves a static frontend bundle through the proxy at `http://localhost:8090/app`, and leaves Docker containers running.
+
+Do not use `stack up` for normal UI development. It does not start Vite and does not bind `localhost:3000`; frontend source edits under `apps/web/src` will not hot reload until the static bundle is rebuilt. For daily development, use `just run_local --no-doppler` or `just frontend` and open `http://localhost:3000/app`.
 
 ## Status and Lifecycle
 
@@ -67,4 +69,3 @@ just seed-scenario --instance <name> --port-base <free-port> status --file seed/
 ```
 
 If a stack started with an explicit `--port-base`, all seed/status commands for that stack must repeat the same `--port-base`.
-

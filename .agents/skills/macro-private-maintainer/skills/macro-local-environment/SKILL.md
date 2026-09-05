@@ -69,6 +69,8 @@ just stack down
 
 > **注意**：`just stack` 属于静态 Bundle 代理模式，修改源码后必须执行 `just stack update --frontend` 才会重新编译打包；日常开发请优先使用上面的 `just run_local` 或 `just frontend` 热更新模式。
 >
+> **端口判定**：如果 `http://localhost:8090/app` 可访问但 `http://localhost:3000/app` 不可访问，当前只运行了 headless/static proxy stack，没有 Vite HMR 前端。需要热更新时，保持后端容器不动，另开终端运行 `just frontend`；或用 `just stack down` 停止容器后改用 `just run_local --no-doppler`。
+>
 > **构建前必查**：任何本地栈构建、`stack up`、`stack update`、agent harness、runtime image 或 `--no-build` 相关操作，先读：
 > - `tooling/xtask/crates/xtask_local/src/local/sandbox_image.rs`
 > - `tooling/xtask/crates/xtask_local/src/local.rs` 的 `prepare(...)`

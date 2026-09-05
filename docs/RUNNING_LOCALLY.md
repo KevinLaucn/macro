@@ -295,7 +295,9 @@ If you started without the flag and suspect a stale image, press `q`. Then start
 
 ## Headless Mode
 
-`just stack` runs the same stack without an attached terminal. There is no hotkey loop and no dev server. The frontend is built once and served statically by the proxy. The whole product lives behind one origin. A finished `up` leaves only Docker containers running.
+`just stack` runs the same stack without an attached terminal. There is no hotkey loop and no dev server. The frontend is built once and served statically by the proxy at `http://localhost:8090/app`. The whole product lives behind one origin. A finished `up` leaves only Docker containers running.
+
+Use this mode for agents, CI-style local operation, snapshot baking, or release/parity checks. Do not use it for normal UI development: it will not bind `localhost:3000`, and source edits under `apps/web/src` will not hot reload. For daily frontend/backend development, start the Vite HMR path with `just run_local --no-doppler` or run `just frontend` against an already-running backend stack, then open `http://localhost:3000/app`.
 
 ```bash
 just stack up                  # bring everything up, print URLs, return
@@ -308,7 +310,7 @@ just stack down               # remove containers and state; volumes stay
 
 All the `run_local` flags apply to `stack` too. This includes `--instance`, `--no-doppler`, `--no-build`, and `--binaries-dir`.
 
-The app is served at `<proxy>/app/`. The bundle resolves its backend from the origin it is served on. The same stack works on localhost or behind any hostname without a rebuild.
+The app is served at `<proxy>/app/` (`http://localhost:8090/app` for the default instance). The bundle resolves its backend from the origin it is served on. The same stack works on localhost or behind any hostname without a rebuild.
 
 ### Init Snapshots
 
