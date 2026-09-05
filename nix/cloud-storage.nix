@@ -703,7 +703,7 @@
           serviceName = "search-processing-service";
           packageName = "search_processing_service";
           binaries = [ "search_processing_service" ];
-          featureArgs = "--no-default-features --features email-processing,service";
+          featureArgs = "--no-default-features --features processing,service";
         }
         {
           serviceName = "upload-finalizer";
@@ -725,7 +725,7 @@
       # invoke cargo once per package and correctly apply the full featureArgs.
       # Compiling deps with default features is a harmless superset.
       selfHostEmailBinaryCargoExtraArgs =
-        "--locked "
+        "--offline "
         + pkgs.lib.concatMapStringsSep " " (
           def:
           let
@@ -758,7 +758,7 @@
               cargoArtifacts = selfHostEmailCargoArtifacts;
               buildArgs = selfHostEmailCommonArgs;
               sourceForPackage = selfHostEmailPrunedDeploySrc;
-              lockArg = "--locked";
+              lockArg = "--offline";
             }
           );
         }) selfHostEmailBinaryDefinitions
