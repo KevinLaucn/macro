@@ -12,14 +12,11 @@
 use macro_db_migrator::MACRO_DB_MIGRATIONS;
 use sqlx::postgres::PgPoolOptions;
 
-macro_env_var::env_var! {
-    /// The MacroDB connection string to migrate.
-    struct DatabaseUrl;
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let database_url = DatabaseUrl::new()?;
+    #[allow(clippy::disallowed_methods)]
+    let database_url = std::env::var("DATABASE_URL")
+        .map_err(|e| format!("DATABASE_URL environment variable not set: {e}"))?;
 
     let pool = PgPoolOptions::new()
         .max_connections(1)

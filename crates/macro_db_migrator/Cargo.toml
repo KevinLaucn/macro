@@ -7,7 +7,7 @@ version = "0.1.0"
 # The migration runner. Off by default so the crate stays as light for its test
 # consumers as it was before — only the self-host init image builds it.
 [features]
-cli = ["dep:tokio", "dep:macro_env_var"]
+cli = ["dep:tokio"]
 
 [[bin]]
 name = "macro_db_migrate"
@@ -16,6 +16,5 @@ required-features = ["cli"]
 
 [dependencies]
 sqlx = { workspace = true, features = ["migrate"] }
-macro_env_var = { path = "../macro_env_var", optional = true }
 tokio = { workspace = true, optional = true }
 workspace-hack = { version = "0.1", path = "../workspace-hack" }
